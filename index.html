@@ -481,7 +481,7 @@
     <img id="headerBanner"
          alt="GEEMS Header Banner"
          class="header-banner-image"
-         onerror="this.src='https://placehold.co/1200x200/e0e7ff/4f46e5?text=Banner+Error'; this.alt='Error loading banner image'; this.onerror=null;">
+    >
     <h1>Guided Extreme Emotional Mental States</h1>
 </header>
 
@@ -531,7 +531,7 @@
     <img id="footerBanner"
          alt="GEEMS Footer Banner"
          class="footer-banner-image"
-         onerror="this.src='https://placehold.co/1200x100/e0e7ff/4f46e5?text=Footer+Error'; this.alt='Error loading footer banner'; this.onerror=null;">
+    >
 
     <div class="footer-buttons">
         <button id="saveGameButton" class="geems-button" disabled>Export Game State</button>
@@ -1350,6 +1350,29 @@
         if (pendingTweetData) {
             console.log("Rendering hidden tweet element (initially hidden).");
             renderTweetElement(pendingTweetData);
+        }
+
+        // Move the analysis toggle container to be right after the image
+        const imageElement = uiContainer.querySelector('.geems-image-container');
+        const analysisToggleContainer = uiContainer.querySelector('.analysis-toggle-container');
+        if (imageElement && analysisToggleContainer) {
+            // Check if there's an element after the image
+            if (imageElement.nextSibling) {
+                // Insert the analysis toggle container before the element that is currently after the image
+                uiContainer.insertBefore(analysisToggleContainer, imageElement.nextSibling);
+            } else {
+                // If the image is the last element, append the analysis toggle container after it
+                uiContainer.appendChild(analysisToggleContainer);
+            }
+        }
+
+        // Move the tweet element to be right after the analysis toggle container
+        const tweetElement = document.getElementById('tweet-element-wrapper');
+        if (analysisToggleContainer && tweetElement) {
+            // Insert the tweet element after the analysis toggle container
+            uiContainer.insertBefore(tweetElement, analysisToggleContainer.nextSibling);
+        } else {
+            console.warn("Could not find analysis toggle container or tweet element to move.");
         }
         console.log("Finished rendering all elements.");
     }
