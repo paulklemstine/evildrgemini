@@ -1,0 +1,436 @@
+/* Base body styling */
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #1f2937;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header Styling */
+.site-header {
+    padding: 0;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.header-banner-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+}
+.site-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem;
+    color: white;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    padding: 0 1rem;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.4);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+
+/* Footer Styling */
+.site-footer {
+    margin-top: 3rem;
+    padding: 0;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #6b7280;
+    border-top: 1px solid #d1d5db;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    overflow: hidden;
+}
+.footer-banner-image {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    display: block;
+    margin-bottom: 1.5rem;
+}
+.footer-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 1rem;
+}
+#saveGameButton, #modeToggleButton, #resetGameButton { /* Added reset button */
+    margin-top: 0;
+}
+.footer-content { /* Copyright section */
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0;
+    padding-bottom: 1.5rem;
+}
+.footer-copyright-image { /* Specific class for the small icon */
+    height: 30px; /* Adjusted size */
+    width: 30px; /* Adjusted size */
+    border-radius: 0.375rem;
+    object-fit: cover;
+}
+#clipboardMessage {
+    font-size: 0.8rem;
+    color: #16a34a;
+    height: 1.2em;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+    padding: 0 1rem;
+}
+
+
+/* Custom styles for GEEMS UI elements */
+.geems-element {
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background-color: white !important;
+    color: #1f2937 !important;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.08), 0 2px 6px 0 rgba(0, 0, 0, 0.05);
+    border-left: 5px solid transparent;
+    position: relative;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.3s ease;
+}
+.geems-element:hover {
+    box-shadow: 0 8px 15px 0 rgba(0, 0, 0, 0.1), 0 4px 8px 0 rgba(0, 0, 0, 0.07);
+}
+
+.geems-label {
+    display: block;
+    margin-bottom: 0.6rem;
+    font-weight: 600;
+    color: #4f46e5;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+.geems-text {
+    color: inherit;
+    line-height: 1.7;
+    word-wrap: break-word;
+    font-size: 1rem;
+}
+
+.geems-text strong {
+    color: #7c3aed;
+}
+
+.geems-text em {
+    color: #db2777;
+    font-style: italic;
+}
+
+
+/* Input and Textarea styles */
+.geems-input, .geems-textarea {
+    width: 100%;
+    padding: 0.85rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    color: #1f2937;
+    background-color: #f9fafb;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.geems-input::placeholder, .geems-textarea::placeholder {
+    color: #9ca3af;
+}
+.geems-input:focus, .geems-textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+    background-color: white;
+}
+
+/* Radio and Checkbox option styling */
+.geems-radio-option, .geems-checkbox-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    border: 1px solid #e5e7eb;
+    color: inherit;
+}
+.geems-radio-option:hover, .geems-checkbox-option:hover {
+    background-color: #f0f9ff;
+    border-color: #a5b4fc;
+}
+.geems-radio-option:active, .geems-checkbox-option:active {
+    transform: scale(0.98);
+}
+.geems-radio-option input[type="radio"], .geems-checkbox-option input[type="checkbox"] {
+    margin-right: 0.85rem;
+    cursor: pointer;
+    accent-color: #6366f1;
+    width: 1.1rem;
+    height: 1.1rem;
+}
+.geems-radio-option label, .geems-checkbox-option label {
+    color: inherit;
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+/* Slider styling */
+.geems-slider {
+    width: 100%;
+    cursor: pointer;
+    accent-color: #6366f1;
+    height: 0.6rem;
+    background: #e5e7eb;
+    border-radius: 9999px;
+    appearance: none;
+    -webkit-appearance: none;
+}
+.geems-slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: #4f46e5;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.geems-slider::-moz-range-thumb {
+    width: 1.25rem;
+    height: 1.25rem;
+    background: #4f46e5;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+.geems-slider-value-display {
+    color: #4f46e5;
+    font-weight: 600;
+    min-width: 2.5rem;
+    transition: color 0.3s ease;
+}
+
+/* Image container and styling */
+.geems-image-container {
+    text-align: center;
+}
+.geems-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+    background-color: #e5e7eb;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.geems-image-prompt {
+    font-size: 0.8rem;
+    color: #6b7280;
+    opacity: 0.8;
+    font-style: italic;
+    margin-top: 0.5rem;
+    word-wrap: break-word;
+    padding: 0 1rem;
+}
+
+/* Button styling */
+.geems-button {
+    padding: 0.85rem 2rem;
+    background: linear-gradient(to right, #4f46e5, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+.geems-button:hover {
+    background: linear-gradient(to right, #4338ca, #6d28d9);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+.geems-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+}
+.geems-button:disabled {
+    background: #a5b4fc;
+    cursor: not-allowed;
+    opacity: 0.7;
+    box-shadow: none;
+    transform: none;
+}
+/* Specific style for Mode Toggle Button */
+#modeToggleButton {
+    background: linear-gradient(to right, #be185d, #9d174d); /* Pink/Red gradient for Explicit */
+    min-width: 150px;
+}
+#modeToggleButton.standard-mode {
+    background: linear-gradient(to right, #059669, #047857); /* Green gradient for Standard */
+}
+#modeToggleButton:hover {
+    background: linear-gradient(to right, #9d174d, #831843); /* Darker Pink/Red */
+}
+#modeToggleButton.standard-mode:hover {
+    background: linear-gradient(to right, #047857, #065f46); /* Darker Green */
+}
+/* Specific style for Reset Button */
+#resetGameButton {
+    background: linear-gradient(to right, #f97316, #ea580c); /* Orange gradient */
+}
+#resetGameButton:hover {
+    background: linear-gradient(to right, #ea580c, #c2410c); /* Darker Orange gradient */
+}
+
+
+/* Loading and Error message styling */
+.loading-indicator, .error-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    font-size: 1.125rem;
+    border-radius: 0.75rem;
+    margin-top: 1rem;
+}
+.loading-indicator {
+    color: #4f46e5;
+    background-color: #e0e7ff;
+    border: 1px solid #c7d2fe;
+}
+
+.loading-indicator svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.error-message {
+    color: #991b1b;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    text-align: center;
+    white-space: pre-wrap;
+    font-weight: 500;
+}
+
+/* API Key Input Section */
+#apiKeySection {
+    margin-bottom: 1.5rem;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.08);
+    border-left: 5px solid #fbbf24;
+}
+
+#apiKeySection .geems-label {
+    color: #ca8a04;
+}
+#apiKeyInput {
+    width: 100%;
+}
+#apiKeySection .api-key-instructions a {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+#apiKeySection .api-key-instructions a:hover {
+    color: #3730a3;
+}
+
+/* Analysis Toggle Styles */
+.analysis-toggle-container {
+    cursor: pointer;
+    position: relative;
+    padding-right: 3.5rem;
+    border-left-width: 5px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-style: solid;
+    border-color: transparent;
+}
+
+.analysis-toggle-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 1rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #9ca3af;
+    opacity: 0.8;
+    transition: transform 0.3s ease-in-out, opacity 0.2s, color 0.2s;
+}
+
+.analysis-toggle-container:hover .analysis-toggle-icon {
+    opacity: 1;
+    color: #4f46e5;
+}
+
+.analysis-content {
+    color: inherit;
+}
+
+.analysis-content pre {
+    background-color: #1f2937;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    color: #d1d5db;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #374151;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.analysis-content .geems-label {
+    font-size: 1rem;
+    color: inherit;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px dashed currentColor;
+    display: inline-block;
+    padding-bottom: 2px;
+    transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Tweet Element Styling */
+#tweet-element-wrapper {
+    border-left-color: #0ea5e9 !important;
+    font-style: italic;
+    color: #374151;
+    background-color: #f0f9ff !important;
+    padding: 1rem 1.25rem;
+}
+
+#tweet-element-wrapper .geems-label {
+    font-weight: bold;
+    color: #0284c7 !important;
+    margin-bottom: 0.25rem;
+    font-style: normal;
+    border-bottom: none;
+}
