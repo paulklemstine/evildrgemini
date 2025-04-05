@@ -16,12 +16,14 @@ body {
     position: relative;
     overflow: hidden;
 }
+
 .header-banner-image {
     width: 100%;
     height: 200px;
     object-fit: cover;
     display: block;
 }
+
 .site-header h1 {
     font-family: 'Playfair Display', serif;
     font-size: 3rem;
@@ -55,6 +57,7 @@ body {
     gap: 1.5rem;
     overflow: hidden;
 }
+
 .footer-banner-image {
     width: 100%;
     height: 100px;
@@ -62,6 +65,7 @@ body {
     display: block;
     margin-bottom: 1.5rem;
 }
+
 .footer-buttons {
     display: flex;
     gap: 1rem;
@@ -69,9 +73,11 @@ body {
     justify-content: center;
     padding: 0 1rem;
 }
+
 #saveGameButton, #modeToggleButton, #resetGameButton { /* Added reset button */
     margin-top: 0;
 }
+
 .footer-content { /* Copyright section */
     display: flex;
     align-items: center;
@@ -79,13 +85,16 @@ body {
     margin-top: 0;
     padding-bottom: 1.5rem;
 }
+
 .footer-copyright-image { /* Specific class for the small icon */
     height: 30px; /* Adjusted size */
     width: 30px; /* Adjusted size */
     border-radius: 0.375rem;
     object-fit: cover;
 }
-#clipboardMessage {
+
+/* Class added for consistency */
+.clipboard-message {
     font-size: 0.8rem;
     color: #16a34a;
     height: 1.2em;
@@ -108,6 +117,7 @@ body {
     position: relative;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.3s ease;
 }
+
 .geems-element:hover {
     box-shadow: 0 8px 15px 0 rgba(0, 0, 0, 0.1), 0 4px 8px 0 rgba(0, 0, 0, 0.07);
 }
@@ -120,6 +130,7 @@ body {
     font-size: 0.9rem;
     transition: color 0.3s ease;
 }
+
 .geems-text {
     color: inherit;
     line-height: 1.7;
@@ -148,9 +159,11 @@ body {
     background-color: #f9fafb;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
+
 .geems-input::placeholder, .geems-textarea::placeholder {
     color: #9ca3af;
 }
+
 .geems-input:focus, .geems-textarea:focus {
     outline: none;
     border-color: #6366f1;
@@ -170,13 +183,16 @@ body {
     border: 1px solid #e5e7eb;
     color: inherit;
 }
+
 .geems-radio-option:hover, .geems-checkbox-option:hover {
     background-color: #f0f9ff;
     border-color: #a5b4fc;
 }
+
 .geems-radio-option:active, .geems-checkbox-option:active {
     transform: scale(0.98);
 }
+
 .geems-radio-option input[type="radio"], .geems-checkbox-option input[type="checkbox"] {
     margin-right: 0.85rem;
     cursor: pointer;
@@ -184,6 +200,7 @@ body {
     width: 1.1rem;
     height: 1.1rem;
 }
+
 .geems-radio-option label, .geems-checkbox-option label {
     color: inherit;
     flex-grow: 1;
@@ -201,36 +218,42 @@ body {
     appearance: none;
     -webkit-appearance: none;
 }
+
 .geems-slider::-webkit-slider-thumb {
     appearance: none;
     -webkit-appearance: none;
     width: 1.25rem;
     height: 1.25rem;
-    background: #4f46e5;
+    background: var(--slider-thumb-color, #4f46e5); /* Use CSS variable */
     border-radius: 50%;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
+
 .geems-slider::-moz-range-thumb {
     width: 1.25rem;
     height: 1.25rem;
-    background: #4f46e5;
+    background: var(--slider-thumb-color, #4f46e5); /* Use CSS variable */
     border-radius: 50%;
     cursor: pointer;
     border: none;
     transition: background-color 0.3s ease;
 }
+
 .geems-slider-value-display {
     color: #4f46e5;
     font-weight: 600;
     min-width: 2.5rem;
     transition: color 0.3s ease;
+    width: auto; /* Allow width to adjust */
+    text-align: right;
 }
 
 /* Image container and styling */
 .geems-image-container {
     text-align: center;
 }
+
 .geems-image {
     max-width: 100%;
     height: auto;
@@ -243,6 +266,7 @@ body {
     border: 1px solid #d1d5db;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
 .geems-image-prompt {
     font-size: 0.8rem;
     color: #6b7280;
@@ -268,15 +292,18 @@ body {
     letter-spacing: 0.05em;
     white-space: nowrap;
 }
+
 .geems-button:hover {
     background: linear-gradient(to right, #4338ca, #6d28d9);
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
 }
+
 .geems-button:active {
     transform: translateY(0);
     box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 }
+
 .geems-button:disabled {
     background: #a5b4fc;
     cursor: not-allowed;
@@ -284,24 +311,30 @@ body {
     box-shadow: none;
     transform: none;
 }
+
 /* Specific style for Mode Toggle Button */
 #modeToggleButton {
     background: linear-gradient(to right, #be185d, #9d174d); /* Pink/Red gradient for Explicit */
     min-width: 150px;
 }
+
 #modeToggleButton.standard-mode {
     background: linear-gradient(to right, #059669, #047857); /* Green gradient for Standard */
 }
+
 #modeToggleButton:hover {
     background: linear-gradient(to right, #9d174d, #831843); /* Darker Pink/Red */
 }
+
 #modeToggleButton.standard-mode:hover {
     background: linear-gradient(to right, #047857, #065f46); /* Darker Green */
 }
+
 /* Specific style for Reset Button */
 #resetGameButton {
     background: linear-gradient(to right, #f97316, #ea580c); /* Orange gradient */
 }
+
 #resetGameButton:hover {
     background: linear-gradient(to right, #ea580c, #c2410c); /* Darker Orange gradient */
 }
@@ -317,6 +350,7 @@ body {
     border-radius: 0.75rem;
     margin-top: 1rem;
 }
+
 .loading-indicator {
     color: #4f46e5;
     background-color: #e0e7ff;
@@ -350,13 +384,16 @@ body {
 #apiKeySection .geems-label {
     color: #ca8a04;
 }
+
 #apiKeyInput {
     width: 100%;
 }
+
 #apiKeySection .api-key-instructions a {
     color: #4f46e5;
     text-decoration: underline;
 }
+
 #apiKeySection .api-key-instructions a:hover {
     color: #3730a3;
 }
@@ -365,13 +402,14 @@ body {
 .analysis-toggle-container {
     cursor: pointer;
     position: relative;
-    padding-right: 3.5rem;
+    padding-right: 3.5rem; /* Space for icon */
+    /* Border applied via JS based on Gemini analysis color */
     border-left-width: 5px;
     border-right-width: 1px;
     border-top-width: 1px;
     border-bottom-width: 1px;
     border-style: solid;
-    border-color: transparent;
+    border-color: transparent; /* Default */
 }
 
 .analysis-toggle-icon {
@@ -388,31 +426,33 @@ body {
 
 .analysis-toggle-container:hover .analysis-toggle-icon {
     opacity: 1;
-    color: #4f46e5;
+    color: var(--toggle-hover-color, #4f46e5); /* Use CSS variable for hover color */
 }
 
 .analysis-content {
-    color: inherit;
+    color: inherit; /* Inherit color from parent */
 }
 
 .analysis-content pre {
-    background-color: #1f2937;
+    background-color: #1f2937; /* Dark background for code */
     padding: 1rem;
     border-radius: 0.5rem;
     overflow-x: auto;
     font-family: 'Courier New', Courier, monospace;
     font-size: 0.9rem;
-    color: #d1d5db;
+    color: #d1d5db; /* Light text on dark background */
     margin-top: 0.75rem;
     margin-bottom: 0.75rem;
     border: 1px solid #374151;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
+
+/* Analysis specific label styling inside the toggle */
 .analysis-content .geems-label {
-    font-size: 1rem;
-    color: inherit;
+    font-size: 1rem; /* Slightly larger label */
+    color: inherit; /* Inherit color from parent (set by border color) */
     margin-bottom: 0.4rem;
-    border-bottom: 1px dashed currentColor;
+    border-bottom: 1px dashed currentColor; /* Use parent color */
     display: inline-block;
     padding-bottom: 2px;
     transition: color 0.3s ease, border-color 0.3s ease;
@@ -420,17 +460,84 @@ body {
 
 /* Tweet Element Styling */
 #tweet-element-wrapper {
-    border-left-color: #0ea5e9 !important;
+    border-left-color: #0ea5e9 !important; /* Specific blue color for tweet */
     font-style: italic;
-    color: #374151;
-    background-color: #f0f9ff !important;
-    padding: 1rem 1.25rem;
+    color: #374151; /* Darker gray text */
+    background-color: #f0f9ff !important; /* Light blue background */
+    padding: 1rem 1.25rem; /* Standard padding */
 }
 
 #tweet-element-wrapper .geems-label {
     font-weight: bold;
-    color: #0284c7 !important;
+    color: #0284c7 !important; /* Slightly darker blue for label */
     margin-bottom: 0.25rem;
-    font-style: normal;
-    border-bottom: none;
+    font-style: normal; /* Non-italic label */
+    border-bottom: none; /* No border on tweet label */
 }
+
+/* Player Icon Styling (Added for Multiplayer) */
+.player-icons-container {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem; /* Space between icons */
+    flex-wrap: wrap;
+    padding: 0.5rem 1rem;
+    margin-top: 1rem; /* Space above icons */
+    min-height: 40px; /* Ensure container has some height */
+}
+
+.player-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%; /* Circular icons */
+    background-color: #e0e7ff; /* Default background */
+    color: #4f46e5; /* Default text color */
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 2px solid transparent;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* Ensure initials don't overflow */
+    text-transform: uppercase;
+}
+
+.player-icon:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.player-icon.local-player { /* Style for the user's own icon */
+    border-color: #10b981; /* Example: Green border for local player */
+    background-color: #d1fae5;
+    color: #047857;
+}
+
+.player-icon.host-player { /* Style for the host player icon */
+    border-color: #f59e0b; /* Example: Amber border for host */
+    /* background-color: #fef3c7; */
+    /* color: #b45309; */
+}
+
+.player-icon-initials {
+    /* Styles for the text inside the icon (already covered by .player-icon) */
+}
+
+/* Log output styling (for mp.js debugging, optional) */
+#log-output {
+    font-family: monospace;
+    font-size: 0.8rem;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 5px;
+    background-color: #f8f8f8;
+    margin-top: 10px;
+}
+.log-message { margin-bottom: 3px; }
+.log-info { color: #333; }
+.log-warn { color: orange; }
+.log-error { color: red; }
