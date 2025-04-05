@@ -1,760 +1,875 @@
 /**
- * Multiplayer Library using PeerJS for a Full Mesh Network
+ * Multiplayer Library using PeerJS (Refactored)
  *
- * Connects every peer to every other peer directly.
- * Provides functionality for establishing P2P connections,
- * managing peers, broadcasting/handling messages, and peer discovery.
+ * Provides core functionality for establishing P2P connections,
+ * managing peers, and broadcasting/handling messages.
+ * This version incorporates refactoring to reduce redundancy.
  *
  * Integration:
- * 1. Include this script in your HTML.
+ * 1. Import { MPLib } from './mp.js' in your main script.
  * 2. Call `MPLib.initialize(...)` to start the connection process.
- * 3. Provide callback functions for handling events like connection open,
- * data received, peer joining/leaving, and errors.
- * 4. Use `MPLib.broadcast(...)` to send data to all connected peers.
- * 5. Use `MPLib.sendDirect(...)` to send data to a specific peer.
- * 6. Access `MPLib.localPeerId` and `MPLib.connections` for state info.
+ * ... (rest of the comments) ...
  */
-const MPLib = (() => {
 
-    // --- Configuration & State ---
-    let peer = null; // PeerJS instance
-    let localPeerId = null;
-    let knownPeers = new Set(); // Set of all known peer IDs (including self)
-    const connections = new Map(); // Map<peerId, Peer.DataConnection> - Active connections
-    const pendingConnections = new Set(); // Peer IDs we are actively trying to connect TO
-    const seenMessageIds = new Set(); // For message de-duplication
-    const MAX_SEEN_MESSAGES = 1000;
-    const MAX_CONNECTIONS = 16; // Adjust max connections for mesh
-    const DISCOVERY_INTERVAL_MS = 10000; // Interval to broadcast known peers for discovery
-    const RECONNECT_ATTEMPT_DELAY_MS = 5000; // Delay before attempting reconnect
-    let discoveryInterval = null;
-    let reconnectTimeout = null;
+// --- State variables ---
+let peer = null;
+let localPeerId = null;
+let hostPeerId = null;
+let targetHostId = 'default-mp-channel'; // Default target host ID
+let isHost = false;
+let isAttemptingHostId = false; // Tracks if the current initialization attempt is for the targetHostId
+let initialSyncComplete = false;
+const connections = new Map(); // Map<peerId, DataConnection | 'connecting'>
+const pendingConnections = new Set(); // Set<peerId> - Peers we are actively trying to connect *to*
+const seenMessageIds = new Set();
+const MAX_SEEN_MESSAGES = 1000;
+const MAX_CONNECTIONS = 8;
+const MESSAGE_TTL = 4; // Default gossip message time-to-live
+let hostCheckTimeout = null; // Timeout handle for assuming host role if connection fails
+let config = { // Default configuration, override via initialize()
+    debugLevel: 0,
+    targetHostId: targetHostId, // Allow overriding default target ID via options
+    forceClientOnly: false, // If true, never attempts to become host
+    onStatusUpdate: (msg) => logMessage(msg, 'info'),
+    onError: (type, err) => logMessage(`Error (${type}): ${err?.message || err}`, 'error'),
+    onPeerJoined: (peerId, conn) => logMessage(`Peer joined: ${peerId.slice(-6)}`, 'info'),
+    onPeerLeft: (peerId) => logMessage(`Peer left: ${peerId.slice(-6)}`, 'info'),
+    onDataReceived: (peerId, data) => logMessage(`Data from ${peerId.slice(-6)}: ${JSON.stringify(data)}`, 'info'),
+    onConnectedToHost: (hostId) => logMessage(`Connected to host: ${hostId.slice(-6)}`, 'info'),
+    onBecameHost: () => logMessage(`Became host!`, 'info'),
+    onInitialSync: (syncData) => logMessage(`Received initial sync: ${JSON.stringify(syncData)}`, 'info'),
+    getInitialSyncData: () => ({}), // App should provide function to get its sync data
+    maxConnections: MAX_CONNECTIONS,
+    messageTTL: MESSAGE_TTL,
+    hostConnectionTimeoutMs: 7000, // How long to wait for host connection before assuming role
+};
 
+// --- Utility Functions ---
+function generateUniqueId(prefix = 'msg') {
+    return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
 
-    let config = { // Default configuration, override via initialize()
-        debugLevel: 0, // PeerJS debug level (0-3)
-        peerIdPrefix: 'geems-peer-', // Optional prefix for generated IDs
-        onStatusUpdate: (msg) => logMessage(msg, 'info'),
-        onError: (type, err) => logMessage(`Error (${type}): ${err?.message || err}`, 'error'),
-        onPeerJoined: (peerId, conn) => logMessage(`Peer joined: ${peerId.slice(-6)}`, 'info'),
-        onPeerLeft: (peerId) => logMessage(`Peer left: ${peerId.slice(-6)}`, 'info'),
-        onDataReceived: (peerId, data) => logMessage(`Data from ${peerId.slice(-6)}: ${JSON.stringify(data)}`, 'info'),
-        onNetworkReady: (peerId) => logMessage(`Network ready. Your ID: ${peerId.slice(-6)}`, 'info'), // Called when PeerJS is open
-        getInitialSyncData: () => ({}), // Function for app to provide initial state data (optional)
-        onInitialSync: (syncData) => logMessage(`Received initial app sync: ${JSON.stringify(syncData)}`, 'info'), // Callback for receiving initial app sync data
-        maxConnections: MAX_CONNECTIONS,
-    };
+function logMessage(message, type = 'info') {
+    // Basic logging, replace/extend as needed (e.g., UI updates)
+    console[type === 'error' ? 'error' : (type === 'warn' ? 'warn' : 'log')](`[MPLib] ${message}`);
+}
 
-    // --- Utility Functions ---
+// --- Core PeerJS Functions ---
 
-    /** Generates a unique ID for messages */
-    function generateUniqueId(prefix = 'msg') {
-        return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+/**
+ * Initializes or re-initializes the PeerJS connection.
+ * Destroys any existing peer and resets state before creating a new one.
+ * Attempts to claim the targetHostId unless forceClientOnly is true.
+ * @param {object} options - Configuration options to override defaults.
+ */
+function initialize(options = {}) {
+    // Destroy existing peer instance safely
+    if (peer && !peer.destroyed) {
+        logMessage("Re-initializing PeerJS. Destroying previous instance.", 'warn');
+        // Detach listeners before destroying to prevent spurious events during reset
+        peer.off('open');
+        peer.off('connection');
+        peer.off('disconnected');
+        peer.off('close');
+        peer.off('error');
+        try { peer.destroy(); } catch (e) { logMessage(`Error destroying previous peer: ${e.message}`, 'warn'); }
+    }
+    peer = null; // Ensure peer is null before attempting creation
+
+    // Merge options and reset state variables
+    config = { ...config, ...options };
+    targetHostId = config.targetHostId || targetHostId;
+    localPeerId = null; // Reset local ID
+    initialSyncComplete = false;
+    hostPeerId = null;
+    isHost = false;
+    connections.clear();
+    pendingConnections.clear();
+    seenMessageIds.clear();
+    if (hostCheckTimeout) { clearTimeout(hostCheckTimeout); hostCheckTimeout = null; }
+
+    // Determine if we should attempt to become the host
+    const attemptHost = !config.forceClientOnly;
+    const peerIdToAttempt = attemptHost ? targetHostId : undefined; // undefined = random ID
+    isAttemptingHostId = attemptHost; // Set state flag for error handling
+
+    // Log intent
+    if (attemptHost) {
+        logMessage(`Initializing PeerJS... Attempting target ID: ${targetHostId.slice(-6)}`);
+        config.onStatusUpdate(`Initializing network as potential host...`);
+    } else {
+        logMessage("Initializing with random ID (Client Mode)...");
+        config.onStatusUpdate("Connecting as client...");
     }
 
-    /** Simple hash function for string IDs */
-    function simpleHash(str) {
-        if (!str) return 0;
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash |= 0; // Convert to 32bit integer
-        }
-        return Math.abs(hash);
+    // Attempt to create the new Peer instance
+    try {
+        peer = new Peer(peerIdToAttempt, { debug: config.debugLevel });
+        setupPeerListeners(peer); // Setup listeners immediately after creation
+    } catch (e) {
+        logMessage(`Fatal PeerJS initialization error: ${e.message}`, 'error');
+        config.onError('init', e);
+        resetState(); // Reset fully on immediate instantiation error
     }
+}
 
-    /** Generates a color based on a peer ID */
-    function getColorForPeerId(peerId) {
-        const hash = simpleHash(peerId);
-        const hue = (hash % 360);
-        return `hsl(${hue}, 75%, 60%)`;
-    }
 
-    /** Logs messages to console and optionally to a UI element */
-    function logMessage(message, type = 'info') {
-        console[type === 'error' ? 'error' : (type === 'warn' ? 'warn' : 'log')](`[MPLib] ${message}`);
-        // Optional UI logging (if element exists)
-        const logOutput = document.getElementById('mp-log-output'); // Assuming an ID for logging
-        if (logOutput) {
-            const div = document.createElement('div');
-            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            div.className = `log-message log-${type}`;
-            logOutput.insertBefore(div, logOutput.firstChild);
-            if (logOutput.children.length > 50) { // Limit log lines
-                logOutput.removeChild(logOutput.lastChild);
+/**
+ * Attaches essential event listeners to the PeerJS peer object.
+ * Handles core events like open, connection, errors, etc.
+ * @param {Peer} currentPeer - The PeerJS peer instance.
+ */
+function setupPeerListeners(currentPeer) {
+    if (!currentPeer) return;
+
+    // Remove any potentially lingering listeners from previous instances (belt-and-suspenders)
+    currentPeer.off('open');
+    currentPeer.off('connection');
+    currentPeer.off('disconnected');
+    currentPeer.off('close');
+    currentPeer.off('error');
+
+    currentPeer.on('open', (id) => {
+        if (!id || currentPeer.destroyed) { // Check if peer got destroyed before open resolved
+            logMessage("Error: Peer opened with null ID or was destroyed.", 'error');
+            config.onError('null_id', 'PeerJS returned a null ID or was destroyed');
+            // If we were trying to be host and failed, try again as client
+            if (isAttemptingHostId && !config.forceClientOnly) {
+                logMessage("Retrying initialization as client due to open error.", 'warn');
+                initialize({ ...config, forceClientOnly: true });
+            } else {
+                resetState(); // Full reset if client init fails this way
             }
-        }
-        // Update general status via callback
-        if (type === 'info' || type === 'warn' || type === 'status') {
-            config.onStatusUpdate(message);
-        }
-    }
-
-    // --- Core PeerJS Functions ---
-
-    /** Initializes the PeerJS connection */
-    function initialize(options = {}) {
-        if (peer && !peer.destroyed) {
-            logMessage("Peer already initialized.", 'warn');
             return;
         }
 
-        // Merge user options with defaults
-        config = {...config, ...options};
+        localPeerId = id;
+        logMessage(`PeerJS opened. Local ID: ${id.slice(-6)}`, 'info');
 
-        resetState(); // Ensure clean state before initializing
+        if (isAttemptingHostId && id === targetHostId) {
+            // Successfully claimed the host ID
+            becomeHost();
+        } else {
+            // Operating as a client (either by choice, forceClientOnly, or target ID was taken)
+            isHost = false;
+            if (isAttemptingHostId) {
+                // This means we tried for targetHostId but got a different ID
+                logMessage(`Target ID ${targetHostId.slice(-6)} taken/unavailable. Operating as client ${id.slice(-6)}.`, 'warn');
+                isAttemptingHostId = false; // No longer trying for the host ID in this session
+            } else {
+                logMessage(`Operating as client ${id.slice(-6)}.`, 'info');
+            }
+            config.onStatusUpdate(`Connected as ${id.slice(-6)}. Looking for host ${targetHostId.slice(-6)}...`);
+            connectToPeer(targetHostId); // Attempt to connect to the designated host
 
-        logMessage(`Initializing PeerJS with prefix '${config.peerIdPrefix}'...`);
-        config.onStatusUpdate(`Initializing network...`);
+            // Set a timeout: if we don't connect to the host within a certain time, assume host role (unless client only)
+            if (!config.forceClientOnly) {
+                if (hostCheckTimeout) clearTimeout(hostCheckTimeout);
+                hostCheckTimeout = setTimeout(() => {
+                    if (!connections.has(targetHostId) && !isHost && !initialSyncComplete) {
+                        logMessage(`Host connection to ${targetHostId.slice(-6)} timed out. Assuming host role.`, 'warn');
+                        becomeHost(); // Take over as host
+                    }
+                }, config.hostConnectionTimeoutMs);
+            }
+        }
+    });
 
+    currentPeer.on('connection', (conn) => {
+        logMessage(`Incoming connection request from ${conn.peer.slice(-6)}`, 'info');
+        handleIncomingConnection(conn);
+    });
+
+    currentPeer.on('disconnected', () => {
+        // Disconnected from the PeerJS signaling server
+        logMessage("PeerJS disconnected from signaling server.", 'warn');
+        config.onStatusUpdate("Server disconnected. Reconnecting...");
         try {
-            // Create new peer with a prefixed generated ID
-            const peerJsId = config.peerIdPrefix + generateUniqueId('id');
-            peer = new Peer(peerJsId, {debug: config.debugLevel});
-            setupPeerListeners(peer);
+            if (currentPeer && !currentPeer.destroyed && !currentPeer.disconnected) {
+                // PeerJS documentation suggests reconnect is often automatic,
+                // but we can try explicitly if needed. Check PeerJS version specifics.
+                // currentPeer.reconnect(); // May not be necessary or could cause issues
+            }
         } catch (e) {
-            logMessage(`Fatal PeerJS initialization error: ${e.message}`, 'error');
-            config.onError('init', e);
-            resetState();
+            logMessage(`Error attempting reconnect: ${e.message}`, 'error');
+            config.onError('reconnect', e);
+        }
+    });
+
+    currentPeer.on('close', () => {
+        // Peer instance is permanently closed (usually after .destroy())
+        logMessage("PeerJS connection closed permanently.", 'warn');
+        // Don't call resetState here as it might be part of intentional shutdown/re-init
+        // config.onError('close', 'Peer instance closed'); // Optional: notify app
+    });
+
+    currentPeer.on('error', (err) => {
+        logMessage(`PeerJS Error: ${err.type} - ${err.message || ''}`, 'error');
+        config.onError(err.type, err);
+
+        if (err.type === 'unavailable-id' && isAttemptingHostId && err.message?.includes(targetHostId)) {
+            // Failed to get the desired host ID
+            logMessage(`Target ID ${targetHostId.slice(-6)} unavailable. Re-initializing as client.`, 'warn');
+            const currentOptions = { ...config }; // Capture current config
+            // Need to clean up the failed peer attempt before re-initializing.
+            // Initialize will handle destroying the (now failed) peer.
+            initialize({ ...currentOptions, forceClientOnly: true });
+            // Note: Re-initializing resets all state, including potential connections.
+            // This is generally acceptable if the host ID claim fails early.
+
+        } else if (err.type === 'peer-unavailable') {
+            const unavailablePeerId = err.message?.match(/peer\s(.*?)\s/)?.[1];
+            if (unavailablePeerId) {
+                logMessage(`Peer ${unavailablePeerId.slice(-6)} unavailable. Removing connection.`, 'warn');
+                removeConnection(unavailablePeerId);
+                // If the unavailable peer was the host we were trying to connect to initially
+                if (unavailablePeerId === targetHostId && !isHost && !config.forceClientOnly && !initialSyncComplete) {
+                    logMessage(`Host ${targetHostId.slice(-6)} unavailable. Assuming host role.`, 'warn');
+                    becomeHost();
+                }
+            }
+        } else if (['network', 'server-error', 'socket-error', 'webrtc', 'browser-incompatible'].includes(err.type)) {
+            // More serious errors might require a full reset or specific handling
+            logMessage(`Potential network/compatibility issue: ${err.type}. Consider re-initializing if problems persist.`, 'error');
+            // Optionally attempt reconnect or full reset depending on severity/persistence
+            if (err.type !== 'browser-incompatible') {
+                try {
+                    if (currentPeer && !currentPeer.destroyed && !currentPeer.disconnected) {
+                        // currentPeer.reconnect(); // Cautious about auto-reconnect here
+                    }
+                } catch (e) {}
+            } else {
+                // Browser incompatible = likely fatal for this session
+                resetState();
+                config.onStatusUpdate("Error: Browser not supported.");
+            }
+        }
+    });
+}
+
+
+/**
+ * Handles an incoming connection request from another peer.
+ * Validates the connection and sets up listeners if accepted.
+ * @param {DataConnection} conn - The incoming PeerJS DataConnection object.
+ */
+function handleIncomingConnection(conn) {
+    const remotePeerId = conn.peer;
+    if (!remotePeerId) {
+        logMessage("Incoming connection with no peer ID.", 'warn');
+        try { conn.close(); } catch(e){} // Attempt to close invalid connection
+        return;
+    }
+
+    const existingConn = connections.get(remotePeerId);
+
+    // Check connection limits
+    if (connections.size >= config.maxConnections && !existingConn) {
+        logMessage(`Max connections (${config.maxConnections}) reached. Rejecting ${remotePeerId.slice(-6)}`, 'warn');
+        rejectConnection(conn, 'Room full');
+        return;
+    }
+
+    // Handle duplicate connection attempts
+    if (existingConn) {
+        if (existingConn === 'connecting') {
+            // We were trying to connect to them, they connected to us first. Use their connection.
+            logMessage(`Incoming conn from ${remotePeerId.slice(-6)} replaces pending outgoing.`, 'info');
+            pendingConnections.delete(remotePeerId); // No longer pending outgoing
+        } else if (existingConn.open) {
+            // Already have an open connection with this peer.
+            logMessage(`Duplicate connection attempt from ${remotePeerId.slice(-6)}. Rejecting.`, 'warn');
+            rejectConnection(conn, 'Duplicate connection');
+            return;
+        } else {
+            // Existing connection wasn't open (maybe errored/closed without cleanup). Replace it.
+            logMessage(`Replacing existing non-open connection for ${remotePeerId.slice(-6)}.`, 'info');
+            try { existingConn.close(); } catch(e){} // Clean up old one if possible
         }
     }
 
-
-    /** Sets up the main PeerJS event handlers */
-    function setupPeerListeners(currentPeer) {
-        if (!currentPeer) return;
-
-        currentPeer.on('open', (id) => {
-            if (!id) {
-                logMessage("Error: Received null ID from PeerJS.", 'error');
-                config.onError('null_id', 'PeerJS returned a null ID');
-                scheduleReconnect(); // Try again after a delay
-                return;
-            }
-            if (reconnectTimeout) { // Clear any pending reconnect attempts on success
-                clearTimeout(reconnectTimeout);
-                reconnectTimeout = null;
-            }
-
-            localPeerId = id;
-            MPLib.localPeerId = id; // Expose local ID
-            knownPeers.add(localPeerId); // Add self to known peers
-            logMessage(`PeerJS connection open. Your ID: ${id}`, 'info');
-            config.onNetworkReady(id); // Notify app that network layer is ready
-            config.onStatusUpdate(`Online as ${id.slice(-6)}. Discovering peers...`);
-
-            // Start discovery process (periodically broadcast known peers)
-            startDiscovery();
-
-            // Attempt to connect to any peers already known (e.g., from previous session if implemented)
-            connectToKnownPeers();
-        });
-
-        currentPeer.on('connection', (conn) => {
-            logMessage(`Incoming connection request from ${conn.peer}`, 'info');
-            handleIncomingConnection(conn);
-        });
-
-        currentPeer.on('disconnected', () => {
-            logMessage("PeerJS disconnected from signaling server.", 'warn');
-            config.onStatusUpdate("Server disconnected. Attempting to reconnect...");
-            // PeerJS attempts reconnection automatically, but we might schedule our own check
-            if (!reconnectTimeout) { // Avoid scheduling multiple reconnects
-                scheduleReconnect();
-            }
-        });
-
-        currentPeer.on('close', () => {
-            logMessage("PeerJS connection closed permanently.", 'error');
-            config.onError('close', 'Peer instance closed');
-            resetState(); // Full reset required
-        });
-
-        currentPeer.on('error', (err) => {
-            logMessage(`PeerJS Error: ${err.type} - ${err.message}`, 'error');
-            config.onError(err.type, err);
-
-            // Handle specific errors
-            if (err.type === 'peer-unavailable') {
-                const unavailablePeerId = err.message?.match(/peer\s(.*?)\s/)?.[1];
-                if (unavailablePeerId) {
-                    logMessage(`Peer ${unavailablePeerId.slice(-6)} unavailable. Removing connection.`, 'warn');
-                    removeConnection(unavailablePeerId);
-                }
-            } else if (['network', 'server-error', 'socket-error', 'disconnected'].includes(err.type)) {
-                logMessage("Network/Server error detected. Attempting reconnect sequence.", 'warn');
-                if (!reconnectTimeout) { // Avoid scheduling multiple reconnects
-                    scheduleReconnect();
-                }
-            } else if (err.type === 'webrtc') {
-                logMessage("WebRTC connection error. This might affect specific peer connections.", 'warn');
-                // We might not need a full reconnect here, connection-specific errors are handled
-            } else if (err.type === 'unavailable-id') {
-                logMessage("Peer ID conflict or issue. Re-initializing.", 'error');
-                resetAndInitialize(); // Full re-init needed
-            }
-        });
-    }
-
-    /** Schedules a reconnect attempt after a delay */
-    function scheduleReconnect() {
-        if (reconnectTimeout) clearTimeout(reconnectTimeout); // Clear existing timer
-        logMessage(`Scheduling reconnect attempt in ${RECONNECT_ATTEMPT_DELAY_MS / 1000} seconds...`);
-        reconnectTimeout = setTimeout(() => {
-            reconnectTimeout = null; // Clear the timeout ID
-            if (peer && !peer.destroyed && !peer.disconnected) {
-                logMessage("Already reconnected or connection is stable. Aborting scheduled reconnect.", "info");
-                return;
-            }
-            logMessage("Attempting to reconnect PeerJS...", "warn");
-            try {
-                if (peer && !peer.destroyed) {
-                    peer.reconnect();
-                } else {
-                    logMessage("Peer was destroyed. Re-initializing.", "warn");
-                    resetAndInitialize();
-                }
-            } catch(e) {
-                logMessage(`Reconnect/Re-initialize failed: ${e.message}`, "error");
-                config.onError('reconnect_attempt', e);
-                // Consider a more robust backoff strategy if needed
-                scheduleReconnect(); // Schedule another attempt
-            }
-        }, RECONNECT_ATTEMPT_DELAY_MS);
-    }
-
-    /** Helper to reset state and re-initialize */
-    function resetAndInitialize() {
-        resetState();
-        setTimeout(() => initialize(config), 100); // Re-initialize after a short delay
-    }
-
-
-    /** Handles incoming connection requests */
-    function handleIncomingConnection(conn) {
-        const remotePeerId = conn.peer;
-        if (!remotePeerId) {
-            logMessage("Incoming connection with no peer ID.", 'warn');
-            try { conn.close(); } catch(e) {}
+    // Accept the connection - setup listeners for open, data, close, error
+    conn.on('open', () => {
+        logMessage(`Connection opened with ${remotePeerId.slice(-6)} (incoming)`);
+        // Final check for limits in case connections filled up while this one was opening
+        if (connections.size >= config.maxConnections && !connections.has(remotePeerId)) {
+            logMessage(`Connection ${remotePeerId.slice(-6)} opened, but room now full. Closing.`, 'warn');
+            try { conn.close(); } catch(e){}
+            removeConnection(remotePeerId); // Ensure state cleanup if we immediately close
             return;
         }
+        setupConnection(conn); // Finalize the connection setup
+    });
+    conn.on('error', (err) => {
+        logMessage(`Pre-open connection error with ${remotePeerId.slice(-6)}: ${err.type}`, 'error');
+        removeConnection(remotePeerId); // Clean up state if incoming conn errors before opening
+    });
+    conn.on('close', () => {
+        logMessage(`Pre-open connection closed with ${remotePeerId.slice(-6)}`, 'warn');
+        removeConnection(remotePeerId); // Clean up state if incoming conn closes before opening
+    });
 
-        logMessage(`Handling incoming connection from ${remotePeerId.slice(-6)}`, 'info');
+    // Add to connections map immediately to reserve the slot (value is the conn object itself)
+    connections.set(remotePeerId, conn);
+}
 
-        // Check if already connected or pending
-        if (connections.has(remotePeerId)) {
-            logMessage(`Already connected/connecting to ${remotePeerId.slice(-6)}. Ignoring incoming.`, 'info');
-            // Don't reject, PeerJS handles duplicate connection attempts gracefully typically.
-            // If issues arise, might need logic to prioritize one connection (e.g., based on ID comparison).
-            return;
-        }
-        // Check connection limits BEFORE accepting
-        if (connections.size >= config.maxConnections) {
-            logMessage(`Max connections (${config.maxConnections}) reached. Rejecting ${remotePeerId.slice(-6)}`, 'warn');
-            rejectConnection(conn, 'Network full'); // Explicitly reject
-            return;
-        }
-
-
-        // Add temporary handlers before 'open'
-        conn.on('error', (err) => {
-            logMessage(`Pre-open connection error with ${remotePeerId.slice(-6)}: ${err.type}`, 'error');
-            removeConnection(remotePeerId); // Clean up if error before open
+/**
+ * Sends a rejection message and closes a connection attempt.
+ * @param {DataConnection} conn - The connection to reject.
+ * @param {string} reason - The reason for rejection.
+ */
+function rejectConnection(conn, reason = 'Connection rejected') {
+    try {
+        // Wait for open briefly to try and send a reason, then close.
+        conn.on('open', () => {
+            try { conn.send({ type: 'error', payload: { message: reason } }); } catch(e) {/* ignore send error */}
+            setTimeout(() => { try { conn.close(); } catch(e) {/* ignore close error */} }, 50);
         });
-        conn.on('close', () => {
-            logMessage(`Pre-open connection closed with ${remotePeerId.slice(-6)}`, 'warn');
-            removeConnection(remotePeerId); // Clean up if closed before open
-        });
+        // If it errors or closes before opening, just let it happen.
+        conn.on('error', (err) => { logMessage(`Error during rejection for ${conn?.peer?.slice(-6)}: ${err.type}`, 'warn');});
+        conn.on('close', () => { logMessage(`Connection closed during rejection for ${conn?.peer?.slice(-6)}`, 'info');});
+        // If conn never opens, it will eventually be cleaned up or GC'd.
+    } catch (e) {
+        logMessage(`Error during connection rejection setup: ${e.message}`, 'error');
+    }
+}
+
+/**
+ * Finalizes setup for an opened DataConnection (incoming or outgoing).
+ * Attaches data, close, and error handlers.
+ * Manages state updates (host connection, initial sync).
+ * @param {DataConnection} conn - The open DataConnection.
+ */
+function setupConnection(conn) {
+    const remotePeerId = conn.peer;
+    if (!remotePeerId || !conn.open) {
+        logMessage(`Attempted to setup non-open/invalid connection with ${remotePeerId?.slice(-6)}.`, 'warn');
+        return; // Should not happen if called correctly from 'open' handlers
+    }
+
+    // Ensure this connection is the one stored (handles race conditions)
+    if (connections.get(remotePeerId) !== conn && connections.get(remotePeerId) !== 'connecting') {
+        logMessage(`Stale connection object found for ${remotePeerId.slice(-6)} during setup. Closing old.`, 'warn');
+        try { connections.get(remotePeerId)?.close(); } catch(e) {}
+    } else if (connections.get(remotePeerId) === 'connecting'){
+        logMessage(`Promoting 'connecting' state for ${remotePeerId.slice(-6)}`, 'info');
+    }
+
+    connections.set(remotePeerId, conn); // Store the final, open connection object
+    pendingConnections.delete(remotePeerId); // No longer pending outgoing
+
+    logMessage(`Connection setup complete with ${remotePeerId.slice(-6)}. Total: ${connections.size}`, 'info');
+    config.onPeerJoined(remotePeerId, conn); // Notify application
+
+    // Host-specific actions
+    if (isHost) {
+        sendInitialSync(conn); // Send current state to new peer
+    }
+
+    // Client-specific actions
+    if (remotePeerId === targetHostId) {
+        logMessage(`Confirmed connection to designated host: ${targetHostId.slice(-6)}`, 'info');
+        hostPeerId = targetHostId; // Set the host ID
+        if (hostCheckTimeout) { clearTimeout(hostCheckTimeout); hostCheckTimeout = null; } // Cancel host assumption timeout
+        config.onConnectedToHost(targetHostId); // Notify application
+        // Client doesn't request sync, waits for host to send it.
+    }
+
+    // Remove previous handlers and attach final ones
+    conn.off('data');
+    conn.off('close');
+    conn.off('error');
+
+    conn.on('data', (data) => {
+        handleReceivedData(data, conn);
+    });
+
+    conn.on('close', () => {
+        logMessage(`Connection closed with ${remotePeerId.slice(-6)}`, 'warn');
+        removeConnection(remotePeerId); // Clean up on close
+    });
+
+    conn.on('error', (err) => {
+        logMessage(`Connection error with ${remotePeerId.slice(-6)}: ${err.type}`, 'error');
+        config.onError('connection', err);
+        removeConnection(remotePeerId); // Clean up on error
+    });
+}
+
+/**
+ * Initiates an outgoing connection to a target peer ID.
+ * @param {string} targetPeerId - The ID of the peer to connect to.
+ */
+function connectToPeer(targetPeerId) {
+    if (!targetPeerId || targetPeerId === localPeerId || !peer || peer.destroyed) {
+        // logMessage(`Skipping connection to ${targetPeerId}: invalid target or peer state.`, 'debug');
+        return;
+    }
+    // Avoid connecting if already connected or connection attempt is in progress
+    if (connections.has(targetPeerId)) {
+        // logMessage(`Skipping connection to ${targetPeerId}: connection already exists or pending.`, 'debug');
+        return;
+    }
+    // Check connection limits before initiating
+    if (connections.size >= config.maxConnections) {
+        logMessage(`Cannot connect to ${targetPeerId.slice(-6)}, max connections (${config.maxConnections}) reached.`, 'warn');
+        return;
+    }
+
+    logMessage(`Attempting outgoing connection to ${targetPeerId.slice(-6)}...`, 'info');
+    if (targetPeerId === targetHostId) {
+        config.onStatusUpdate(`Connecting to host ${targetPeerId.slice(-6)}...`);
+    } else {
+        config.onStatusUpdate(`Connecting to peer ${targetPeerId.slice(-6)}...`);
+    }
+
+    // Mark as pending and reserve space in connections map
+    pendingConnections.add(targetPeerId);
+    connections.set(targetPeerId, 'connecting'); // Mark as attempting connection
+
+    try {
+        const conn = peer.connect(targetPeerId, { reliable: true }); // Use reliable transport
 
         conn.on('open', () => {
-            // Final check for limits *after* connection opens, in case limit was reached concurrently
-            if (connections.size >= config.maxConnections && !connections.has(remotePeerId)) {
-                logMessage(`Connection ${remotePeerId.slice(-6)} opened, but network now full. Closing.`, 'warn');
+            logMessage(`Outgoing connection to ${targetPeerId.slice(-6)} opened.`);
+            // Check if state changed while opening (e.g., incoming connection established first)
+            if (connections.get(targetPeerId) === 'connecting') {
+                // State is still pending, finalize setup with this connection
+                setupConnection(conn);
+            } else if (connections.get(targetPeerId) !== conn) {
+                // State changed, likely an incoming connection won, or connection was removed. Close this outgoing attempt.
+                logMessage(`State changed for ${targetPeerId.slice(-6)} during outgoing open. Closing this attempt.`, 'warn');
                 try { conn.close(); } catch(e) {}
-                removeConnection(remotePeerId); // Ensure cleanup
-                return;
+                // If the state is still 'connecting' somehow, clean it up. Should ideally be handled by incoming connection flow.
+                if(connections.get(targetPeerId) === 'connecting') {
+                    connections.delete(targetPeerId);
+                    pendingConnections.delete(targetPeerId);
+                }
+            } else {
+                // Connection object already matches the one in the map (could happen with fast connections/race conditions)
+                logMessage(`Connection object for ${targetPeerId.slice(-6)} already set correctly during open.`, 'info');
+                // setupConnection should have been called already or will be by another path, avoid calling twice.
             }
-
-            logMessage(`Connection opened with ${remotePeerId.slice(-6)}. Setting up...`);
-            setupConnection(conn); // Finalize setup now that it's open
-        });
-
-        // Accept the connection (PeerJS handles this implicitly by attaching handlers)
-        logMessage(`Accepted incoming connection from ${remotePeerId.slice(-6)}. Waiting for 'open'.`, 'info');
-        // Store temporarily to avoid race conditions if outgoing is initiated simultaneously
-        // connections.set(remotePeerId, 'accepting'); // Tentative state
-    }
-
-    /** Rejects an incoming connection */
-    function rejectConnection(conn, reason = 'Connection rejected') {
-        conn.on('open', () => { // Wait for open to send rejection message
-            try {
-                conn.send({ type: '_mp_internal', payload: { type: 'reject', reason: reason } });
-            } catch (e) { /* ignore send error */ }
-            setTimeout(() => {
-                try { conn.close(); } catch (e) { /* ignore close error */ }
-            }, 100); // Short delay to allow message sending
-        });
-        conn.on('error', (err) => { /* Ignore errors on rejected connections */ });
-    }
-
-    /** Finalizes setup for an established DataConnection */
-    function setupConnection(conn) {
-        const remotePeerId = conn.peer;
-        if (!remotePeerId || connections.get(remotePeerId) === conn) {
-            // logMessage(`Connection with ${remotePeerId?.slice(-6)} already fully set up.`, 'debug');
-            return; // Already setup or invalid peer ID
-        }
-
-        // --- Replace existing connection/placeholder ---
-        const existingState = connections.get(remotePeerId);
-        if (existingState && existingState !== 'connecting' && existingState !== 'accepting') {
-            logMessage(`Replacing existing connection object for ${remotePeerId.slice(-6)}`, 'warn');
-            try { existingState.close(); } catch(e) {} // Close old connection object
-        }
-
-        connections.set(remotePeerId, conn); // Store the established connection
-        pendingConnections.delete(remotePeerId); // Remove from pending list if it was outgoing
-        knownPeers.add(remotePeerId); // Add to known peers
-
-        logMessage(`Connection setup complete with ${remotePeerId.slice(-6)}. Total connected: ${connections.size}`, 'info');
-        config.onPeerJoined(remotePeerId, conn); // Notify application
-
-        // --- Send initial data ---
-        // 1. Send our list of known peers (excluding the recipient)
-        sendPeerList(conn);
-        // 2. Send initial application sync data (if provided by app)
-        sendInitialAppSync(conn);
-
-
-        // --- Setup Data, Close, Error handlers ---
-        conn.off('data'); // Remove previous handlers if any
-        conn.off('close');
-        conn.off('error');
-
-        conn.on('data', (data) => {
-            handleReceivedData(data, conn);
-        });
-
-        conn.on('close', () => {
-            logMessage(`Connection closed with ${remotePeerId.slice(-6)}`, 'warn');
-            removeConnection(remotePeerId);
         });
 
         conn.on('error', (err) => {
-            logMessage(`Connection error with ${remotePeerId.slice(-6)}: ${err.type}`, 'error');
-            config.onError('connection', err);
-            removeConnection(remotePeerId);
+            logMessage(`Failed to connect to ${targetPeerId.slice(-6)}: ${err.type}`, 'error');
+            config.onError('connect_error', err);
+            // Clean up only if we were still in the 'connecting' state for this target
+            if (connections.get(targetPeerId) === 'connecting') {
+                connections.delete(targetPeerId);
+            }
+            pendingConnections.delete(targetPeerId); // Always remove from pending on error
+
+            // If connection to the designated host failed, potentially assume host role
+            if (targetPeerId === targetHostId && !isHost && !config.forceClientOnly && !initialSyncComplete) {
+                logMessage(`Failed connection to intended host ${targetHostId.slice(-6)}. Assuming host role.`, 'warn');
+                becomeHost();
+            }
         });
-    }
-
-    /** Attempts to connect to a specific peer */
-    function connectToPeer(targetPeerId) {
-        if (!targetPeerId || targetPeerId === localPeerId || !peer || peer.destroyed) return;
-        if (connections.has(targetPeerId) || pendingConnections.has(targetPeerId)) {
-            // logMessage(`Already connected or connecting to ${targetPeerId.slice(-6)}.`, 'debug');
-            return;
-        }
-        if (connections.size >= config.maxConnections) {
-            logMessage(`Cannot connect to ${targetPeerId.slice(-6)}, max connections reached.`, 'warn');
-            return;
-        }
-
-        logMessage(`Attempting outgoing connection to ${targetPeerId.slice(-6)}...`, 'info');
-        config.onStatusUpdate(`Connecting ${targetPeerId.slice(-6)}...`);
-        pendingConnections.add(targetPeerId); // Mark as pending
-        // connections.set(targetPeerId, 'connecting'); // Placeholder - Optional
-
-        try {
-            const conn = peer.connect(targetPeerId, { reliable: true }); // Or adjust reliability as needed
-
-            conn.on('open', () => {
-                logMessage(`Outgoing connection to ${targetPeerId.slice(-6)} opened.`, 'info');
-                // Check if an incoming connection from the same peer was accepted while this was opening
-                const existingConn = connections.get(targetPeerId);
-                if(existingConn && existingConn !== conn) {
-                    logMessage(`Incoming connection from ${targetPeerId.slice(-6)} established first. Closing this outgoing attempt.`, 'info');
-                    try { conn.close(); } catch(e) {}
-                    pendingConnections.delete(targetPeerId); // Clean up pending state
-                } else {
-                    // This outgoing connection is the primary one, set it up.
-                    setupConnection(conn);
-                }
-            });
-
-            conn.on('error', (err) => {
-                logMessage(`Failed to connect to ${targetPeerId.slice(-6)}: ${err.type}`, 'error');
-                config.onError('connect_error', {peerId: targetPeerId, error: err});
-                pendingConnections.delete(targetPeerId);
-                // connections.delete(targetPeerId); // Remove placeholder if used
-                knownPeers.delete(targetPeerId); // Assume peer is gone if connection fails
-            });
-
-            conn.on('close', () => {
-                logMessage(`Outgoing connection attempt to ${targetPeerId.slice(-6)} closed before open or during setup.`, 'warn');
-                // Only remove from pending/connections if it wasn't fully set up
-                if (pendingConnections.has(targetPeerId) || connections.get(targetPeerId) === 'connecting') {
-                    pendingConnections.delete(targetPeerId);
-                    connections.delete(targetPeerId);
-                }
-                // Do not remove from knownPeers here, let discovery handle it
-            });
-
-        } catch (e) {
-            logMessage(`Error initiating connection to ${targetPeerId.slice(-6)}: ${e.message}`, 'error');
-            config.onError('connect_init', {peerId: targetPeerId, error: e});
+        conn.on('close', () => {
+            // Connection closed before opening fully
+            logMessage(`Outgoing connection attempt to ${targetPeerId.slice(-6)} closed before open.`, 'warn');
+            if (connections.get(targetPeerId) === 'connecting') {
+                connections.delete(targetPeerId);
+            }
             pendingConnections.delete(targetPeerId);
-            // connections.delete(targetPeerId); // Remove placeholder if used
-        }
-    }
-
-    /** Connects to all peers currently in the knownPeers set (excluding self and already connected/pending) */
-    function connectToKnownPeers() {
-        logMessage(`Attempting connections to ${knownPeers.size - 1} known peers...`, 'info');
-        knownPeers.forEach(peerId => {
-            if (peerId !== localPeerId && !connections.has(peerId) && !pendingConnections.has(peerId)) {
-                connectToPeer(peerId);
-            }
         });
+
+    } catch (e) {
+        logMessage(`Error initiating connection to ${targetPeerId.slice(-6)}: ${e.message}`, 'error');
+        config.onError('connect_init', e);
+        // Clean up state if initiation failed immediately
+        if (connections.get(targetPeerId) === 'connecting') connections.delete(targetPeerId);
+        pendingConnections.delete(targetPeerId);
     }
+}
 
+/**
+ * Cleans up state associated with a peer connection (e.g., on close or error).
+ * @param {string} peerIdToRemove - The ID of the peer whose connection to remove.
+ */
+function removeConnection(peerIdToRemove) {
+    if (!peerIdToRemove) return;
 
-    /** Removes a connection and notifies the application */
-    function removeConnection(peerIdToRemove) {
-        if (!peerIdToRemove) return;
+    pendingConnections.delete(peerIdToRemove); // Ensure it's not marked as pending
 
-        pendingConnections.delete(peerIdToRemove); // Remove from pending set if present
+    const conn = connections.get(peerIdToRemove);
+    if (conn) { // Check if an entry exists
+        connections.delete(peerIdToRemove); // Remove from map
+        logMessage(`Removed connection entry for ${peerIdToRemove.slice(-6)}. Total: ${connections.size}`, 'info');
+        config.onPeerLeft(peerIdToRemove); // Notify application
 
-        const conn = connections.get(peerIdToRemove);
-        if (conn) {
-            connections.delete(peerIdToRemove); // Remove from map
-            logMessage(`Removed connection for ${peerIdToRemove.slice(-6)}. Total connected: ${connections.size}`, 'info');
-            config.onPeerLeft(peerIdToRemove); // Notify application
-
-            // Close the connection object if it exists and is open
-            if (conn !== 'connecting' && conn !== 'accepting' && typeof conn === 'object' && conn.open) {
-                logMessage(`Closing connection object for ${peerIdToRemove.slice(-6)}`, 'info');
-                try {
-                    conn.close();
-                } catch (e) { /* ignore */ }
-            }
-        }
-        // Keep peer in knownPeers for potential reconnection attempts via discovery
-        // knownPeers.delete(peerIdToRemove); // Don't remove from knownPeers on disconnect
-    }
-
-    /** Sends the current list of known peers to a specific connection */
-    function sendPeerList(conn) {
-        if (!conn || !conn.open) return;
-        const remotePeerId = conn.peer;
-        const peersToSend = Array.from(knownPeers).filter(id => id !== remotePeerId); // Exclude recipient
-
-        if (peersToSend.length > 0) {
-            logMessage(`Sending known peer list (${peersToSend.length}) to ${remotePeerId.slice(-6)}`, 'debug');
-            const message = {
-                type: '_mp_internal', // Internal message type
-                payload: {
-                    type: 'peer_list',
-                    peers: peersToSend
-                }
-            };
+        // Attempt to close the connection object if it's not just the 'connecting' placeholder
+        if (conn !== 'connecting' && typeof conn === 'object' && conn.close) {
             try {
-                conn.send(message);
+                conn.off('data'); // Remove listeners before closing
+                conn.off('close');
+                conn.off('error');
+                conn.close();
             } catch (e) {
-                logMessage(`Error sending peer list to ${remotePeerId.slice(-6)}: ${e.message}`, 'error');
-                removeConnection(remotePeerId);
+                logMessage(`Error closing connection for ${peerIdToRemove.slice(-6)} during removal: ${e.message}`, 'warn');
             }
         }
-    }
 
-    /** Sends initial application-specific sync data to a new peer */
-    function sendInitialAppSync(conn) {
-        if (!conn || !conn.open || !config.getInitialSyncData) return;
-
-        const syncData = config.getInitialSyncData();
-        // Check if syncData is meaningful (not null/undefined/empty object)
-        if (syncData && (typeof syncData !== 'object' || Object.keys(syncData).length > 0)) {
-            const remotePeerId = conn.peer;
-            logMessage(`Sending initial app sync data to ${remotePeerId.slice(-6)}`, 'info');
-
-            const message = {
-                type: 'initialAppSync', // Specific type for app data
-                payload: syncData
-            };
-            try {
-                conn.send(message);
-            } catch (e) {
-                logMessage(`Error sending initial app sync to ${remotePeerId.slice(-6)}: ${e.message}`, 'error');
-                removeConnection(remotePeerId);
-            }
-        } else {
-            // logMessage("No initial app sync data provided by application.", 'debug');
-        }
-    }
-
-
-    /** Handles received data, parses message, calls app callback or handles internal messages */
-    function handleReceivedData(data, sourceConn) {
-        const sourcePeerId = sourceConn?.peer;
-        if (!sourcePeerId) return; // Ignore data from unknown source
-
-        try {
-            // --- Handle Internal Messages ---
-            if (data && data.type === '_mp_internal' && data.payload) {
-                handleInternalMessage(data.payload, sourcePeerId, sourceConn);
-                return; // Don't process internal messages further
-            }
-
-            // --- Handle Initial App Sync Data ---
-            if (data && data.type === 'initialAppSync' && data.payload) {
-                logMessage(`Received initial app sync from ${sourcePeerId.slice(-6)}`, 'info');
-                config.onInitialSync(data.payload); // Pass payload to app
-                return; // Don't process as regular data
-            }
-
-            // --- Handle Application/Broadcast Messages ---
-            if (data && data.payload && data.messageId && data.originalSenderId) {
-                const { payload, messageId, originalSenderId } = data;
-
-                // Ignore own messages or already seen messages
-                if (seenMessageIds.has(messageId) || originalSenderId === localPeerId) {
-                    return;
-                }
-                seenMessageIds.add(messageId);
-                // Simple cleanup for seen messages
-                if (seenMessageIds.size > MAX_SEEN_MESSAGES) {
-                    const oldestIds = Array.from(seenMessageIds).slice(0, MAX_SEEN_MESSAGES / 5);
-                    oldestIds.forEach(id => seenMessageIds.delete(id));
-                }
-
-
-                // Process the payload via application callback
-                config.onDataReceived(originalSenderId, payload);
-
-                // Forward the message to other connected peers (simple broadcast)
-                // Avoid re-broadcasting internal messages or sync data here
-                broadcast(data, sourceConn); // Forward the original wrapped message
-
+        // Handle host disconnection logic
+        if (peerIdToRemove === hostPeerId && !isHost) {
+            logMessage("Lost connection to host!", 'error');
+            config.onError('host_disconnect', 'Lost connection to host');
+            hostPeerId = null; // Clear host ID
+            initialSyncComplete = false; // Need sync again if we find a new host
+            config.onStatusUpdate("Lost connection to host. Searching...");
+            // If not forced client, try to become the host now
+            if (!config.forceClientOnly) {
+                logMessage("Attempting to assume host role after losing connection to previous host.", 'warn');
+                becomeHost(); // Try to take over
             } else {
-                // Handle raw data or non-standard messages if necessary, pass to app
-                logMessage(`Received non-standard data from ${sourcePeerId.slice(-6)}`, 'debug');
-                config.onDataReceived(sourcePeerId, data); // Pass raw data to app
+                // If forced client, may need logic to find a new host or wait.
+                // Currently, it would wait for a new peer claiming targetHostId to connect.
             }
-        } catch (e) {
-            logMessage(`Error processing data from ${sourcePeerId.slice(-6)}: ${e.message}`, 'error');
-            console.error(e); // Log stack trace
         }
+
+        // Trigger UI update if needed (using a globally available function or event system)
+        if (typeof updateControlPanel === 'function') {
+            updateControlPanel();
+        }
+    } else {
+        // logMessage(`Attempted to remove non-existent connection: ${peerIdToRemove.slice(-6)}`, 'debug');
+    }
+}
+
+/**
+ * Sends the initial synchronization data from the host to a newly connected peer.
+ * Includes application data and the list of currently connected peers.
+ * @param {DataConnection} conn - The connection to send the sync data to.
+ */
+function sendInitialSync(conn) {
+    if (!isHost || !conn || !conn.open) return;
+    const remotePeerId = conn.peer;
+    logMessage(`Sending initial sync data to ${remotePeerId.slice(-6)}`, 'info');
+
+    try {
+        // Get application-specific data first
+        const appSyncData = config.getInitialSyncData() || {};
+
+        // Add peer list (excluding the recipient)
+        const peerList = [localPeerId, ...Array.from(connections.keys())]
+            .filter(id => id && id !== remotePeerId && connections.get(id) !== 'connecting'); // Filter out self, recipient, and pending
+
+        const syncMessage = {
+            type: 'initialSync',
+            payload: {
+                ...appSyncData, // Spread application data into payload
+                peers: peerList // Add peer list under 'peers' key
+            },
+            senderId: localPeerId // Identify the host
+        };
+        conn.send(syncMessage);
+    } catch (e) {
+        logMessage(`Error sending initial sync to ${remotePeerId.slice(-6)}: ${e.message}`, 'error');
+        // Optionally remove connection if send fails critically
+        // removeConnection(remotePeerId);
+    }
+}
+
+/**
+ * Processes data received from a peer connection.
+ * Handles initial sync messages, regular data messages, and gossip propagation.
+ * @param {any} data - The raw data received.
+ * @param {DataConnection} sourceConn - The connection the data came from.
+ */
+function handleReceivedData(data, sourceConn) {
+    const sourcePeerId = sourceConn?.peer;
+    if (!sourcePeerId) {
+        logMessage("Received data from unknown source.", 'warn');
+        return;
     }
 
-    /** Handles internal library messages */
-    function handleInternalMessage(payload, sourcePeerId, sourceConn) {
-        logMessage(`Handling internal message type '${payload.type}' from ${sourcePeerId.slice(-6)}`, 'debug');
-        switch (payload.type) {
-            case 'peer_list':
-                // Received a list of peers from another node
-                if (Array.isArray(payload.peers)) {
-                    logMessage(`Received peer list (${payload.peers.length}) from ${sourcePeerId.slice(-6)}`, 'debug');
-                    let newPeersFound = 0;
-                    payload.peers.forEach(peerId => {
-                        if (peerId !== localPeerId && !knownPeers.has(peerId)) {
-                            knownPeers.add(peerId);
-                            newPeersFound++;
-                            connectToPeer(peerId); // Attempt to connect to newly discovered peers
+    try {
+        // --- Handle Initial Sync ---
+        if (data && data.type === 'initialSync' && data.payload) {
+            if (!initialSyncComplete && !isHost) { // Only process if we haven't synced yet and aren't the host
+                logMessage(`Received initial sync from host ${sourcePeerId.slice(-6)}`, 'info');
+                initialSyncComplete = true;
+                isHost = false; // Ensure we know we're a client
+                hostPeerId = data.senderId || sourcePeerId; // Trust senderId if present, else source peer
+
+                if (hostCheckTimeout) { clearTimeout(hostCheckTimeout); hostCheckTimeout = null; } // Stop trying to become host
+                config.onStatusUpdate(`Synced with host ${hostPeerId.slice(-6)}.`);
+                config.onInitialSync(data.payload); // Pass full payload (app data + peers) to application
+
+                // Connect to other peers mentioned in the sync data
+                if (Array.isArray(data.payload.peers)) {
+                    data.payload.peers.forEach(pid => {
+                        if (pid && pid !== localPeerId && !connections.has(pid)) {
+                            logMessage(`Connecting to peer ${pid.slice(-6)} based on sync data.`, 'info');
+                            connectToPeer(pid);
                         }
                     });
-                    if (newPeersFound > 0) {
-                        logMessage(`Discovered ${newPeersFound} new peers from ${sourcePeerId.slice(-6)}. Total known: ${knownPeers.size}`, 'info');
-                    }
                 }
-                break;
-            case 'reject':
-                logMessage(`Connection rejected by ${sourcePeerId.slice(-6)}. Reason: ${payload.reason || 'Unknown'}`, 'warn');
-                removeConnection(sourcePeerId); // Remove the connection attempt
-                knownPeers.delete(sourcePeerId); // Assume peer is not connectable for now
-                break;
-            // Add other internal message types if needed
-            default:
-                logMessage(`Received unknown internal message type: ${payload.type}`, 'warn');
-        }
-    }
-
-
-    /** Starts the periodic peer discovery broadcast */
-    function startDiscovery() {
-        if (discoveryInterval) clearInterval(discoveryInterval); // Clear existing interval
-        logMessage("Starting periodic peer discovery broadcast...", 'info');
-        discoveryInterval = setInterval(() => {
-            broadcastPeerListToAll(); // Broadcast our known peers to everyone connected
-            // Optionally, also try connecting to any known peers we aren't connected to
-            connectToKnownPeers();
-        }, DISCOVERY_INTERVAL_MS);
-    }
-
-    /** Stops the periodic peer discovery broadcast */
-    function stopDiscovery() {
-        if (discoveryInterval) {
-            logMessage("Stopping periodic peer discovery broadcast.", 'info');
-            clearInterval(discoveryInterval);
-            discoveryInterval = null;
-        }
-    }
-
-    /** Broadcasts the local peer list to all active connections */
-    function broadcastPeerListToAll() {
-        if (connections.size === 0) return; // No one to send to
-        logMessage(`Broadcasting peer list (${knownPeers.size}) to ${connections.size} connected peers.`, 'debug');
-        const peersToSend = Array.from(knownPeers); // Send full list including self
-
-        const message = {
-            type: '_mp_internal',
-            payload: {
-                type: 'peer_list',
-                peers: peersToSend
+            } else {
+                logMessage(`Ignoring subsequent/unnecessary initial sync from ${sourcePeerId.slice(-6)} (Already synced: ${initialSyncComplete}, Is host: ${isHost})`, 'warn');
             }
-        };
-
-        connections.forEach((conn, peerId) => {
-            if (conn && conn.open) {
-                try {
-                    conn.send(message);
-                } catch (e) {
-                    logMessage(`Error broadcasting peer list to ${peerId.slice(-6)}: ${e.message}`, 'error');
-                    removeConnection(peerId);
-                }
-            }
-        });
-    }
-
-    /** Resets the library state */
-    function resetState() {
-        logMessage("Resetting multiplayer library state.", 'warn');
-        stopDiscovery(); // Stop discovery process
-        if (reconnectTimeout) {
-            clearTimeout(reconnectTimeout);
-            reconnectTimeout = null;
+            return; // Stop processing after handling sync message
         }
 
-        // Close all existing connections
-        connections.forEach(conn => {
-            if (conn && conn.close) {
-                try { conn.close(); } catch(e) {/* ignore */}
-            }
-        });
-        connections.clear();
-        pendingConnections.clear();
-        knownPeers.clear();
-        seenMessageIds.clear();
+        // --- Handle Regular/Gossip Messages ---
+        let payload, msgId, originalSenderId, ttl;
+        let isGossip = false;
 
-        // Destroy the PeerJS instance
-        if (peer && !peer.destroyed) {
+        // Check if it's a structured gossip message
+        if (data && typeof data === 'object' && data.payload && data.messageId && data.originalSenderId && data.ttl !== undefined) {
+            isGossip = true;
+            payload = data.payload;
+            msgId = data.messageId;
+            originalSenderId = data.originalSenderId;
+            ttl = data.ttl;
+
+            // Deduplication and loop prevention
+            if (seenMessageIds.has(msgId) || originalSenderId === localPeerId) {
+                // logMessage(`Ignoring seen/own message ${msgId.slice(-4)}`, 'debug');
+                return;
+            }
+            seenMessageIds.add(msgId);
+            // Prune seen messages to prevent memory leak
+            if (seenMessageIds.size > MAX_SEEN_MESSAGES) {
+                const oldestIds = Array.from(seenMessageIds).slice(0, MAX_SEEN_MESSAGES / 5); // Remove oldest 20%
+                oldestIds.forEach(id => seenMessageIds.delete(id));
+            }
+        } else if (typeof data === 'object' && data !== null && data.type !== 'error') { // Treat other objects as direct messages (allow app-defined types)
+            payload = data;
+            originalSenderId = sourcePeerId; // Sender is the direct peer
+        } else if (data.type === 'error') { // Handle rejection/error messages
+            logMessage(`Received error message from ${sourcePeerId.slice(-6)}: ${data.payload?.message || 'Unknown error'}`, 'warn');
+            return; // Don't process error payloads further here
+        }
+        else {
+            logMessage(`Received non-object or unknown data format from ${sourcePeerId.slice(-6)}: ${JSON.stringify(data)}`, 'warn');
+            return; // Ignore data we don't understand
+        }
+
+        // Pass the actual payload to the application's handler
+        config.onDataReceived(originalSenderId, payload);
+
+        // --- Gossip Propagation ---
+        if (isGossip && ttl > 0 && connections.size > 1) { // Only forward if TTL > 0 and there are other peers
+            const forwardedMessage = { ...data, ttl: ttl - 1 }; // Decrement TTL
+            // logMessage(`Forwarding message ${msgId.slice(-4)} from ${originalSenderId.slice(-6)} with TTL ${ttl - 1}`, 'debug');
+            broadcastInternal(forwardedMessage, [sourceConn]); // Broadcast to others, excluding the source
+        }
+
+    } catch (e) {
+        logMessage(`Error processing data from ${sourcePeerId.slice(-6)}: ${e.message}`, 'error');
+        console.error("Data processing error:", e, "Received data:", data); // Log stack trace and data
+    }
+}
+
+/**
+ * Internal function to broadcast data to all connected and open peers,
+ * optionally excluding some connections.
+ * @param {any} messageData - The data to send.
+ * @param {DataConnection[]} [excludeConns=[]] - An array of connections to exclude from the broadcast.
+ */
+function broadcastInternal(messageData, excludeConns = []) {
+    if (!peer || peer.destroyed || connections.size === 0) return;
+
+    const excludeIds = excludeConns.map(conn => conn?.peer).filter(id => id); // Get IDs to exclude
+
+    connections.forEach((conn, peerId) => {
+        // Check if connection is valid, open, and not in the exclusion list
+        if (conn !== 'connecting' && conn.open && !excludeIds.includes(peerId)) {
             try {
-                peer.destroy();
-                logMessage("PeerJS instance destroyed.", "info");
-            } catch (e) { logMessage(`Error destroying PeerJS instance: ${e.message}`, "error"); }
+                conn.send(messageData);
+            } catch (e) {
+                logMessage(`Error broadcasting to ${peerId.slice(-6)}: ${e.message}`, 'error');
+                // If sending fails, assume connection is bad and remove it
+                removeConnection(peerId);
+            }
+        }
+    });
+}
+
+/**
+ * Sets the library's state to be the host.
+ * Called when successfully claiming the target ID or when assuming the role after timeout/error.
+ */
+function becomeHost() {
+    if (isHost) return; // Already host
+    if (config.forceClientOnly) {
+        logMessage("Cannot become host: forceClientOnly is set.", 'warn');
+        return; // Cannot become host if forced client
+    }
+
+    isHost = true;
+    hostPeerId = localPeerId; // Host's ID is our own ID
+    initialSyncComplete = true; // Host is considered "synced" with itself
+    isAttemptingHostId = false; // No longer trying, we *are* the host
+
+    if (hostCheckTimeout) { clearTimeout(hostCheckTimeout); hostCheckTimeout = null; } // Clear any pending host check
+
+    logMessage(`Assumed host role. ID: ${localPeerId.slice(-6)}`, 'info');
+    config.onBecameHost(); // Notify application
+    config.onStatusUpdate(`Hosting as ${localPeerId.slice(-6)} (${connections.size} peers)`);
+
+    // Send initial sync to all currently connected peers (they might have connected before we became host)
+    connections.forEach((conn) => {
+        if (conn !== 'connecting' && conn.open) {
+            sendInitialSync(conn);
+        }
+    });
+    // Trigger UI update if needed
+    if (typeof updateControlPanel === 'function') {
+        updateControlPanel();
+    }
+}
+
+/**
+ * Resets the library state completely. Closes connections and destroys the PeerJS object.
+ * Should be called before re-initializing or shutting down.
+ */
+function resetState() {
+    logMessage("Resetting multiplayer library state.", 'warn');
+
+    if (peer) {
+        if (!peer.destroyed) {
+            // Detach listeners before destroying
+            peer.off('open');
+            peer.off('connection');
+            peer.off('disconnected');
+            peer.off('close');
+            peer.off('error');
+            try { peer.destroy(); } catch (e) { logMessage(`Error destroying peer during reset: ${e.message}`, 'warn');}
         }
         peer = null;
-        localPeerId = null;
-        MPLib.localPeerId = null; // Update exposed property
-
-        config.onStatusUpdate("Network disconnected.");
     }
 
-    // --- Public API ---
-    return {
-        initialize,
-        /**
-         * Broadcasts application data to all connected peers.
-         * @param {any} appPayload - The data payload from the application.
-         * @param {Peer.DataConnection} [senderConn=null] - Internal: Connection the message originally came from (to avoid loops).
-         */
-        broadcast: (appPayload, senderConn = null) => {
-            if (!peer || peer.destroyed || connections.size === 0) {
-                logMessage("Cannot broadcast: No open connections or peer not ready.", 'warn');
-                return;
+    localPeerId = null;
+    isHost = false;
+    hostPeerId = null;
+    isAttemptingHostId = false;
+    initialSyncComplete = false;
+
+    // Clear connections and pending states
+    connections.forEach((conn, peerId) => {
+        if (conn !== 'connecting' && typeof conn === 'object' && conn.close) {
+            try { conn.close(); } catch(e){} // Attempt to close gracefully
+        }
+    });
+    connections.clear();
+    pendingConnections.clear();
+    seenMessageIds.clear();
+
+    if (hostCheckTimeout) { clearTimeout(hostCheckTimeout); hostCheckTimeout = null; }
+
+    config.onStatusUpdate("Disconnected.");
+
+    // Trigger UI update if needed
+    if (typeof updateControlPanel === 'function') {
+        updateControlPanel();
+    }
+}
+
+
+// --- Exported Public API Object ---
+export const MPLib = {
+    /**
+     * Initializes or re-initializes the PeerJS connection.
+     * @param {object} options - Configuration options.
+     */
+    initialize, // Expose initialize function
+
+    /**
+     * Broadcasts a payload to all connected peers using the gossip protocol.
+     * @param {any} payload - The data payload to broadcast. Must be JSON-serializable.
+     */
+    broadcast: (payload) => {
+        if (!payload) {
+            logMessage("Broadcast payload cannot be empty.", 'warn');
+            return;
+        }
+        if (!localPeerId || !peer || peer.destroyed) {
+            logMessage("Cannot broadcast: Peer not initialized or connected.", 'warn');
+            return;
+        }
+        // Wrap payload in the gossip message structure
+        const message = {
+            messageId: generateUniqueId(),
+            originalSenderId: localPeerId,
+            payload: payload,
+            ttl: config.messageTTL // Use configured TTL
+        };
+        // logMessage(`Broadcasting msg ${message.messageId.slice(-4)}`, 'debug');
+        broadcastInternal(message); // Use internal broadcast function
+    },
+
+    /**
+     * Sends a direct message to a specific peer.
+     * @param {string} targetPeerId - The ID of the recipient peer.
+     * @param {any} payload - The data payload to send. Must be JSON-serializable.
+     */
+    sendDirect: (targetPeerId, payload) => {
+        if (!targetPeerId || !payload) {
+            logMessage("Direct send requires targetPeerId and payload.", 'warn');
+            return;
+        }
+        if (!peer || peer.destroyed) {
+            logMessage("Cannot send direct: Peer not initialized.", 'warn');
+            return;
+        }
+        if (targetPeerId === localPeerId) {
+            logMessage("Cannot send direct message to self.", 'warn');
+            return;
+        }
+
+        const conn = connections.get(targetPeerId);
+        if (conn && conn !== 'connecting' && conn.open) {
+            try {
+                // Direct messages don't use the gossip structure unless the app adds it
+                conn.send(payload);
+            } catch (e) {
+                logMessage(`Error sending direct message to ${targetPeerId.slice(-6)}: ${e.message}`, 'error');
+                removeConnection(targetPeerId); // Remove connection if send fails
             }
-            if (!appPayload) {
-                logMessage("Broadcast payload cannot be empty.", 'warn');
-                return;
-            }
+        } else {
+            logMessage(`No open connection to ${targetPeerId.slice(-6)} for direct message. Status: ${conn || 'Not connected'}`, 'warn');
+        }
+    },
 
-            // Check if it's already a wrapped message (internal forwarding)
-            let messageToSend;
-            if (appPayload && appPayload.messageId && appPayload.originalSenderId) {
-                messageToSend = appPayload; // It's already wrapped, forward as is
-            } else {
-                // Wrap the application payload for broadcast
-                messageToSend = {
-                    messageId: generateUniqueId('bcast'),
-                    originalSenderId: localPeerId, // This peer is the original sender
-                    payload: appPayload,
-                    timestamp: Date.now() // Optional timestamp
-                };
-            }
+    /**
+     * Disconnects from the network and resets the library state.
+     */
+    disconnect: () => {
+        logMessage("Disconnecting and resetting state.", 'info');
+        resetState();
+    },
 
+    // --- Read-only State Accessors (using getter syntax) ---
 
-            // Add to seen immediately to prevent loopback if message arrives quickly
-            seenMessageIds.add(messageToSend.messageId);
+    /** Gets the local PeerJS ID, or null if not connected. */
+    get localPeerId() { return localPeerId; },
 
-            logMessage(`Broadcasting message ${messageToSend.messageId.slice(-6)} from ${messageToSend.originalSenderId.slice(-6)}`, 'debug');
+    /** Gets the PeerJS ID of the current host, or null if not connected to a host or is the host. */
+    get hostPeerId() { return hostPeerId; },
 
-            connections.forEach((conn, peerId) => {
-                // Don't send back to the source connection if forwarding
-                if (conn && conn.open && conn !== senderConn) {
-                    try {
-                        conn.send(messageToSend);
-                    } catch (e) {
-                        logMessage(`Error broadcasting message to ${peerId.slice(-6)}: ${e.message}`, 'error');
-                        removeConnection(peerId);
-                    }
-                }
-            });
-        },
-        /**
-         * Sends data directly to a specific peer.
-         * @param {string} targetPeerId - The ID of the peer to send to.
-         * @param {any} payload - The data payload to send.
-         */
-        sendDirect: (targetPeerId, payload) => {
-            if (!targetPeerId || !payload) {
-                logMessage("Direct send requires targetPeerId and payload.", 'warn');
-                return;
-            }
-            if(targetPeerId === localPeerId) {
-                logMessage("Cannot send direct message to self.", "warn");
-                return;
-            }
+    /** Returns true if the local instance is currently acting as the host, false otherwise. */
+    get isHost() { return isHost; },
 
-            const conn = connections.get(targetPeerId);
-            if (conn && conn !== 'connecting' && conn !== 'accepting' && conn.open) {
-                try {
-                    // Send directly without broadcast wrapping
-                    conn.send(payload);
-                    logMessage(`Sent direct message to ${targetPeerId.slice(-6)}`, 'debug');
-                } catch (e) {
-                    logMessage(`Error sending direct message to ${targetPeerId.slice(-6)}: ${e.message}`, 'error');
-                    removeConnection(targetPeerId);
-                }
-            } else {
-                logMessage(`No open connection to ${targetPeerId.slice(-6)} for direct message. Attempting connect.`, 'warn');
-                connectToPeer(targetPeerId); // Try to connect if not already connected
-                // TODO: Consider queuing the message? For now, just attempts connect.
-            }
-        },
-        /** Disconnects and cleans up the PeerJS instance. */
-        disconnect: () => {
-            logMessage("Disconnecting multiplayer library.", 'info');
-            resetState();
-        },
+    /**
+     * Gets a Map of active connections. Keys are peer IDs, values are PeerJS DataConnection objects.
+     * Note: Returns the internal Map directly for performance; do not modify it externally.
+     * Consider returning a copy (`new Map(connections)`) if external modification is a risk.
+     */
+    get connections() { return connections; },
 
-        // --- Accessors ---
-        getConnections: () => new Map(connections), // Return a copy of active connections
-        getKnownPeers: () => new Set(knownPeers), // Return a copy of known peers
-        getLocalPeerId: () => localPeerId,
+    /**
+     * Returns a Set of peer IDs that we are currently attempting to establish an outgoing connection to.
+     */
+    get pendingConnections() { return pendingConnections; },
 
-        // --- Direct State Exposure (use with caution) ---
-        localPeerId: localPeerId,
-        connections: connections, // Expose map directly (read-only recommended)
-    };
+    /** Gets the current configuration object. */
+    get configuration() { return { ...config }; }, // Return a shallow copy
+};
 
-})();
+// Make updateControlPanel globally available ONLY IF NEEDED (e.g., for simple examples)
+// In a real application, UI updates should be handled via the callbacks (onPeerJoined, onPeerLeft, onStatusUpdate, etc.)
+// Example: window.updateControlPanel = updateControlPanel; // Avoid if possible

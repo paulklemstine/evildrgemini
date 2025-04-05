@@ -5,39 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GUIDED EXTREME EMOTIONAL MENTAL STATES</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap"
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/Lucide.css">
-    <link rel="stylesheet" href="styles.css">
-    <script type="module">
-        // Firebase Initialization (keep here or move to a separate config file if preferred)
-        import {initializeApp} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-        import {getAnalytics} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCl32VbjykZX-k3TNEZrXbZ4IWRSKweq3E", // Note: Exposing API keys client-side is generally discouraged for production. Consider using backend functions or Firebase Auth.
-            authDomain: "geems-60187.firebaseapp.com",
-            projectId: "geems-60187",
-            storageBucket: "geems-60187.firebasestorage.app",
-            messagingSenderId: "353260647182",
-            appId: "1:353260647182:web:6f44d9c68fe379534f5d5f",
-            measurementId: "G-4SB7BD55RY"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-    </script>
 </head>
 <body>
 
 <header class="site-header">
-    <img id="headerBanner" alt="GEEMS Header Banner" class="header-banner-image">
+    <img id="headerBanner"
+         alt="GEEMS Header Banner"
+         class="header-banner-image"
+         src="" >
     <h1>Guided Extreme Emotional Mental States</h1>
 </header>
 
@@ -84,10 +65,12 @@
 </div>
 
 <footer class="site-footer">
-    <img id="footerBanner" alt="GEEMS Footer Banner" class="footer-banner-image">
+    <img id="footerBanner"
+         alt="GEEMS Footer Banner"
+         class="footer-banner-image"
+         src="" >
 
     <div class="footer-buttons">
-        <button id="saveGameButton" class="geems-button" disabled>Export Game State</button>
         <button id="modeToggleButton" class="geems-button">Mode: Explicit</button>
         <button id="resetGameButton" class="geems-button" disabled>Reset Game</button>
     </div>
@@ -99,7 +82,6 @@
     </div>
 </footer>
 
-<script type="module" src="prompts.js"></script>
 <script type="module" src="script.js"></script>
 
 </body>
