@@ -174,6 +174,11 @@ function playTurnAlertSound() {
 function updateHistoryQueue(playerActionsJson) {
     if (currentUiJson) {
         const previousTurnData = {ui: JSON.stringify(currentUiJson), actions: playerActionsJson || "{}"};
+        const isDuplicate = historyQueue.some(item => JSON.stringify(item) === JSON.stringify(previousTurnData));
+        if (isDuplicate) {
+            console.log("Duplicate turn data detected, not adding to history queue.");
+            return;
+        }
         if (historyQueue.length >= MAX_HISTORY_SIZE) historyQueue.shift();
         historyQueue.push(previousTurnData);
         console.log(`History Queue size: ${historyQueue.length}/${MAX_HISTORY_SIZE}`);
@@ -261,7 +266,6 @@ function restoreLocalState() {
 
 /** Processes the successful response from the Gemini API. */
 function processSuccessfulResponse(responseJson, playerActionsJson) {
-    updateHistoryQueue(playerActionsJson); // Update history *before* changing current UI
     currentUiJson = responseJson;
     if (!apiKeyLocked) {
         apiKeyLocked = true;
@@ -290,6 +294,9 @@ function broadcastGameState() {
 
 /** Fetches the next turn's UI data from the Gemini API. */
 async function fetchTurnData(playerActionsJson) {
+    
+    // Update history queue with the player actions JSON for the current turn.
+    updateHistoryQueue(playerActionsJson); // Update history. Clear flag upon successful response from Gemini.
     console.log("fetchTurnData called.");
     initAudioContext();
     const apiKey = apiKeyInput.value.trim();
