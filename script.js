@@ -84,7 +84,6 @@ function decodeApiKey(encodedKey) {
         return null;
     }
 }
-
 /** Constructs the full prompt for the Gemini API call. */
 function constructPrompt(playerActionsJson, historyQueue, isMasturbationMode) {
     const baseMainPrompt = geemsPrompts.main;
