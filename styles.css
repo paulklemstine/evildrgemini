@@ -580,6 +580,7 @@ body {
     align-items: center;
     justify-content: center;
 }
+
 .modal-content {
     background-color: #fefefe;
     padding: 25px;
@@ -587,8 +588,11 @@ body {
     width: 80%; /* Responsive width */
     max-width: 700px; /* Maximum width */
     border-radius: 8px;
-    position: relative;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     color: #333; /* Ensure text is readable */
 }
 .modal-close {

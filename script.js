@@ -15,6 +15,8 @@ let isLoading = false;
 let apiKeyLocked = false;
 let localGameStateSnapshot = null; // To store local state when viewing remote state
 let hiddenAnalysisContent = null; // To store content of gemini_facing_analysis for modal
+let hiddenAnalysisContentTweet = null; // To store content of gemini_facing_analysis for modal
+let hiddenAnalysisContentNotes = null; // To store content of gemini_facing_analysis for modal
 
 // --- Model Switching State ---
 const AVAILABLE_MODELS = ["gemini-2.5-pro-exp-03-25",
@@ -355,6 +357,16 @@ function renderSingleElement(element, index) {
         console.log("Stored hidden 'gemini_facing_analysis' content.");
         return; // Do not render this element to the main UI
     }
+    if (element.name?.includes('tweet')) {
+        hiddenAnalysisContentTweet = element.text || element.value || '';
+        console.log("Stored hidden 'tweet' content.");
+        return; // Do not render this element to the main UI
+    }
+    if (element.name?.includes('notes')) {
+        hiddenAnalysisContentNotes = element.value || '';
+        console.log("Stored hidden 'gemini_facing_analysis' content.");
+        return; // Do not render this element to the main UI
+    }
     // --- MODIFICATION END ---
 
     const wrapper = document.createElement('div');
@@ -422,7 +434,7 @@ function showAnalysisModal() {
 
     if (hiddenAnalysisContent) {
         // Basic HTML rendering (similar to renderText)
-        analysisModalBody.innerHTML = hiddenAnalysisContent
+        analysisModalBody.innerHTML = ("Tweet: "+hiddenAnalysisContentTweet+"\n\n"+hiddenAnalysisContent+"\n\nSystem notes: "+hiddenAnalysisContentNotes)
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
