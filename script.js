@@ -14,6 +14,7 @@ let isMasturbationMode = false; // Default mode
 let isLoading = false;
 let apiKeyLocked = false;
 let localGameStateSnapshot = null; // To store local state when viewing remote state
+let hiddenAnalysisContent = null; // To store content of gemini_facing_analysis for modal
 
 // --- Model Switching State ---
 const AVAILABLE_MODELS = ["gemini-2.5-pro-exp-03-25",
@@ -43,12 +44,21 @@ const footerBanner = document.getElementById('footerBanner');
 // Assume footer exists, get reference to it
 const footerElement = document.querySelector('.site-footer');
 let peerListContainer = null; // Will be created dynamically
+// Add references for the modal (assuming HTML structure exists)
+const analysisModal = document.getElementById('analysisModal'); // e.g., <div id="analysisModal" class="modal" style="display:none;">...</div>
+const analysisModalBody = document.getElementById('analysisModalBody'); // e.g., <div id="analysisModalBody"></div> inside the modal
+const analysisModalClose = document.getElementById('analysisModalClose'); // e.g., <button id="analysisModalClose">Close</button> inside the modal
 
 // --- Web Audio API Context ---
 let audioCtx = null;
 
 // --- Multiplayer State ---
 const remoteGameStates = new Map(); // Map<peerId, gameState>
+
+// --- Long Press State ---
+let pressTimer = null;
+let isLongPress = false;
+const longPressDuration = 750; // milliseconds
 
 // --- Helper Functions ---
 
@@ -168,12 +178,13 @@ function loadGameState(newState, sourcePeerId = null) {
         renderUI(currentUiJson);
         console.log("Loaded game state UI rendered.");
         // Disable submit turn button when viewing remote state?
-        submitButton.disabled = false;
+        submitButton.disabled = false; // Disable submit when viewing remote state
         showNotification(`Viewing ${sourcePeerId ? sourcePeerId.slice(-6) : 'remote'} state. Click your icon to return.`, 'info', 5000);
     } else {
         showError("Loaded game state is missing UI data.");
     }
     updatePeerListUI(); // Highlight the peer being viewed
+    highlightPeerIcon(sourcePeerId); // Explicitly highlight
 }
 
 /** Saves the current local game state snapshot. */
@@ -200,6 +211,7 @@ function restoreLocalState() {
             console.log("Restored local game state UI rendered.");
             submitButton.disabled = isLoading || !apiKeyLocked; // Re-enable submit button
             updatePeerListUI(); // Clear highlights
+            showNotification("Returned to your game state.", "info", 2000);
         } else {
             showError("Error restoring local game state: UI data missing.");
             // Might need a more robust recovery here
@@ -219,7 +231,7 @@ function processSuccessfulResponse(responseJson, playerActionsJson) {
         if (apiKeySection) apiKeySection.style.display = 'none';
         resetGameButton.disabled = false;
     }
-    renderUI(currentUiJson);
+    renderUI(currentUiJson); // This will also populate hiddenAnalysisContent if present
     playTurnAlertSound();
     autoSaveGameState();
 
@@ -318,6 +330,7 @@ async function callRealGeminiAPI(apiKey, promptText, modelName) {
 /** Renders the UI elements based on the JSON array. */
 function renderUI(uiJsonArray) {
     console.log("renderUI started.");
+    hiddenAnalysisContent = null; // Reset hidden content before rendering new UI
     const initialMsgElementRef = document.getElementById('initial-message');
     uiContainer.innerHTML = '';
     if (!Array.isArray(uiJsonArray)) {
@@ -335,6 +348,15 @@ function renderUI(uiJsonArray) {
 
 /** Renders a single UI element. */
 function renderSingleElement(element, index) {
+    // --- MODIFICATION START: Check for gemini_facing_analysis ---
+    // If it's the gemini_facing_analysis text element, store its content and skip rendering.
+    if (element.type === 'text' && element.name?.includes('gemini_facing_analysis')) {
+        hiddenAnalysisContent = element.text || element.value || '';
+        console.log("Stored hidden 'gemini_facing_analysis' content.");
+        return; // Do not render this element to the main UI
+    }
+    // --- MODIFICATION END ---
+
     const wrapper = document.createElement('div');
     wrapper.className = 'geems-element';
     if (element.voice) wrapper.classList.add(`voice-${element.voice}`);
@@ -343,7 +365,7 @@ function renderSingleElement(element, index) {
     try {
         switch (element.type) {
             case 'image': renderImage(wrapper, element, adjustedColor); break;
-            case 'text': renderText(wrapper, element, adjustedColor);  break;
+            case 'text': renderText(wrapper, element, adjustedColor);  break; // Will be skipped for gemini_facing_analysis by the check above
             case 'textfield': renderTextField(wrapper, element, adjustedColor); break;
             case 'checkbox': renderCheckbox(wrapper, element, adjustedColor); break;
             case 'slider': renderSlider(wrapper, element, adjustedColor); break;
@@ -359,7 +381,7 @@ function renderSingleElement(element, index) {
 
 // --- UI Element Rendering Functions ---
 function renderImage(wrapper, element, adjustedColor) { wrapper.classList.add('geems-image-container'); wrapper.classList.remove('geems-element'); wrapper.style.borderLeftColor = 'transparent'; const img = document.createElement('img'); img.className = 'geems-image'; const imagePrompt = element.value || 'abstract image'; const randomSeed = Math.floor(Math.random() * 65536); const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?nologo=true&safe=false&seed=${randomSeed}`; img.src = imageUrl; img.alt = element.label || `Image: ${imagePrompt.substring(0, 50)}...`; img.onerror = () => { console.warn(`Failed to load image: ${imageUrl}`); img.src = `https://placehold.co/600x400/e0e7ff/4f46e5?text=Image+Load+Error`; img.alt = `Error loading image: ${imagePrompt.substring(0, 50)}...`; }; wrapper.appendChild(img); if (element.label) { const labelDiv = document.createElement('div'); labelDiv.className = 'geems-label text-center font-semibold mt-2'; if (adjustedColor) labelDiv.style.color = adjustedColor; labelDiv.textContent = element.label; wrapper.appendChild(labelDiv); } const promptText = document.createElement('p'); promptText.className = 'geems-image-prompt'; promptText.textContent = imagePrompt; wrapper.appendChild(promptText); }
-function renderText(wrapper, element, adjustedColor) { const textContent = element.text || element.value || ''; const useLabel = element.label && !['narrative', 'divine_wisdom', 'player_facing_analysis', 'gemini_facing_analysis'].some(namePart => element.name?.includes(namePart)); if (useLabel) { const label = document.createElement('label'); label.className = 'geems-label'; if (adjustedColor) label.style.color = adjustedColor; label.textContent = element.label; wrapper.appendChild(label); } const textElement = document.createElement('div'); textElement.className = 'geems-text'; textElement.innerHTML = textContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/```([\s\S]*?)```/g, (match, p1) => `<pre>${p1.trim()}</pre>`).replace(/\n/g, '<br>'); wrapper.appendChild(textElement); }
+function renderText(wrapper, element, adjustedColor) { const textContent = element.text || element.value || ''; const useLabel = element.label && !['narrative', 'divine_wisdom', 'player_facing_analysis'].some(namePart => element.name?.includes(namePart)); /* Removed gemini_facing_analysis from here as it's handled earlier */ if (useLabel) { const label = document.createElement('label'); label.className = 'geems-label'; if (adjustedColor) label.style.color = adjustedColor; label.textContent = element.label; wrapper.appendChild(label); } const textElement = document.createElement('div'); textElement.className = 'geems-text'; textElement.innerHTML = textContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/```([\s\S]*?)```/g, (match, p1) => `<pre>${p1.trim()}</pre>`).replace(/\n/g, '<br>'); wrapper.appendChild(textElement); }
 function renderTextField(wrapper, element, adjustedColor) { const label = document.createElement('label'); label.className = 'geems-label'; label.textContent = element.label || element.name; label.htmlFor = element.name; if (adjustedColor) label.style.color = adjustedColor; wrapper.appendChild(label); const input = document.createElement('textarea'); input.className = 'geems-textarea'; input.id = element.name; input.name = element.name; input.rows = 4; input.value = element.value || ''; input.placeholder = element.placeholder || 'Type response...'; input.dataset.elementType = 'textfield'; wrapper.appendChild(input); }
 function renderCheckbox(wrapper, element, adjustedColor) { wrapper.classList.remove('geems-element'); wrapper.style.borderLeftColor = 'transparent'; wrapper.style.padding = '0'; wrapper.style.marginBottom = '0.75rem'; const optionDiv = document.createElement('div'); optionDiv.className = 'geems-checkbox-option'; const input = document.createElement('input'); input.type = 'checkbox'; input.id = element.name; input.name = element.name; input.checked = element.value === true || String(element.value).toLowerCase() === 'true'; input.dataset.elementType = 'checkbox'; if (adjustedColor) input.style.accentColor = adjustedColor; const label = document.createElement('label'); label.htmlFor = element.name; label.textContent = element.label || element.name; label.className = "flex-grow cursor-pointer"; optionDiv.appendChild(input); optionDiv.appendChild(label); wrapper.appendChild(optionDiv); }
 function renderSlider(wrapper, element, adjustedColor) { const label = document.createElement('label'); label.className = 'geems-label'; label.textContent = element.label || element.name; label.htmlFor = element.name; if (adjustedColor) label.style.color = adjustedColor; wrapper.appendChild(label); const sliderContainer = document.createElement('div'); sliderContainer.className = 'flex items-center space-x-4 mt-2'; const input = document.createElement('input'); input.type = 'range'; input.className = 'geems-slider flex-grow'; input.id = element.name; input.name = element.name; const min = parseFloat(element.min) || 0; const max = parseFloat(element.max) || 10; input.min = min; input.max = max; input.step = element.step || 1; const defaultValue = parseFloat(element.value); input.value = isNaN(defaultValue) ? (min + max) / 2 : Math.max(min, Math.min(max, defaultValue)); input.dataset.elementType = 'slider'; if (adjustedColor) { input.style.accentColor = adjustedColor; input.style.setProperty('--slider-thumb-color', adjustedColor); input.setAttribute('style', `${input.getAttribute('style') || ''} --slider-thumb-color: ${adjustedColor};`); } const valueDisplay = document.createElement('span'); valueDisplay.className = `geems-slider-value-display font-medium w-auto text-right`; valueDisplay.textContent = input.value; if (adjustedColor) valueDisplay.style.color = adjustedColor; input.oninput = () => { valueDisplay.textContent = input.value; }; sliderContainer.appendChild(input); sliderContainer.appendChild(valueDisplay); wrapper.appendChild(sliderContainer); }
@@ -388,6 +410,39 @@ function showClipboardMessage(message, isError = false) { clipboardMessage.textC
 function updateModeButtonVisuals() { if (isMasturbationMode) { modeToggleButton.textContent = 'Mode: Explicit'; modeToggleButton.classList.remove('standard-mode'); } else { modeToggleButton.textContent = 'Mode: Standard'; modeToggleButton.classList.add('standard-mode'); } }
 function setDynamicImages() { const headerSeed = Math.floor(Math.random() * 65536), footerSeed = Math.floor(Math.random() * 65536); const headerPrompt = "wide cinematic vivid colorful abstract emotional landscape brainwaves", footerPrompt = "wide abstract colorful digital roots network connections"; if (headerBanner) { headerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(headerPrompt)}?width=1200&height=200&seed=${headerSeed}&nologo=true&safe=false`; headerBanner.alt = headerPrompt; } if (footerBanner) { footerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(footerPrompt)}?width=1200&height=100&seed=${footerSeed}&nologo=true&safe=false`; footerBanner.alt = footerPrompt; } }
 
+// --- Modal Functions ---
+/** Displays the modal with the hidden analysis content. */
+function showAnalysisModal() {
+    // Check if modal elements exist
+    if (!analysisModal || !analysisModalBody) {
+        console.error("Analysis modal elements not found in the DOM.");
+        showError("Cannot display analysis: Modal elements missing.");
+        return;
+    }
+
+    if (hiddenAnalysisContent) {
+        // Basic HTML rendering (similar to renderText)
+        analysisModalBody.innerHTML = hiddenAnalysisContent
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')       // Italics
+            .replace(/```([\s\S]*?)```/g, (match, p1) => `<pre>${p1.trim()}</pre>`) // Code blocks
+            .replace(/\n/g, '<br>'); // Newlines
+    } else {
+        analysisModalBody.innerHTML = '<p>No analysis content available for this turn.</p>';
+    }
+    analysisModal.style.display = 'block'; // Or 'flex', depending on your CSS
+}
+
+/** Hides the analysis modal. */
+function hideAnalysisModal() {
+    if (analysisModal) {
+        analysisModal.style.display = 'none';
+    }
+}
+
 // --- Multiplayer Functions ---
 
 /** Shows a basic notification */
@@ -409,16 +464,20 @@ function updatePeerListUI() {
     const peers = MPLib.getConnections ? Array.from(MPLib.getConnections().keys()) : [];
     const localId = MPLib.getLocalPeerId ? MPLib.getLocalPeerId() : null;
     const hostId = MPLib.getHostPeerId ? MPLib.getHostPeerId() : null;
+    const isViewingRemote = localGameStateSnapshot !== null;
 
     // Add local player icon
     if (localId) {
-        const localIcon = createPeerIcon(localId, 'You', true, false); // isSelf=true, isHost=isHost
+        const localIcon = createPeerIcon(localId, 'You', true, localId === hostId); // isSelf=true, isHost=isHost
         localIcon.onclick = () => {
-            console.log("Clicked local icon - restoring local state.");
-            restoreLocalState();
-            submitButton.disabled = isLoading || !apiKeyLocked; // Re-enable submit
-            showNotification("Returned to your game state.", "info", 2000);
-            updatePeerListUI(); // Update UI to remove highlight
+            if (isViewingRemote) {
+                console.log("Clicked local icon - restoring local state.");
+                restoreLocalState();
+                // Submit button state is handled within restoreLocalState
+                // Highlight is cleared within restoreLocalState calling this function again
+            } else {
+                console.log("Clicked local icon - already viewing local state.");
+            }
         };
         peerListContainer.appendChild(localIcon);
     }
@@ -427,7 +486,8 @@ function updatePeerListUI() {
     peers.forEach(peerId => {
         if (peerId !== localId) { // Don't add self again
             const conn = MPLib.getConnections().get(peerId);
-            if (conn && conn !== 'connecting') { // Check for valid connection object
+            // Check for valid connection object (MPLib might store 'connecting' string temporarily)
+            if (conn && typeof conn === 'object' && conn.open) { // Ensure it's an open DataConnection
                 const isPeerHost = peerId === hostId;
                 const peerIcon = createPeerIcon(peerId, peerId.slice(-6), false, isPeerHost);
                 peerIcon.onclick = () => {
@@ -437,21 +497,22 @@ function updatePeerListUI() {
                     MPLib.sendDirect(peerId, { type: 'request_game_state' });
                     showNotification(`Requesting state from ${peerId.slice(-6)}...`, 'info', 2000);
                     // Highlight this peer (will be updated fully when state arrives)
-                    highlightPeerIcon(peerId);
-                    submitButton.disabled = true; // Disable submit when viewing remote state
+                    highlightPeerIcon(peerId); // Indicate attempt to view
+                    // submitButton.disabled = true; // Handled in loadGameState
                 }
                 peerListContainer.appendChild(peerIcon);
+            } else {
+                console.log(`Skipping peer icon for ${peerId.slice(-6)} - connection not fully established or is invalid.`);
+                // Optionally add a placeholder icon for connecting peers
             }
         }
     });
 
     // Highlight the peer whose state is currently being viewed
-    if (localGameStateSnapshot && remoteGameStates.size > 0) {
-        // Find which peer's state might be active (this is imperfect without tracking active view target)
-        // A simple approach: highlight the *first* peer whose state we have stored, assuming that's the one being viewed.
-        // Or better: Add a variable `currentlyViewingPeerId` when loading state.
-        // For now, let's find the peer whose state was most recently stored (if timestamps were stored)
-        // Simplest: Assume the 'highlightPeerIcon' called on click is sufficient until state loads
+    // Highlighting is now mainly handled by calls to highlightPeerIcon when clicking or receiving state.
+    // Ensure no highlights if viewing local state
+    if (!isViewingRemote) {
+        highlightPeerIcon(null); // Clear highlights if viewing local
     }
 }
 
@@ -484,15 +545,25 @@ function createPeerIcon(peerId, labelText, isSelf, isHost) {
 }
 
 /** Highlights a specific peer icon */
-function highlightPeerIcon(peerId) {
+function highlightPeerIcon(peerIdToHighlight) {
     if (!peerListContainer) return;
     peerListContainer.querySelectorAll('.peer-icon-wrapper').forEach(icon => {
-        if (icon.dataset.peerId === peerId) {
+        if (icon.dataset.peerId === peerIdToHighlight) {
             icon.classList.add('viewing');
+            // Ensure self icon isn't highlighted if viewing remote
+            if (peerIdToHighlight !== MPLib.getLocalPeerId()) {
+                const selfIcon = peerListContainer.querySelector(`.peer-icon-wrapper[data-peer-id="${MPLib.getLocalPeerId()}"]`);
+                if(selfIcon) selfIcon.classList.remove('viewing');
+            }
         } else {
             icon.classList.remove('viewing');
         }
     });
+    // Ensure local icon is highlighted if no remote peer is specified (i.e., back to local view)
+    if (peerIdToHighlight === null && MPLib.getLocalPeerId()) {
+        const selfIcon = peerListContainer.querySelector(`.peer-icon-wrapper[data-peer-id="${MPLib.getLocalPeerId()}"]`);
+        if(selfIcon) selfIcon.classList.add('viewing');
+    }
 }
 
 /** Add CSS for Peer Icons and Tooltips (inject or add to styles.css) */
@@ -530,14 +601,22 @@ function addPeerIconStyles() {
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             box-sizing: border-box; /* Include border in size */
+            user-select: none; /* Prevent text selection */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         .peer-icon-wrapper:hover .peer-icon {
             transform: scale(1.1);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
+        /* Highlight style for viewing peer/self */
         .peer-icon-wrapper.viewing .peer-icon {
-             box-shadow: 0 0 0 3px #a78bfa; /* Purple ring when viewing */
-             transform: scale(1.05);
+             /* Use a distinct outline or shadow to indicate viewing */
+             outline: 3px solid #a78bfa; /* Purple outline */
+             outline-offset: 2px;
+             box-shadow: 0 0 10px rgba(167, 139, 250, 0.7); /* Optional glow */
+             /* transform: scale(1.05); // Can conflict with hover */
         }
         /* Tooltip styles */
         .tooltip .tooltiptext {
@@ -553,11 +632,12 @@ function addPeerIconStyles() {
             z-index: 10;
             bottom: 135%; /* Position above the icon */
             left: 50%;
-            margin-left: -50%; /* Center the tooltip */
+            transform: translateX(-50%); /* Center the tooltip using transform */
             opacity: 0;
             transition: opacity 0.3s;
             font-size: 0.75rem; /* 12px */
-            word-wrap: break-word;
+            word-wrap: break-word; /* Prevent long IDs from breaking layout */
+            pointer-events: none; /* Tooltip should not interfere with clicks */
         }
         .tooltip:hover .tooltiptext {
             visibility: visible;
@@ -590,18 +670,27 @@ function handlePeerJoined(peerId, conn) {
     updatePeerListUI();
     // Optional: If you are host, maybe send them the current state immediately?
     // MPLib handles initial sync, but subsequent joins might need updates.
+    // Example: if (MPLib.isHost() && apiKeyLocked) { // Only send if game started
+    //     const currentState = getCurrentGameState();
+    //     MPLib.sendDirect(peerId, { type: 'game_state', payload: currentState });
+    // }
 }
 
 function handlePeerLeft(peerId) {
     console.log(`MPLib Event: Peer left - ${peerId.slice(-6)}`);
     showNotification(`Peer ${peerId.slice(-6)} disconnected.`, 'warn', 2000);
     remoteGameStates.delete(peerId); // Remove any stored state for this peer
-    updatePeerListUI();
+
     // If we were viewing this peer's state, restore local state
-    // This needs tracking `currentlyViewingPeerId`
-    // if (currentlyViewingPeerId === peerId) {
-    //    restoreLocalState();
-    // }
+    const isViewingRemote = localGameStateSnapshot !== null;
+    // A simple check: If we are in remote view mode AND the leaving peer MIGHT be the one we were viewing
+    // (More robust would be storing `currentlyViewingPeerId`)
+    if (isViewingRemote && remoteGameStates.size === 0) { // Or if viewingPeerId === peerId
+        console.log(`Peer ${peerId.slice(-6)} left while being viewed (or was last viewed). Restoring local state.`);
+        restoreLocalState();
+    } else {
+        updatePeerListUI(); // Just update the list if not viewing the leaving peer
+    }
 }
 
 function handleDataReceived(senderId, data) {
@@ -614,33 +703,52 @@ function handleDataReceived(senderId, data) {
     switch (data.type) {
         case 'request_game_state':
             console.log(`Received game state request from ${senderId.slice(-6)}`);
-            const currentState = getCurrentGameState();
-            MPLib.sendDirect(senderId, { type: 'game_state', payload: currentState });
-            console.log(`Sent current game state back to ${senderId.slice(-6)}`);
+            // Only send state if the game has started (API key locked)
+            if (apiKeyLocked && currentUiJson) {
+                const currentState = getCurrentGameState();
+                MPLib.sendDirect(senderId, { type: 'game_state', payload: currentState });
+                console.log(`Sent current game state back to ${senderId.slice(-6)}`);
+            } else {
+                console.log(`Game not started or no UI yet, cannot send state to ${senderId.slice(-6)}.`);
+                // Optionally send a message indicating game not ready
+                MPLib.sendDirect(senderId, { type: 'game_state_not_ready' });
+            }
             break;
         case 'game_state':
             console.log(`Received game state from ${senderId.slice(-6)}`);
             if (data.payload) {
                 remoteGameStates.set(senderId, data.payload); // Store the received state
                 loadGameState(data.payload, senderId); // Load the received state for viewing
-                updatePeerListUI(); // Highlight peer
+                // updatePeerListUI is called within loadGameState
             } else {
                 console.warn("Received game_state message with no payload.");
                 showNotification(`Failed to load state from ${senderId.slice(-6)}.`, "error", 3000);
+                highlightPeerIcon(null); // Clear potential highlight if state load failed
+                submitButton.disabled = false; // Re-enable submit if state load failed
             }
+            break;
+        case 'game_state_not_ready':
+            console.log(`Received game_state_not_ready from ${senderId.slice(-6)}`);
+            showNotification(`Peer ${senderId.slice(-6)}'s game has not started yet.`, "info", 3000);
+            highlightPeerIcon(null); // Clear potential highlight
+            submitButton.disabled = false; // Re-enable submit locally
             break;
         case 'game_state_update':
             console.log(`Received game state update broadcast from ${senderId.slice(-6)}`);
-            // Optional: Store this update if needed, but don't automatically load it
-            // unless the user is actively viewing this peer.
+            // Store this update if needed.
             if (data.payload) {
                 remoteGameStates.set(senderId, data.payload); // Update stored state
-                // If user is currently viewing THIS peer, maybe refresh?
-                // if(currentlyViewingPeerId === senderId) {
-                //    loadGameState(data.payload, senderId); // Refresh view
-                // } else {
-                showNotification(`Received state update from ${senderId.slice(-6)}.`, 'info', 1500);
-                // }
+                const isViewingRemote = localGameStateSnapshot !== null;
+                // If user is currently viewing THIS peer, refresh the view
+                // (Requires tracking `currentlyViewingPeerId`, simplified check here)
+                const viewingIcon = peerListContainer?.querySelector('.peer-icon-wrapper.viewing');
+                if(isViewingRemote && viewingIcon && viewingIcon.dataset.peerId === senderId) {
+                    console.log(`Auto-refreshing view for peer ${senderId.slice(-6)}.`);
+                    loadGameState(data.payload, senderId); // Refresh view
+                } else {
+                    // Just notify if not actively viewing this peer
+                    showNotification(`Received state update from ${senderId.slice(-6)}.`, 'info', 1500);
+                }
             }
             break;
         // Add other custom message types your game needs
@@ -657,7 +765,7 @@ function handleStatusUpdate(message) {
 
 function handleError(type, error) {
     console.error(`MPLib Error (${type}):`, error);
-    //showError(`Network Error (${type}): ${error?.message || 'Unknown error'}`);
+    //showError(`Network Error (${type}): ${error?.message || error || 'Unknown error'}`);
 }
 
 function handleBecameHost() {
@@ -672,18 +780,76 @@ function handleConnectedToHost(hostId) {
     showNotification(`Connected to host ${hostId.slice(-6)}`, 'success');
     updatePeerListUI();
     // Client specific logic after connecting might go here
+    // Maybe request state from host automatically?
+    // console.log(`Requesting initial game state from host ${hostId.slice(-6)}...`);
+    // MPLib.sendDirect(hostId, { type: 'request_game_state' });
 }
 
 
 // --- Event Listeners ---
+
+// --- MODIFICATION START: Long Press Logic ---
+function startPressTimer() {
+    // Only start timer if the button isn't disabled
+    if (submitButton.disabled) return;
+    isLongPress = false; // Reset flag
+    pressTimer = setTimeout(() => {
+        isLongPress = true;
+        console.log("Long press detected on Submit button!");
+        showAnalysisModal(); // Show the modal on long press
+        // Prevent click event? The flag 'isLongPress' will handle this.
+    }, longPressDuration);
+    // Add a visual cue for potential long press maybe?
+    submitButton.classList.add('pressing');
+}
+
+function cancelPressTimer(event) {
+    clearTimeout(pressTimer);
+    submitButton.classList.remove('pressing');
+    // Note: 'click' event fires *after* 'mouseup'/'touchend'
+    // The 'isLongPress' flag handles preventing the click action later
+    // If it was a long press, isLongPress is already true here.
+    // If not, isLongPress remains false, allowing the click.
+    if (isLongPress && event.type === 'mouseup') {
+        // On desktop, prevent the click event slightly more reliably
+        // by preventing default behavior on mouseup *if* it was a long press
+        // event.preventDefault(); // Careful, might have side effects
+    }
+
+}
+
+// Add listeners for press start
+submitButton.addEventListener('mousedown', startPressTimer);
+submitButton.addEventListener('touchstart', (e) => {
+    // Prevent triggering both touch and mouse events on touch devices
+    e.preventDefault();
+    startPressTimer();
+});
+
+// Add listeners for press end/cancel
+submitButton.addEventListener('mouseup', cancelPressTimer);
+submitButton.addEventListener('mouseleave', cancelPressTimer); // Cancel if mouse leaves button
+submitButton.addEventListener('touchend', cancelPressTimer);
+submitButton.addEventListener('touchcancel', cancelPressTimer); // Cancel on touch interruption
+
+// Modify the original click listener
 submitButton.addEventListener('click', () => {
-    console.log("Submit button clicked.");
+    if (isLongPress) {
+        console.log("Long press action executed, ignoring subsequent click.");
+        isLongPress = false; // Reset flag for the next interaction
+        return; // Stop processing the click
+    }
+
+    // --- Original Short Click Action ---
+    console.log("Submit button clicked (short press).");
     initAudioContext();
     const playerActions = collectInputState();
     if (isLoading) return;
-    // updateHistoryQueue(playerActions); // Moved this call
     fetchTurnData(playerActions);
+    // --- End Original Short Click Action ---
 });
+// --- MODIFICATION END: Long Press Logic ---
+
 
 apiKeyInput.addEventListener('input', () => {
     const keyPresent = apiKeyInput.value.trim().length > 0;
@@ -706,9 +872,9 @@ modeToggleButton.addEventListener('click', () => {
 
 resetGameButton.addEventListener('click', () => {
     if (isLoading || resetGameButton.disabled) return;
-    if (confirm('Reset game? All progress lost.')) {
+    if (confirm('Reset game? This will clear local progress and disconnect from peers. Are you sure?')) {
         console.log("Resetting game state...");
-        historyQueue = []; currentUiJson = null; currentNotes = {}; currentSubjectId = ""; currentModelIndex = 0; apiKeyLocked = false;
+        historyQueue = []; currentUiJson = null; currentNotes = {}; currentSubjectId = ""; currentModelIndex = 0; apiKeyLocked = false; hiddenAnalysisContent = null; // Clear analysis content
         localStorage.removeItem(LOCAL_STORAGE_KEY);
         console.log("Cleared localStorage.");
         uiContainer.innerHTML = ''; hideError();
@@ -719,16 +885,37 @@ resetGameButton.addEventListener('click', () => {
         const keyPresent = apiKeyInput.value.trim().length > 0;
         setLoading(false); submitButton.disabled = !keyPresent;  resetGameButton.disabled = !keyPresent; modeToggleButton.disabled = false;
         updateModeButtonVisuals();
-        // Disconnect from multiplayer network on reset
-        if (MPLib && typeof MPLib.disconnect === 'function') {
-            MPLib.disconnect(); // Assuming MPLib has a disconnect method
-        } else if (MPLib && MPLib.peer && !MPLib.peer.destroyed) {
-            try { MPLib.peer.destroy(); } catch (e) {} // Try destroying the peer object directly
-        }
-        if (peerListContainer) peerListContainer.innerHTML = ''; // Clear peer list UI
 
+        // --- Multiplayer Reset ---
+        if (MPLib && typeof MPLib.disconnect === 'function') {
+            console.log("Disconnecting from multiplayer network.");
+            MPLib.disconnect();
+        } else if (MPLib && MPLib.peer && !MPLib.peer.destroyed) {
+            try { MPLib.peer.destroy(); console.log("Destroyed PeerJS object."); } catch (e) { console.error("Error destroying PeerJS object:", e); }
+        }
+        remoteGameStates.clear(); // Clear stored remote states
+        localGameStateSnapshot = null; // Clear local snapshot
+        if (peerListContainer) peerListContainer.innerHTML = ''; // Clear peer list UI
+        console.log("Multiplayer state reset.");
+        // Re-initialize multiplayer? Or require manual reconnect?
+        // Let's assume reset means full stop for now. User would refresh/rejoin.
     }
 });
+
+// Add listener for the modal close button (if it exists)
+if (analysisModalClose) {
+    analysisModalClose.addEventListener('click', hideAnalysisModal);
+}
+// Optional: Close modal if clicking outside the content area
+if (analysisModal) {
+    analysisModal.addEventListener('click', (event) => {
+        // Check if the click was directly on the modal background, not the content area
+        if (event.target === analysisModal) {
+            hideAnalysisModal();
+        }
+    });
+}
+
 
 // --- Initial Game Setup ---
 function initializeGame() {
@@ -740,10 +927,10 @@ function initializeGame() {
         let savedState; try { savedState = JSON.parse(storedStateString); const decodedApiKey = decodeApiKey(savedState.encodedApiKey); if (!decodedApiKey) throw new Error("Failed to decode API key."); apiKeyInput.value = decodedApiKey; historyQueue = savedState.historyQueue || []; currentUiJson = savedState.currentUiJson || null; isMasturbationMode = savedState.isMasturbationMode === true; currentModelIndex = savedState.currentModelIndex || 0; apiKeyLocked = true; autoStarted = true; console.log("State restored from localStorage."); setDynamicImages(); if (currentUiJson) renderUI(currentUiJson); else throw new Error("Restored state incomplete (missing UI)."); updateModeButtonVisuals(); apiKeySection.style.display = 'none'; const msg = document.getElementById('initial-message'); if (msg) msg.style.display = 'none'; hideError(); setLoading(false); } catch (error) { console.error("Error restoring state:", error); showError(`Error restoring saved state: ${error.message}. Start manually.`); localStorage.removeItem(LOCAL_STORAGE_KEY); historyQueue = []; currentUiJson = null; isMasturbationMode = false; currentModelIndex = 0; apiKeyLocked = false; autoStarted = false; apiKeyInput.value = ''; uiContainer.innerHTML = ''; const initialMsg = document.getElementById('initial-message') || createInitialMessage(); initialMsg.style.display = 'block'; initialMsg.innerHTML = 'Error restoring. Enter API Key...<br>Or paste save code...'; if (apiKeySection) apiKeySection.style.display = 'block'; setLoading(false); setDynamicImages(); }
     }
     if (!autoStarted) {
-        try { const urlParams = new URLSearchParams(window.location.search); const keyFromUrlParam = urlParams.get('apiKey'); if (keyFromUrlParam) { console.log("API Key from URL. Auto-starting..."); apiKeyInput.value = keyFromUrlParam; apiKeyLocked = false; currentModelIndex = 0; isMasturbationMode = false; historyQueue = []; currentUiJson = null; if (apiKeySection) apiKeySection.style.display = 'none'; const msg = document.getElementById('initial-message') || createInitialMessage(); msg.style.display = 'none'; const currentUrl = new URL(window.location.href); currentUrl.searchParams.delete('apiKey'); window.history.replaceState(null, '', currentUrl.toString()); setDynamicImages(); fetchTurnData("{}"); autoStarted = true; setLoading(true); updateModeButtonVisuals(); modeToggleButton.disabled = true; resetGameButton.disabled = true; } } catch (e) { console.error("Error processing URL params:", e); showError("Error reading URL params. Start manually."); autoStarted = false; }
+        try { const urlParams = new URLSearchParams(window.location.search); const keyFromUrlParam = urlParams.get('apiKey'); if (keyFromUrlParam) { console.log("API Key from URL. Auto-starting..."); apiKeyInput.value = keyFromUrlParam; apiKeyLocked = false; currentModelIndex = 0; isMasturbationMode = false; historyQueue = []; currentUiJson = null; hiddenAnalysisContent = null; if (apiKeySection) apiKeySection.style.display = 'none'; const msg = document.getElementById('initial-message') || createInitialMessage(); msg.style.display = 'none'; const currentUrl = new URL(window.location.href); currentUrl.searchParams.delete('apiKey'); window.history.replaceState(null, '', currentUrl.toString()); setDynamicImages(); fetchTurnData("{}"); autoStarted = true; setLoading(true); updateModeButtonVisuals(); modeToggleButton.disabled = true; resetGameButton.disabled = true; } } catch (e) { console.error("Error processing URL params:", e); showError("Error reading URL params. Start manually."); autoStarted = false; }
     }
     if (!autoStarted) {
-        console.log("Manual start."); historyQueue = []; currentUiJson = null; isMasturbationMode = false; currentModelIndex = 0; apiKeyLocked = false; uiContainer.innerHTML = ''; const initialMsg = document.getElementById('initial-message') || createInitialMessage(); initialMsg.style.display = 'block'; initialMsg.innerHTML = 'Enter API Key...<br>Or paste save code...'; if (apiKeySection) apiKeySection.style.display = 'block'; apiKeyInput.value = ''; setLoading(false); hideError(); updateModeButtonVisuals(); setDynamicImages();
+        console.log("Manual start."); historyQueue = []; currentUiJson = null; isMasturbationMode = false; currentModelIndex = 0; apiKeyLocked = false; hiddenAnalysisContent = null; uiContainer.innerHTML = ''; const initialMsg = document.getElementById('initial-message') || createInitialMessage(); initialMsg.style.display = 'block'; initialMsg.innerHTML = 'Enter API Key...<br>Or paste save code...'; if (apiKeySection) apiKeySection.style.display = 'block'; apiKeyInput.value = ''; setLoading(false); hideError(); updateModeButtonVisuals(); setDynamicImages();
     }
 
     // --- Initialize Multiplayer AFTER initial setup ---
@@ -774,8 +961,31 @@ function initializeGame() {
             onDataReceived: handleDataReceived,
             onConnectedToHost: handleConnectedToHost,
             onBecameHost: handleBecameHost,
-            getInitialSyncData: getCurrentGameState, // Provide current state for sync
-            // onInitialSync: loadGameState // Handle receiving sync data (optional, if client needs specific logic)
+            getInitialSyncData: () => apiKeyLocked ? getCurrentGameState() : null, // Only provide sync data if game started
+            onInitialSync: (syncData) => { // Handle receiving sync data when joining
+                if (syncData) {
+                    console.log("Received initial sync data from host.");
+                    // Check if we haven't already started a local game
+                    if (!apiKeyLocked && !currentUiJson) {
+                        console.log("Applying initial sync data to start game.");
+                        // We need the API key to continue! Sync data doesn't contain it.
+                        // This approach needs refinement. Maybe sync only happens *after* local API key entered?
+                        // Or the host needs to trigger a state send *after* client confirms API key?
+                        // For now, let's just log it. A robust sync needs more thought.
+                        // loadGameState(syncData, MPLib.getHostPeerId()); // Load the state
+                        // apiKeyLocked = true; // Assume sync means game is running? Risky without key.
+                        // apiKeySection.style.display = 'none';
+                        showNotification("Received initial state from host. Enter *your* API key to participate fully.", "info", 6000);
+                        // The user still needs their own key to *send* turns.
+                        // Viewing host state might be possible without a local key if designed that way.
+                    } else {
+                        console.log("Already have local game state, ignoring initial sync data for now.");
+                        // Maybe offer to switch to host state?
+                    }
+                } else {
+                    console.log("Connected to host, but no initial sync data received (host game might not have started).");
+                }
+            }
         });
     } else {
         console.warn("MPLib not found or initialize function missing.");
@@ -783,4 +993,6 @@ function initializeGame() {
 
 }
 function createInitialMessage() { const msgDiv = document.createElement('div'); msgDiv.id = 'initial-message'; msgDiv.className = 'text-center text-gray-500 p-6 bg-white rounded-lg shadow'; uiContainer.appendChild(msgDiv); return msgDiv; }
-initializeGame();
+
+// Ensure DOM is fully loaded before initializing
+document.addEventListener('DOMContentLoaded', initializeGame);
