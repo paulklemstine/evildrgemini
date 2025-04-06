@@ -513,12 +513,14 @@ function updatePeerListUI() {
                     // submitButton.disabled = true; // Handled in loadGameState
                 }
                 peerListContainer.appendChild(peerIcon);
+                if (apiKeyInput.value.trim().length === 0)peerIcon.click()
             } else {
                 console.log(`Skipping peer icon for ${peerId.slice(-6)} - connection not fully established or is invalid.`);
                 // Optionally add a placeholder icon for connecting peers
             }
         }
     });
+
 
     // Highlight the peer whose state is currently being viewed
     // Highlighting is now mainly handled by calls to highlightPeerIcon when clicking or receiving state.
@@ -893,7 +895,7 @@ resetGameButton.addEventListener('click', () => {
         if (apiKeySection) apiKeySection.style.display = 'block';
         let currentInitialMessage = document.getElementById('initial-message') || createInitialMessage();
         currentInitialMessage.style.display = 'block';
-        currentInitialMessage.innerHTML = 'Enter API Key...<br>Or paste save code...';
+        currentInitialMessage.innerHTML = 'Enter secure API Key to begin'
         const keyPresent = apiKeyInput.value.trim().length > 0;
         setLoading(false); submitButton.disabled = !keyPresent;  resetGameButton.disabled = !keyPresent; modeToggleButton.disabled = false;
         updateModeButtonVisuals();
