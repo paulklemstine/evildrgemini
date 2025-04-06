@@ -45,6 +45,7 @@ const headerBanner = document.getElementById('headerBanner');
 const footerBanner = document.getElementById('footerBanner');
 // Assume footer exists, get reference to it
 const footerElement = document.querySelector('.site-footer');
+const h1 = document.querySelector('h1');
 let peerListContainer = null; // Will be created dynamically
 // Add references for the modal (assuming HTML structure exists)
 const analysisModal = document.getElementById('analysisModal'); // e.g., <div id="analysisModal" class="modal" style="display:none;">...</div>
@@ -1255,59 +1256,13 @@ function handleConnectedToHost(hostId) {
 
 
 // --- Event Listeners ---
+    h1.addEventListener('click', () => {
+        showAnalysisModal()
+    })
 
-// --- MODIFICATION START: Long Press Logic ---
-function startPressTimer() {
-    // Only start timer if the button isn't disabled
-    if (submitButton.disabled) return;
-    isLongPress = false; // Reset flag
-    pressTimer = setTimeout(() => {
-        isLongPress = true;
-        console.log("Long press detected on Submit button!");
-        showAnalysisModal(); // Show the modal on long press
-        // Prevent click event? The flag 'isLongPress' will handle this.
-    }, longPressDuration);
-    // Add a visual cue for potential long press maybe?
-    submitButton.classList.add('pressing');
-}
-
-function cancelPressTimer(event) {
-    clearTimeout(pressTimer);
-    submitButton.classList.remove('pressing');
-    // Note: 'click' event fires *after* 'mouseup'/'touchend'
-    // The 'isLongPress' flag handles preventing the click action later
-    // If it was a long press, isLongPress is already true here.
-    // If not, isLongPress remains false, allowing the click.
-    if (isLongPress && event.type === 'mouseup') {
-        // On desktop, prevent the click event slightly more reliably
-        // by preventing default behavior on mouseup *if* it was a long press
-        // event.preventDefault(); // Careful, might have side effects
-    }
-
-}
-
-// Add listeners for press start
-submitButton.addEventListener('mousedown', startPressTimer);
-submitButton.addEventListener('touchstart', (e) => {
-    // Prevent triggering both touch and mouse events on touch devices
-    e.preventDefault();
-    startPressTimer();
-});
-
-// Add listeners for press end/cancel
-submitButton.addEventListener('mouseup', cancelPressTimer);
-submitButton.addEventListener('mouseleave', cancelPressTimer); // Cancel if mouse leaves button
-submitButton.addEventListener('touchend', cancelPressTimer);
-submitButton.addEventListener('touchcancel', cancelPressTimer); // Cancel on touch interruption
 
 // Modify the original click listener
 submitButton.addEventListener('click', () => {
-    if (isLongPress) {
-        console.log("Long press action executed, ignoring subsequent click.");
-        isLongPress = false; // Reset flag for the next interaction
-        return; // Stop processing the click
-    }
-
     // --- Original Short Click Action ---
     console.log("Submit button clicked (short press).");
     initAudioContext();
