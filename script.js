@@ -258,7 +258,7 @@ async function fetchTurnData(playerActionsJson) {
     console.log("fetchTurnData called.");
     initAudioContext();
     const apiKey = apiKeyInput.value.trim();
-    if (!apiKey) { showError("Please enter API Key."); setLoading(false); if (apiKeySection.style.display === 'none') apiKeySection.style.display = 'block'; return; }
+    if (!apiKey) { showError("Please enter API Key"); setLoading(false); if (apiKeySection.style.display === 'none') apiKeySection.style.display = 'block'; return; }
 
     setLoading(true);
     hideError();
@@ -513,7 +513,7 @@ function updatePeerListUI() {
                     // submitButton.disabled = true; // Handled in loadGameState
                 }
                 peerListContainer.appendChild(peerIcon);
-                if (apiKeyInput.value.trim().length === 0)peerIcon.click()
+
             } else {
                 console.log(`Skipping peer icon for ${peerId.slice(-6)} - connection not fully established or is invalid.`);
                 // Optionally add a placeholder icon for connecting peers
@@ -872,7 +872,7 @@ apiKeyInput.addEventListener('input', () => {
     if (apiKeySection.style.display !== 'none') {
         const currentInitialMessage = document.getElementById('initial-message');
         if (keyPresent) { hideError(); if (currentInitialMessage && currentInitialMessage.style.display !== 'none') currentInitialMessage.textContent = 'API Key entered. Click "Submit Turn" to begin!'; }
-        else { if (currentInitialMessage) { currentInitialMessage.innerHTML = 'Enter API Key...<br>Or paste save code...'; currentInitialMessage.style.display = 'block'; } }
+        else { if (currentInitialMessage) { currentInitialMessage.innerHTML = 'Enter API Key'; currentInitialMessage.style.display = 'block'; } }
     }
 });
 
@@ -886,7 +886,7 @@ modeToggleButton.addEventListener('click', () => {
 
 resetGameButton.addEventListener('click', () => {
     if (isLoading || resetGameButton.disabled) return;
-    if (confirm('Reset game? This will clear local progress and disconnect from peers. Are you sure?')) {
+    if (confirm('Reset game? This will clear local progress. Are you sure?')) {
         console.log("Resetting game state...");
         historyQueue = []; currentUiJson = null; currentNotes = {}; currentSubjectId = ""; currentModelIndex = 0; apiKeyLocked = false; hiddenAnalysisContent = null; // Clear analysis content
         localStorage.removeItem(LOCAL_STORAGE_KEY);
@@ -900,17 +900,17 @@ resetGameButton.addEventListener('click', () => {
         setLoading(false); submitButton.disabled = !keyPresent;  resetGameButton.disabled = !keyPresent; modeToggleButton.disabled = false;
         updateModeButtonVisuals();
 
-        // --- Multiplayer Reset ---
-        if (MPLib && typeof MPLib.disconnect === 'function') {
-            console.log("Disconnecting from multiplayer network.");
-            MPLib.disconnect();
-        } else if (MPLib && MPLib.peer && !MPLib.peer.destroyed) {
-            try { MPLib.peer.destroy(); console.log("Destroyed PeerJS object."); } catch (e) { console.error("Error destroying PeerJS object:", e); }
-        }
-        remoteGameStates.clear(); // Clear stored remote states
-        localGameStateSnapshot = null; // Clear local snapshot
-        if (peerListContainer) peerListContainer.innerHTML = ''; // Clear peer list UI
-        console.log("Multiplayer state reset.");
+        // // --- Multiplayer Reset ---
+        // if (MPLib && typeof MPLib.disconnect === 'function') {
+        //     console.log("Disconnecting from multiplayer network.");
+        //     MPLib.disconnect();
+        // } else if (MPLib && MPLib.peer && !MPLib.peer.destroyed) {
+        //     try { MPLib.peer.destroy(); console.log("Destroyed PeerJS object."); } catch (e) { console.error("Error destroying PeerJS object:", e); }
+        // }
+        // remoteGameStates.clear(); // Clear stored remote states
+        // localGameStateSnapshot = null; // Clear local snapshot
+        // if (peerListContainer) peerListContainer.innerHTML = ''; // Clear peer list UI
+        // console.log("Multiplayer state reset.");
         // Re-initialize multiplayer? Or require manual reconnect?
         // Let's assume reset means full stop for now. User would refresh/rejoin.
     }
@@ -938,13 +938,13 @@ function initializeGame() {
     const storedStateString = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (storedStateString) {
         console.log("Found saved state. Attempting restore...");
-        let savedState; try { savedState = JSON.parse(storedStateString); const decodedApiKey = decodeApiKey(savedState.encodedApiKey); if (!decodedApiKey) throw new Error("Failed to decode API key."); apiKeyInput.value = decodedApiKey; historyQueue = savedState.historyQueue || []; currentUiJson = savedState.currentUiJson || null; isMasturbationMode = savedState.isMasturbationMode === true; currentModelIndex = savedState.currentModelIndex || 0; apiKeyLocked = true; autoStarted = true; console.log("State restored from localStorage."); setDynamicImages(); if (currentUiJson) renderUI(currentUiJson); else throw new Error("Restored state incomplete (missing UI)."); updateModeButtonVisuals(); apiKeySection.style.display = 'none'; const msg = document.getElementById('initial-message'); if (msg) msg.style.display = 'none'; hideError(); setLoading(false); } catch (error) { console.error("Error restoring state:", error); showError(`Error restoring saved state: ${error.message}. Start manually.`); localStorage.removeItem(LOCAL_STORAGE_KEY); historyQueue = []; currentUiJson = null; isMasturbationMode = false; currentModelIndex = 0; apiKeyLocked = false; autoStarted = false; apiKeyInput.value = ''; uiContainer.innerHTML = ''; const initialMsg = document.getElementById('initial-message') || createInitialMessage(); initialMsg.style.display = 'block'; initialMsg.innerHTML = 'Error restoring. Enter API Key...<br>Or paste save code...'; if (apiKeySection) apiKeySection.style.display = 'block'; setLoading(false); setDynamicImages(); }
+        let savedState; try { savedState = JSON.parse(storedStateString); const decodedApiKey = decodeApiKey(savedState.encodedApiKey); if (!decodedApiKey) throw new Error("Failed to decode API key."); apiKeyInput.value = decodedApiKey; historyQueue = savedState.historyQueue || []; currentUiJson = savedState.currentUiJson || null; isMasturbationMode = savedState.isMasturbationMode === true; currentModelIndex = savedState.currentModelIndex || 0; apiKeyLocked = true; autoStarted = true; console.log("State restored from localStorage."); setDynamicImages(); if (currentUiJson) renderUI(currentUiJson); else throw new Error("Restored state incomplete (missing UI)."); updateModeButtonVisuals(); apiKeySection.style.display = 'none'; const msg = document.getElementById('initial-message'); if (msg) msg.style.display = 'none'; hideError(); setLoading(false); } catch (error) { console.error("Error restoring state:", error); showError(`Error restoring saved state: ${error.message}. Start manually.`); localStorage.removeItem(LOCAL_STORAGE_KEY); historyQueue = []; currentUiJson = null; isMasturbationMode = false; currentModelIndex = 0; apiKeyLocked = false; autoStarted = false; apiKeyInput.value = ''; uiContainer.innerHTML = ''; const initialMsg = document.getElementById('initial-message') || createInitialMessage(); initialMsg.style.display = 'block'; initialMsg.innerHTML = 'Error restoring. Enter API Key'; if (apiKeySection) apiKeySection.style.display = 'block'; setLoading(false); setDynamicImages(); }
     }
     if (!autoStarted) {
         try { const urlParams = new URLSearchParams(window.location.search); const keyFromUrlParam = urlParams.get('apiKey'); if (keyFromUrlParam) { console.log("API Key from URL. Auto-starting..."); apiKeyInput.value = keyFromUrlParam; apiKeyLocked = false; currentModelIndex = 0; isMasturbationMode = false; historyQueue = []; currentUiJson = null; hiddenAnalysisContent = null; if (apiKeySection) apiKeySection.style.display = 'none'; const msg = document.getElementById('initial-message') || createInitialMessage(); msg.style.display = 'none'; const currentUrl = new URL(window.location.href); currentUrl.searchParams.delete('apiKey'); window.history.replaceState(null, '', currentUrl.toString()); setDynamicImages(); fetchTurnData("{}"); autoStarted = true; setLoading(true); updateModeButtonVisuals(); modeToggleButton.disabled = true; resetGameButton.disabled = true; } } catch (e) { console.error("Error processing URL params:", e); showError("Error reading URL params. Start manually."); autoStarted = false; }
     }
     if (!autoStarted) {
-        console.log("Manual start."); historyQueue = []; currentUiJson = null; isMasturbationMode = false; currentModelIndex = 0; apiKeyLocked = false; hiddenAnalysisContent = null; uiContainer.innerHTML = ''; const initialMsg = document.getElementById('initial-message') || createInitialMessage(); initialMsg.style.display = 'block'; initialMsg.innerHTML = 'Enter API Key...<br>Or paste save code...'; if (apiKeySection) apiKeySection.style.display = 'block'; apiKeyInput.value = ''; setLoading(false); hideError(); updateModeButtonVisuals(); setDynamicImages();
+        console.log("Manual start."); historyQueue = []; currentUiJson = null; isMasturbationMode = false; currentModelIndex = 0; apiKeyLocked = false; hiddenAnalysisContent = null; uiContainer.innerHTML = ''; const initialMsg = document.getElementById('initial-message') || createInitialMessage(); initialMsg.style.display = 'block'; initialMsg.innerHTML = 'Enter API Key'; if (apiKeySection) apiKeySection.style.display = 'block'; apiKeyInput.value = ''; setLoading(false); hideError(); updateModeButtonVisuals(); setDynamicImages();
     }
 
     // --- Initialize Multiplayer AFTER initial setup ---
@@ -1010,3 +1010,18 @@ function createInitialMessage() { const msgDiv = document.createElement('div'); 
 
 // Ensure DOM is fully loaded before initializing
 document.addEventListener('DOMContentLoaded', initializeGame);
+let randomPeerClickInterval;
+
+if (apiKeyInput.value.trim().length === 0) {
+    randomPeerClickInterval = setInterval(() => {
+        const peerIcons = Array.from(peerListContainer.querySelectorAll('.peer-icon-wrapper'));
+        const randomPeerIcon = peerIcons[Math.floor(Math.random() * peerIcons.length)];
+        if (randomPeerIcon) {
+            randomPeerIcon.click();
+        }
+    }, 10000);
+} else {
+    if (randomPeerClickInterval) {
+        clearInterval(randomPeerClickInterval);
+    }
+}
