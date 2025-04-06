@@ -111,7 +111,7 @@ export const geemsPrompts = {
 
 * **Final Output:** Valid compact JSON array for Turn 1.`,
     main: `
-    **GEEMS LLM Turn Generation Protocol v2.6.1 - Explicit Focus, Manipulative Therapy & Intense Profiling (Standard Gameplay)**
+    **Guided Extreme Emotional Mental States (GEEMS) LLM Turn Generation Protocol v2.6.1 - Explicit Focus, Manipulative Therapy & Intense Profiling (Standard Gameplay)**
 
 **(Input: Full prior game history JSON. Output: JSON array for next turn)**
 
