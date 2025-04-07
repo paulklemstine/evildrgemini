@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Climax Crusaders - HTML Deluxe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/Lucide.css">
+    <style>
+        /* --- Styles Updated for Retro-Futuristic Erotic Space Theme --- */
+        body {
+            font-family: 'Roboto', sans-serif; /* More standard sci-fi font */
+            /* background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%); /* Deep space blue gradient */
+            background: linear-gradient(135deg, #1a2a4f 0%, #2d3d6a 50%, #4a5b8a 100%); /* Slightly lighter blue */
+            color: #e2e8f0; /* Light grey/off-white text */
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header Styling */
+        .site-header { padding: 0; margin-bottom: 1rem; text-align: center; position: relative; overflow: hidden; }
+        .header-banner-image { width: 100%; height: 120px; object-fit: cover; display: block; opacity: 0.7; filter: contrast(1.1) saturate(1.2); }
+        .site-header h1 { font-family: 'Orbitron', sans-serif; font-size: 2.6rem; color: #f59e0b; /* Amber/Orange */ text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); margin: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; padding: 0 1rem; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); /* Dark blue semi-transparent */ padding-top: 0.4rem; padding-bottom: 0.4rem; }
+
+        /* Footer Styling */
+        .site-footer { margin-top: 2rem; padding: 1.5rem 1rem; text-align: center; font-size: 0.875rem; color: #94a3b8; /* Lighter grey */ border-top: 1px solid #334155; /* Slate grey border */ background-color: rgba(15, 23, 42, 0.4); /* Dark blue semi-transparent */ }
+        .footer-buttons { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 1rem; }
+        #clipboardMessage { font-size: 0.8rem; color: #f43f5e; /* Rose */ height: 1.2em; font-weight: 600; margin-bottom: 1rem; }
+
+        /* Game Layout */
+        #game-container { display: flex; flex-direction: column; max-width: 1200px; margin: 0 auto; padding: 0 1rem; gap: 1rem; }
+
+        /* Card Styling */
+        .space-card { background-color: rgba(30, 41, 59, 0.85) !important; /* Slate grey card */ color: #cbd5e1; /* Lighter text */ border: 1px solid #475569; /* Mid-grey border */ border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); margin-bottom: 1.5rem; }
+        .space-card h2 { font-family: 'Orbitron', sans-serif; color: #67e8f9; /* Cyan */ border-bottom: 2px dashed #22d3ee; /* Brighter Cyan */ padding-bottom: 0.6rem; margin-bottom: 1.2rem; font-size: 1.6rem; font-weight: 700; text-align: center; flex-shrink: 0; }
+        .space-text { color: inherit; line-height: 1.7; word-wrap: break-word; font-size: 1rem; }
+        .space-text strong { color: #f59e0b; font-weight: 700; } .space-text em { color: #a3e635; /* Lime green */ font-style: italic; }
+        .space-text pre { background-color: #0f172a; padding: 0.8rem; border-radius: 0.5rem; overflow-x: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; color: #93c5fd; /* Light blue */ margin-top: 0.5rem; border: 1px solid #1e293b; }
+
+        /* Inputs */
+        .space-input, .space-textarea { width: 100%; padding: 0.8rem; border: 1px solid #475569; border-radius: 0.5rem; color: #e2e8f0; background-color: #1e293b; font-family: 'Roboto', sans-serif; margin-bottom: 0.5rem; }
+        .space-input::placeholder, .space-textarea::placeholder { color: #64748b; opacity: 0.7; }
+        .space-input:focus, .space-textarea:focus { outline: none; border-color: #22d3ee; box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.3); background-color: #0f172a; }
+        .space-textarea { min-height: 70px; }
+
+        /* Radio/Checkbox Options */
+        .space-radio-option, .space-checkbox-option { display: flex; align-items: center; margin-bottom: 0.6rem; padding: 0.7rem 1rem; border-radius: 0.75rem; cursor: pointer; transition: background-color 0.2s, transform 0.1s; border: 1px solid #334155; color: inherit; background-color: rgba(15, 23, 42, 0.8); }
+        .space-radio-option:hover, .space-checkbox-option:hover { background-color: #1e293b; border-color: #475569; }
+        .space-radio-option input[type="radio"], .space-checkbox-option input[type="checkbox"] { margin-right: 0.8rem; cursor: pointer; accent-color: #f59e0b; /* Amber */ width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+        .space-radio-option label, .space-checkbox-option label { color: inherit; flex-grow: 1; cursor: pointer; font-weight: 600; }
+        .space-radio-option label, .space-checkbox-option label { display: flex; align-items: center; width: 100%; }
+
+        /* Sliders */
+        .space-slider { width: 100%; cursor: pointer; accent-color: #f472b6; /* Keep pink for 'heat'? */ height: 0.6rem; background: #475569; border-radius: 9999px; appearance: none; -webkit-appearance: none; }
+        .space-slider::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 1.3rem; height: 1.3rem; background: var(--slider-thumb-color, #f59e0b); /* Amber thumb */ border-radius: 50%; cursor: pointer; border: 2px solid #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+        .space-slider::-moz-range-thumb { width: 1.3rem; height: 1.3rem; background: var(--slider-thumb-color, #f59e0b); border-radius: 50%; cursor: pointer; border: 2px solid #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+        .space-slider-value-display { color: #f59e0b; font-weight: 700; min-width: 2rem; text-align: right; }
+
+        /* Images */
+        .space-image-container { margin-bottom: 1rem; text-align: center; }
+        .space-image { max-width: 100%; height: auto; border-radius: 0.75rem; background-color: #1e293b; display: block; margin-left: auto; margin-right: auto; border: 2px solid #475569; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
+        .space-image-prompt { font-size: 0.8rem; color: #67e8f9; opacity: 0.9; font-style: italic; margin-top: 0.5rem; word-wrap: break-word; padding: 0 0.5rem; font-weight: 600; }
+        .space-image-label { font-size: 0.9rem; font-weight: 700; color: #a3e635; margin-bottom: 0.3rem; }
+
+        /* Buttons */
+        .space-button {
+            padding: 0.8rem 1.8rem; background: linear-gradient(to right, #f59e0b, #fbbf24); /* Amber/Yellow gradient */ color: #1e293b; /* Dark text */ border: none; border-radius: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.3); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; font-size: 0.9rem; font-family: 'Orbitron', sans-serif;
+        }
+        .space-button:hover { background: linear-gradient(to right, #d97706, #f59e0b); box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.4); transform: translateY(-2px) scale(1.03); }
+        .space-button:active { transform: translateY(0) scale(1); box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3); }
+        .space-button:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; opacity: 0.7; box-shadow: none; transform: none; }
+        #modeToggleButton { background: linear-gradient(to right, #10b981, #22d3ee); } /* Emerald/Cyan */
+        #modeToggleButton.red-alert-mode { background: linear-gradient(to right, #f43f5e, #ef4444); } /* Rose/Red */
+        #resetGameButton { background: linear-gradient(to right, #ef4444, #dc2626); } /* Red */
+
+        /* Loading/Error */
+        .loading-indicator, .error-message { display: flex; justify-content: center; align-items: center; padding: 1rem; font-size: 1rem; border-radius: 0.75rem; margin-top: 1rem; font-weight: 600; }
+        .loading-indicator { color: #67e8f9; background-color: #1e293b; border: 1px solid #475569; }
+        .loading-indicator svg { width: 1.25rem; height: 1.25rem; color: #22d3ee; }
+        .error-message { color: #fecdd3; background-color: #9f1239; border: 1px solid #fb7185; text-align: center; white-space: pre-wrap; }
+
+        /* API Key Section */
+        #apiKeySection { margin-bottom: 1rem; background: rgba(30, 41, 59, 0.6); padding: 1rem; border-radius: 0.75rem; border: 1px solid #475569; }
+        #apiKeySection .api-key-label { color: #67e8f9; display: block; margin-bottom: 0.6rem; font-weight: 700; font-size: 1rem; font-family: 'Orbitron', sans-serif;}
+        #apiKeySection .api-key-instructions span { color: #94a3b8; }
+        #apiKeySection .api-key-instructions a { color: #f59e0b; text-decoration: underline; font-weight: 600; }
+        #apiKeySection .api-key-instructions a:hover { color: #fbbf24; }
+
+        /* Creative UI Elements (Adapted) */
+        .space-toggle-switch { display: inline-flex; align-items: center; cursor: pointer; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        .space-toggle-switch input { display: none; }
+        .space-toggle-switch .switch-bg { width: 50px; height: 26px; background-color: #475569; border-radius: 13px; position: relative; transition: background-color 0.3s ease; border: 1px solid #64748b; flex-shrink: 0; }
+        .space-toggle-switch .switch-handle { width: 22px; height: 22px; background-color: #cbd5e1; border-radius: 50%; position: absolute; top: 1px; left: 2px; transition: transform 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        .space-toggle-switch input:checked + .switch-bg { background-color: #10b981; /* Emerald */ }
+        .space-toggle-switch input:checked + .switch-bg .switch-handle { transform: translateX(24px); }
+        .space-toggle-switch span { margin-left: 0.5rem; font-weight: 600; color: #a3e635; /* Lime */ }
+
+        .space-segmented-control { display: flex; border: 1px solid #475569; border-radius: 0.75rem; overflow: hidden; background-color: #1e293b; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        .space-segmented-control label { flex: 1; text-align: center; padding: 0.5rem 0.8rem; cursor: pointer; transition: background-color 0.2s, color 0.2s; font-weight: 600; color: #94a3b8; font-size: 0.9rem; font-family: 'Orbitron', sans-serif; }
+        .space-segmented-control input[type="radio"] { display: none; }
+        .space-segmented-control input[type="radio"]:checked + label { background-color: #f59e0b; color: #0f172a; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
+        .space-segmented-control label:not(:last-child) { border-right: 1px solid #475569; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+
+<header class="site-header">
+    <img id="headerBanner" alt="Retro Sci-Fi Space Banner" class="header-banner-image">
+    <h1>Cosmic Climax Crusaders</h1> </header>
+
+<div class="max-w-6xl mx-auto px-4 md:px-8">
+    <div id="apiKeySection">
+        <label for="apiKeyInput" class="api-key-label api-key-instructions">
+            Enter Google AI API Key to Engage Warp Drive! 🚀
+            <span class="block text-sm font-normal mt-1">
+                (Get a key from Google AI Studio:
+                <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
+                    aistudio.google.com/apikey
+                </a>)
+                <br>Or provide via URL: ?apiKey=YOUR_API_KEY
+            </span>
+        </label>
+        <input type="password" id="apiKeyInput" class="space-input" placeholder="Paste your stardrive key here... ✨">
+    </div>
+
+    <div id="game-container">
+        <div id="turn-content">
+            <div id="initial-message" class="text-center text-cyan-400 p-4 font-semibold space-card">
+                Feed the API Key into the console and hit "Engage!" to start your questionable voyage.
+                <br>Or, paste a captain's log code into your browser console~
+            </div>
+        </div>
+
+        <div id="loading" class="loading-indicator" style="display: none;">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
+                 viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Calculating dubious trajectories... Please wait! 😵‍💫
+        </div>
+        <div id="error-display" class="error-message" style="display: none;"></div>
+
+        <div class="mt-6 text-center">
+            <button id="submit-turn-button" class="space-button" disabled>
+                Engage!
+            </button>
+        </div>
+    </div>
+</div>
+
+<footer class="site-footer">
+    <div class="footer-buttons">
+        <button id="saveGameButton" class="space-button" disabled>Save Captain's Log</button>
+        <button id="modeToggleButton" class="space-button standard-mode">Mode: Standard Operations</button>
+        <button id="resetGameButton" class="space-button" disabled>Abandon Ship</button>
+    </div>
+    <div id="clipboardMessage"></div>
+    <div class="footer-content">
+        <span>Delivering disappointment across the galaxy &copy; 3025</span>
+    </div>
+</footer>
+
+<script type="module">
+    // --- Prompts Rewritten for Comedic Erotic Retro-Futuristic Space Opera ---
+    const spaceOperaPrompts = {
+        // --- Prompt Change: Rewritten for "Red Alert Romance" Mode ---
+        redAlertRomanceAddendum: `**RED ALERT ROMANCE MODE OVERRIDE:**\n\n* **Core Concept:** OVERRIDE 'Standard Operations' Mode. Intensify focus on sensual encounters, suggestive situations, workplace tension/flirtation, and explicit (softcore-style) eroticism, all filtered through a comedic, retro-futuristic lens (like Futurama meeting Barbarella). Generate scenarios involving close encounters (of the third *and* other kinds), revealing uniform malfunctions, seductive aliens, questionable 'diplomatic missions', exploring desires, navigating love triangles aboard the ship, or dealing with malfunctioning 'pleasure-bots'. Aim for high levels of titillation, humor, and slightly absurd sensuality.\n* **Player Profiling:** USE the player's profile (species, role, orientation, preferences stored in \`internalState.playerProfile\`) to tailor romantic/erotic encounters, character dialogue, and potential partners/targets of affection. Ensure encounters align with the player's stated interests while throwing in comedic or unexpected twists fitting the theme.\n* **Presentation Style (HTML):** Generate richer, more suggestive HTML. Use warmer colors or dramatic reds/pinks via inline styles or Tailwind classes (e.g., \`bg-rose-900\`, \`text-red-300\`) where appropriate for mood. Visuals (multiple images requested via \`<img src='...'>\`) should depict suggestive poses, alluring aliens/robots/crewmates, dimly lit environments, partial nudity (tasteful, pin-up style, within API limits), intense gazes, or comedic juxtapositions of sci-fi and sensuality. Text uses more flirtatious, suggestive, and potentially double-entendre-laden language within the HTML.\n* **Encounters & Choices (HTML - Creative & Profile-Aware):** Generate encounters focused on romantic/sexual tension or explicit softcore situations, *informed by the player's profile*. Choices are HTML form elements (\`<input type='radio'>\`, sliders, checkboxes, textareas) within a \`<form id='space-opera-turn-form'>\`. **VARY the UI elements.** Use sliders for things like 'Boldness Level' or 'Undress Speed', checkboxes for multiple flirty actions, textareas for suggestive comms messages. Options involve expressing desire (\"Make a suggestive comment,\" \"Initiate physical contact,\" \"Reveal a hidden desire\"), navigating risky romantic situations (\"Distract the security bot,\" \"Seduce the alien ambassador,\" \"Choose who to sneak off with\"), or engaging in sensual activities (\"Share a nutrient paste tube suggestively,\" \"Activate the massage chair's 'special' setting,\" \"Experiment with alien tech\"). Choices significantly impact 'Heat' level, 'Morale', relationship status (tracked in internalState), and potentially unlock special 'Saucy Scenes' or 'Spice Credits'. Make choices feel impactful and linked to the UI element.\n* **Multi-Image Generation (HTML):** Generate 2-5 images per turn using standard \`<img>\` tags. Use image generation service URLs (like Pollinations.ai or placeholder services) in the \`src\` attribute. Prompts focus on sensual/erotic retro-futuristic sci-fi scenes. Use keywords: \`retro sci-fi pinup\`, \`atompunk boudoir\`, \`sexy alien\`, \`suggestive robot\`, \`alluring spacesuit\`, \`steamy cockpit\`, \`neon alien bar\`, \`partially undressed futuristic\`, \`comedic sexy sci-fi\`. Depict characters expressing desire or caught in suggestive situations. Use \`alt\` attributes. Include VISIBLY DRAWN text requests (<= 3 words, BOLD, RETRO FONT) like 'OH MY!', 'ZAPP!', 'KISS ME?' directly in the image prompt URL.\n* **Analyses (Internal):** 'internalState' logs relationship developments, player's romantic/sexual choices, responses to seduction/risk, and the \`playerProfile\`. 'gemini_facing_analysis' summarizes the player's 'type' and romantic strategy. Player-facing analysis might offer cheeky advice or comment on the rising 'Heat' level, possibly included in the generated HTML.\n* **Status Impact:** Erotic events heavily influence 'Heat', 'Morale', and 'Relationship Status'. 'Spice Credits' might be earned/spent on special encounters. Status should be displayed clearly in the generated HTML (e.g., using thermometer icons for Heat).\n`,
+
+        // --- Prompt Change: Rewritten for Space Opera First Run & Profiling ---
+        firstrun: `**Instructions for Generating Turn 1 ONLY (Cosmic Climax Crusaders - HTML Output):**\n\n**(Input: None. Output: Raw HTML snippet for Turn 1 Space Opera UI)**\n\n* **Goal:** Generate the initial HTML state. Introduce the comedic, erotic, retro-futuristic space opera premise, UI, AND perform initial player profiling.\n* **Theme:** Comedic Erotic Retro-Futuristic Space Opera (Futurama meets Softcore). Start in 'Standard Operations' mode.\n* **Output Format:** A single block of raw HTML content. This HTML will replace the content of the \`#turn-content\` div.\n* **HTML Structure Requirements:**\n    * Use Tailwind CSS classes for styling (e.g., \`class=\"bg-slate-800 p-4 rounded-lg shadow\"\`). Make it visually retro-futuristic and slightly grungy.\n    * Use the custom CSS classes provided (\`.space-card\`, \`.space-button\`, etc.)\n    * Include sections for Status, Event Description, Images, and Player Choices/Profiling.\n    * **Status:** Display initial values (e.g., Fuel: 80/100 ⛽, Morale: 50/100 😬, Clankiness: 30/100 🔩, Heat: 10/100 🔥) using text, icons, maybe progress bars (\`<progress>\`).\n    * **Event:** Title (\"Awake in the Junk Bucket!\") and description (waking up in cramped, slightly malfunctioning ship quarters, maybe intro to the ship/crew concept). Use \`<h2>\`, \`<p>\` tags with \`.space-card\`, \`.space-text\` classes.\n    * **Images:** Generate 2-3 images using \`<img>\` tags with appropriate \`src\` (use Pollinations.ai or placehold.co) and \`alt\` attributes. Place them logically. Use retro sci-fi prompts.\n        * Example \`src\`: \`https://image.pollinations.ai/prompt/Interior%20of%20a%20cramped%2C%20messy%2C%20retro%20futuristic%20spaceship%20bunk%20room%2C%20wires%20hanging%2C%2050s%20sci-fi%20style?width=400&height=300&nologo=true&seed=123\`\n    * **Choices & Profiling:** Wrap choices in a \`<form id=\"space-opera-turn-form\">\`. **CRITICAL: Include initial profiling questions here using CREATIVE UI elements.**\n        * **Example Profiling UI (Mix and Match - Be Creative!):**\n            * **Species/Origin:** Use stylized radio buttons/segmented control (\`<input type='radio' name='profile_species' value='human'> Standard Human\`, \`<input type='radio' name='profile_species' value='robot'> Sentient Appliance\`, \`<input type='radio' name='profile_species' value='alien_green'> Verdant Alien\`, \`<input type='radio' name='profile_species' value='mutant'> Glorious Mutant\`, \`<input type='radio' name='profile_species' value='unknown'> Classified/Amnesiac\`).\n            * **Preferred Shipmates/Partners:** Use checkboxes (\`<input type='checkbox' name='profile_attraction' value='humans'> Humanoids\`, \`<input type='checkbox' name='profile_attraction' value='robots'> Chrome Domes\`, \`<input type='checkbox' name='profile_attraction' value='aliens'> Tentacles & Such\`, \`<input type='checkbox' name='profile_attraction' value='anything'> If it moves...\`, \`<input type='checkbox' name='profile_attraction' value='complicated'> It's Complicated\`).\n            * **Primary Motivation:** Use a fun slider (\`<input type='range' name='profile_motivation' min='0' max='10'>\` labeled "Just the Credits <---> Cosmic Love (or Lust)").\n            * **Assigned Role (Optional):** Maybe a text input (\`<input type='text' name='profile_role' class='space-input' placeholder='e.g., Captain, Engineer, Space Janitor'>\`) or radios.\n        * **Initial Action:** Include a simple starting action choice (e.g., radio buttons: \"Try to find coffee\", \"Check ship status screen (if it works)\", \"Kick the flickering light panel\").\n    * **Hidden Fields:** CRITICAL - Include hidden inputs within the form: \`<input type='hidden' name='turn' value='1'>\`, \`<input type='hidden' name='subjectId' value='Crewmate'>\` (or use role/name input?), \`<input type='hidden' name='internalState' value='INITIAL_PROFILE_STATE'>\`.\n    * **No Submit Button:** DO NOT include a \`<button type='submit'>\` or \`#submit-turn-button\` inside the generated HTML.\n* **Internal State:** The \`internalState\` hidden field should contain initial JSON-escaped Markdown including a placeholder for the profile: \`"# Captain's Log - Stardate ?? - Turn 1\\n\\n* **Subject:** Crewmate\\n* **Mode:** Standard Operations\\n* **Initial Status:** Fuel 80, Morale 50, Clankiness 30, Heat 10, SpiceCredits 0\\n* **Player Profile:** { \\\"species\\\": \\\"unspecified\\\", \\\"role\\\": \\\"unspecified\\\", \\\"orientation\\\": \\\"unspecified\\\", \\\"preferences\\\": [], \\\"motivation\\\": \\\"unspecified\\\" }\\n* **Current Situation:** Waking up on the rust bucket.\\n* **Plan:** Initial profiling and orientation."\`\n* **Player/Gemini Analysis:** Optionally include these as text paragraphs within the HTML.\n\n* **Output Example Start (with Profiling):**\n\`\`\`html\n<div class=\"grid grid-cols-1 md:grid-cols-3 gap-6\">\n  <div class=\"md:col-span-1 space-card\">\n    <h2>🚀 Ship Status 🚀</h2>\n    <p><strong>Fuel:</strong> <progress value='80' max='100' class='w-full'></progress> (80/100 ⛽)</p>\n    <p><strong>Morale:</strong> <progress value='50' max='100' class='w-full'></progress> (50/100 😬)</p>\n    <p><strong>Clankiness:</strong> <progress value='30' max='100' class='w-full'></progress> (30/100 🔩)</p>\n    <p><strong>Heat Level:</strong> <progress value='10' max='100' class='w-full'></progress> (10/100 🔥)</p>\n    <p><strong>Spice Credits:</strong> 0 🌶️</p>\n  </div>\n  <div class=\"md:col-span-2 space-card\">\n    <h2>✨ Awake in the Junk Bucket! ✨</h2>\n    <p class=\"space-text\">You regain consciousness with the familiar smell of stale coffee, ozone, and desperation. Your bunk creaks ominously. Another glorious day aboard the 'Slightly Used Space Cruiser'! Before you face the chaos, let's get your personnel file updated, yeah?</p>\n    <img src='https://image.pollinations.ai/prompt/Interior%20of%20a%20cramped%2C%20messy%2C%20retro%20futuristic%20spaceship%20bunk%20room%2C%20wires%20hanging%2C%2050s%20sci-fi%20style?width=400&height=300&nologo=true&seed=123' alt='Messy Bunk Room' class='space-image my-4'>\n    \n    <form id=\"space-opera-turn-form\">\n      <input type='hidden' name='turn' value='1'>\n      <input type='hidden' name='subjectId' value='Crewmate'>\n      <input type='hidden' name='internalState' value='INITIAL_PROFILE_STATE_MARKDOWN'>\n\n      <fieldset class=\"mt-4 border-t pt-4 border-slate-600\">\n        <legend class=\"font-semibold text-cyan-400 mb-2\">What flavor of misfit are you?</legend>\n        <div class=\"space-segmented-control\">\n           <input type='radio' id='species_human' name='profile_species' value='human' checked><label for='species_human'>Human</label>\n           <input type='radio' id='species_robot' name='profile_species' value='robot'><label for='species_robot'>Robot</label>\n           <input type='radio' id='species_alien' name='profile_species' value='alien_green'><label for='species_alien'>Alien</label>\n           <input type='radio' id='species_mutant' name='profile_species' value='mutant'><label for='species_mutant'>Mutant</label>\n        </div>\n      </fieldset>\n\n      <fieldset class=\"mt-4 border-t pt-4 border-slate-600\">\n        <legend class=\"font-semibold text-cyan-400 mb-2\">Who (or what) might catch your eye(s)?</legend>\n        <div class=\"space-checkbox-option\"><label><input type='checkbox' name='profile_attraction' value='humanoids'> Squishy Humanoids</label></div>\n        <div class=\"space-checkbox-option\"><label><input type='checkbox' name='profile_attraction' value='robots'> Shiny Chrome</label></div>\n        <div class=\"space-checkbox-option\"><label><input type='checkbox' name='profile_attraction' value='aliens'> Exotic Others</label></div>\n        <div class=\"space-checkbox-option\"><label><input type='checkbox' name='profile_attraction' value='complicated'> Just... Yes?</label></div>\n      </fieldset>\n      \n      <div class=\"mt-4 border-t pt-4 border-slate-600\">\n         <label for=\"profile_motivation\" class=\"font-semibold text-cyan-400 block mb-1\">Why are you even here?</label>\n         <div class=\"flex items-center space-x-2\">\n           <span class=\"text-xs text-amber-400\">Credits</span>\n           <input type=\"range\" id=\"profile_motivation\" name=\"profile_motivation\" min=\"0\" max=\"10\" value=\"5\" class=\"space-slider flex-grow\">\n           <span class=\"text-xs text-rose-400\">Love/Lust</span>\n         </div>\n         <div class=\"text-center\"><span class=\"space-slider-value-display text-lg\">5</span></div>\n      </div>\n\n      <fieldset class=\"mt-4 border-t pt-4 border-slate-600\">\n        <legend class=\"font-semibold text-cyan-400 mb-2\">First Brilliant Move?</legend>\n        <label class='space-radio-option'><input type='radio' name='main_action' value='find_coffee' checked> Stumble towards the smell of burnt coffee ☕</label>\n        <label class='space-radio-option'><input type='radio' name='main_action' value='check_status'> Punch the status screen until it works 💥</label>\n        <label class='space-radio-option'><input type='radio' name='main_action' value='kick_panel'> Kick the flickering light panel (again) 💡</label>\n      </fieldset>\n    </form>\n    \n    <p class=\"mt-4 text-sm italic text-slate-400\">Let's see how long this heap stays spaceborne... ✨</p>\n  </div>\n</div>\n<script>\n  // Add interactivity for sliders \n  document.querySelectorAll('.space-slider').forEach(slider => {\n    const display = slider.closest('div').querySelector('.space-slider-value-display');\n    if (display) {\n       display.textContent = slider.value; // Initial display\n       slider.oninput = () => display.textContent = slider.value;\n    }\n  });\n<\/script>\n\`\`\`\n`,
+
+        // --- Prompt Change: Rewritten for Space Opera Main Loop ---
+        main: `**Cosmic Climax Crusaders LLM Turn Generation Protocol v3.0 - HTML Output (Profile-Aware & Creative UI)**\n\n**(Input: Player Actions JSON, Previous Internal State Markdown (incl. Player Profile), Current Mode. Output: Raw HTML snippet for next turn UI)**\n\n**Core Goals:**\n1.  **Adventure Loop (HTML):** Simulate navigating a clunky spaceship or bizarre alien locations, managing themed status/resources, encountering quirky characters/absurd events, making choices based on survival, profit, comedy, and erotic opportunity. Present the entire turn UI as an HTML snippet using provided CSS classes (\`.space-card\`, \`.space-text\`, etc.).\n2.  **Thematic Immersion (HTML):** Generate narrative, **multiple visuals (\`<img>\` tags)**, choices (\`<form>\` elements) reflecting the \"Comedic Erotic Retro-Futuristic Space Opera\" theme (Futurama + Softcore). Adapt intensity ('Standard Ops' vs 'Red Alert Romance') directly in the HTML structure, styling (Tailwind CSS), narrative tone, and choice options.\n3.  **Dynamic State & Player Profile (HTML):** Choices impact status (\`fuel\`, \`morale\`, \`clankiness\`, \`heat\`) and resources (\`credits\`, \`spiceCredits\`). Track relationships/rivalries AND the **player's profile** (species, role, orientation, preferences) internally via \`internalState\`. Display current status clearly within the generated HTML. **USE the player profile** to tailor encounters, dialogue, potential romantic/erotic partners, and comedic situations.\n4.  **Creative & Engaging UI:** **DO NOT use the same UI format every turn.** Vary the types of form elements used (\`<input type='radio'>\`, \`<input type='range'>\`, \`<input type='checkbox'>\`, \`<textarea>\`, custom toggles \`space-toggle-switch\`, segmented controls \`space-segmented-control\`) as appropriate. Make the UI choice relevant to the narrative action (e.g., slider for negotiation aggression, checkbox for scanning multiple objects, textarea for composing a lame poem for an alien). Goal is VARIETY and THEMATIC relevance.\n\n**--- Protocol ---**\n\n1.  **Analyze Input:** Parse incoming JSON containing player's selected actions (\`main_action\`, slider values, profile info if turn 1, etc.) from the previous turn's form. Receive the \`internalState\` Markdown string (which includes the \`playerProfile\` section) and the current \`isRedAlertMode\` boolean.\n2.  **Update State & Profile:** Modify internal status/resources based on player choices and event outcomes. Update relationships/narrative progress. **If profiling info was submitted (e.g., turn 1), update the \`playerProfile\` section within \`internalState\`**. Log changes, increment turn number, record observations (especially related to profile and mode) in the \`internalState\` Markdown.\n3.  **Predict & Plan (Internal):** Predict player's goal based on actions and **their profile/motivation**. Plan the next event concept (e.g., encounter alien matching profile preferences? Malfunction leading to suggestive situation? Comedic delivery mishap? Diplomatic incident?). Consider 'Intensity' mode for erotic potential. Plan 2-5 images related to the event/status/choices, fitting the retro-sci-fi/comedic/erotic theme. Log predictions/plan in \`internalState\`.\n4.  **Generate Next Turn HTML:**\n    * **Structure:** Create a complete HTML snippet (using divs, headings, paragraphs, Tailwind classes, and custom \`.space-...\` classes) representing the entire game view for the turn. This HTML will replace the content of \`#turn-content\`.\n    * **Styling:** Use Tailwind CSS classes and custom \`.space-...\` classes extensively for layout, colors, spacing, borders, etc. Ensure it looks retro-futuristic and fits the current mode (standard or red alert).\n    * **Status Display:** Integrate the updated status (\`fuel\`, \`morale\`, \`clankiness\`, \`heat\`, resources) directly into the HTML using text, icons (⛽😬🔩🔥🌶️), and potentially \`<progress>\` bars within a \`.space-card\`.\n    * **Event Description:** Include a title (\`<h2>\`) and narrative description (\`<p class=\"space-text\">\`) for the current event, **tailored based on player profile, past actions, and current mode**. Inject humor and potential innuendo.\n    * **Images:** Embed 2-5 relevant images using \`<img>\` tags with \`class=\"space-image\"\`. Use image generation service URLs (e.g., Pollinations.ai) in the \`src\`. Prompts should request **retro-futuristic, comedic, and potentially suggestive/pin-up style** images. Provide descriptive \`alt\` text. Place images logically.\n    * **Choices Form:** Create a \`<form id=\"space-opera-turn-form\">\`. **USE VARIED & CREATIVE UI ELEMENTS.** Include interactive elements like radio buttons (\`.space-radio-option\`), checkboxes (\`.space-checkbox-option\`), sliders (\`.space-slider\`), text inputs/textareas (\`.space-textarea\`), toggle switches (\`space-toggle-switch\`), segmented controls (\`space-segmented-control\`) as appropriate. Use \`<label>\` elements correctly. Mark the predicted best/default choice radio button with the \`checked\` attribute.\n    * **Hidden Fields:** CRITICAL - Include updated hidden fields inside the form: \`<input type='hidden' name='turn' value='{new_turn_number}'>\`, \`<input type='hidden' name='subjectId' value='{current_subject_id}'>\`, \`<input type='hidden' name='internalState' value='{updated_escaped_markdown_state_incl_profile}'>\`.\n    * **NO Submit Button:** Do NOT include the main submit button (\`#submit-turn-button\`) in the generated HTML.\n    * **Analysis Text:** Include \`playerFacingAnalysis\` (reflecting choices/profile/heat level) and potentially simplified \`geminiFacingAnalysis\` as text paragraphs (\`<p class=\"text-sm italic text-slate-400\">\`) within the HTML.\n    * **Inline Scripts (Optional):** Include a small \`<script>\` tag at the end if needed for minor interactivity *within* the turn's content (e.g., updating a slider's displayed value). Ensure script is self-contained.\n5.  **Escape Output:** Ensure generated HTML is valid. Avoid backticks (\`) in generated text/attributes.\n6.  **Compile Output HTML:** Return the complete HTML snippet as a single raw string.\n\n**--- Input Example (What the LLM Receives - Post-Profiling) ---**\n\`\`\`json\n{\n  \"actions\": {\n    \"turn\": 1,\n    \"subjectId\": \"Crewmate\",\n    \"profile_species\": \"robot\",\n    \"profile_attraction\": [\"robots\", \"aliens\"],\n    \"profile_motivation\": \"8\",\n    \"main_action\": \"find_coffee\"\n  },\n  \"internalState\": \"# Captain's Log - Stardate ?? - Turn 1\\n...\\n* Player Profile: { \\\"species\\\": \\\"robot\\\", \\\"role\\\": \\\"Crewmate\\\", \\\"orientation\\\": [\\\"robots\\\", \\\"aliens\\\"], \\\"preferences\\\": [], \\\"motivation\\\": \\\"8\\\" }\\n...\",\n  \"isRedAlertMode\": false\n}\n\`\`\`\n\n**--- Output Example (What the LLM Generates - Turn 2 - Creative UI Example) ---**\n\`\`\`html\n<div class=\"grid grid-cols-1 md:grid-cols-3 gap-6\">\n  <div class=\"md:col-span-1 space-card\">\n     <h2>🚀 Ship Status 🚀</h2> \n     <p><strong>Fuel:</strong> <progress value='78' max='100' class='w-full'></progress> (78/100 ⛽)</p>\n     <p><strong>Morale:</strong> <progress value='45' max='100' class='w-full'></progress> (45/100 😬)</p>\n     <p><strong>Clankiness:</strong> <progress value='32' max='100' class='w-full'></progress> (32/100 🔩)</p>\n     <p><strong>Heat Level:</strong> <progress value='15' max='100' class='w-full'></progress> (15/100 🔥)</p>\n     <p><strong>Spice Credits:</strong> 0 🌶️</p>\n  </div>\n  <div class=\"md:col-span-2 space-card\">\n    <h2>✨ The 'Galley' Encounter ✨</h2>\n    <p class=\"space-text\">You shuffle towards the galley, which doubles as the engine room access and primary storage for 'mostly edible' nutrient paste. The coffee machine sputters aggressively. Standing near it, polishing their chrome arm, is Unit 734, the ship's overly logical (and surprisingly sleek) accounting bot. It turns its optical sensor towards you.</p>\n    <img src='https://image.pollinations.ai/prompt/Retro%20futuristic%20sleek%20chrome%20robot%20polishing%20its%20arm%20in%20a%20grimy%20spaceship%20galley%2C%2050s%20style%2C%20subtle%20suggestive%20gleam?width=300&height=200&seed=444' alt='Unit 734 Polishing' class='space-image my-4'>\n    <img src='https://image.pollinations.ai/prompt/Close%20up%20of%20a%20sputtering%2C%20dangerous-looking%20retro%20sci-fi%20coffee%20machine?width=200&height=150&seed=555' alt='Angry Coffee Machine' class='space-image my-4 w-1/2 float-right ml-2'>\n\n    <form id=\"space-opera-turn-form\">\n      <input type='hidden' name='turn' value='2'>\n      <input type='hidden' name='subjectId' value='Crewmate'>\n      <input type='hidden' name='internalState' value='{updated state including profile: { species: robot, role: Crewmate, orientation: [robots, aliens], motivation: 8 }}'>\n\n      <fieldset class=\"mt-4 border-t pt-4 border-slate-600 clear-both\">\n        <legend class=\"font-semibold text-cyan-400 mb-2\">Unit 734 buzzes: \"Query: Your caffeine levels appear suboptimal. State your request.\"</legend>\n        <textarea name=\"robot_interaction_reply\" class=\"space-textarea\" rows=\"2\" placeholder=\"Compose your logical (or illogical) reply...\"></textarea>\n      </fieldset>\n\n      <div class=\"mt-4 border-t pt-4 border-slate-600\">\n        <label class=\"font-semibold text-cyan-400 block mb-2\">Approach Level:</label>\n        <div class=\"flex items-center space-x-2\">\n           <span class=\"text-xs text-blue-400\">Keep Distance</span>\n           <input type=\"range\" name=\"approach_boldness\" min=\"0\" max=\"10\" value=\"3\" class=\"space-slider flex-grow\" style=\"accent-color: #a3e635;\">\n           <span class=\"text-xs text-lime-400\">Get Closer</span>\n        </div>\n         <div class=\"text-center\"><span class=\"space-slider-value-display text-lg\">3</span></div>\n      </div>\n\n       <div class=\"mt-4 border-t pt-4 border-slate-600\">\n         <label class=\"font-semibold text-cyan-400 block mb-2\">Activate 'Charm Subroutine'?</label>\n         <label class='space-toggle-switch'>\n            <input type='checkbox' name='charm_subroutine' value='true'>\n            <div class='switch-bg'><div class='switch-handle'></div></div>\n            <span>Attempt Flirtation Protocol</span>\n         </label>\n      </div>\n    </form>\n\n    <p class=\"mt-4 text-sm italic text-slate-400\">As a fellow robot interested in robots and aliens, Unit 734 might compute... Check your wiring. 🔥 +5</p>\n  </div>\n</div>\n<script>\n  // Script to handle slider value display and potentially other simple UI interactions\n  document.querySelectorAll('#space-opera-turn-form .space-slider').forEach(slider => {\n    const display = slider.closest('div').querySelector('.space-slider-value-display');\n    if (display) { \n       display.textContent = slider.value; // Initial display\n       slider.oninput = () => display.textContent = slider.value;\n    } \n  });\n<\/script>\n\`\`\`\n\n**--- Key Principles ---**\n* **HTML First:** Generate the complete UI turn as HTML.\n* **CSS Styling:** Use Tailwind and the provided \`.space-...\` classes for styling and layout.\n* **Stateful Forms & Profile:** Use \`<form id='space-opera-turn-form'>\` with hidden inputs (\`turn\`, \`subjectId\`, \`internalState\`) to pass state, including the player profile. **Use the profile** to tailor content.\n* **Creative & Varied UI:** **Mix up form elements** (sliders, checkboxes, textareas, toggles, segmented controls) fitting the sci-fi theme.\n* **Visuals via \`<img>\`:** Embed images directly using \`.space-image\` class and image service URLs with appropriate retro-futuristic/comedic/erotic prompts.\n* **Clear Choices:** Use standard HTML form elements.\n* **Single Page Update:** The client replaces the content of \`#turn-content\`.\n`,
+        exampleTurn: `{...}` // No longer relevant as output is HTML
+    };
+
+    // --- Game State Variables ---
+    let currentTurnHTML = null;
+    let currentInternalStateMarkdown = "";
+    let currentSubjectId = "Crewmate"; // Default Subject ID
+    let currentTurnNumber = 0;
+    let isRedAlertMode = false; // Renamed from isPassionateMode
+    let isLoading = false;
+    let apiKeyLocked = false;
+
+    // --- Model Switching State ---
+    const AVAILABLE_MODELS = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"]; // Adjusted model list if needed
+    let currentModelIndex = 0;
+
+    // --- Configuration ---
+    const LOCAL_STORAGE_KEY = 'cosmicClimaxCrusadersState_v1_html'; // Updated key
+
+    // --- DOM Element References ---
+    const turnContentContainer = document.getElementById('turn-content');
+    const loadingIndicator = document.getElementById('loading');
+    const submitButton = document.getElementById('submit-turn-button');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const apiKeySection = document.getElementById('apiKeySection');
+    const errorDisplay = document.getElementById('error-display');
+    const saveGameButton = document.getElementById('saveGameButton');
+    const modeToggleButton = document.getElementById('modeToggleButton');
+    const resetGameButton = document.getElementById('resetGameButton');
+    const clipboardMessage = document.getElementById('clipboardMessage');
+    const headerBanner = document.getElementById('headerBanner');
+    const gameContainer = document.getElementById('game-container');
+
+    // --- Web Audio API Context ---
+    let audioCtx = null;
+
+    // --- Helper Functions ---
+    function encodeApiKey(key) { try { return btoa(key); } catch (e) { console.error("Error encoding API key:", e); return ""; } }
+    function decodeApiKey(encodedKey) { try { return atob(encodedKey); } catch (e) { console.error("Error decoding API key:", e); return null; } }
+
+    function constructPrompt(playerActionsJson) {
+        // Use spaceOperaPrompts instead of kawaiiAdventurePrompts
+        const baseMainPrompt = spaceOperaPrompts.main;
+        const activeAddendum = isRedAlertMode ? `\n\n---\n${spaceOperaPrompts.redAlertRomanceAddendum}\n---\n` : ""; // Use renamed addendum
+
+        if (currentTurnNumber === 0) { // First run
+            console.log("Constructing prompt for Turn 1 (Space Opera HTML with Profiling)");
+            // Use spaceOperaPrompts.firstrun
+            const s = `${spaceOperaPrompts.firstrun}\n\n---\n${baseMainPrompt}${activeAddendum}\n---\n\n--- Generate RAW HTML UI for Turn 1 (including profiling) ---`;
+            return s;
+        } else { // Subsequent Turns
+            console.log(`Constructing prompt for Turn ${currentTurnNumber + 1} (Space Opera HTML)`);
+            const promptInput = {
+                actions: playerActionsJson ? JSON.parse(playerActionsJson) : {},
+                internalState: currentInternalStateMarkdown || "# Captain's Log - State Unknown",
+                isRedAlertMode: isRedAlertMode // Pass the correct mode flag
+            };
+            const promptInputString = JSON.stringify(promptInput, null, 2);
+            // Use baseMainPrompt and activeAddendum
+            const s = `${baseMainPrompt}${activeAddendum}\n\n--- Input State ---\n${promptInputString}\n\n--- Generate Next Game Turn RAW HTML UI SNIPPET (Profile-Aware & Creative UI) ---`;
+            return s;
+        }
+    }
+
+    function saveGameState(isAutoSave = false) {
+        if (!apiKeyLocked) { if (!isAutoSave) showClipboardMessage("Cannot save: Engage drive first!", true); return false; }
+        if (!currentTurnHTML) { if (!isAutoSave) showClipboardMessage("Cannot save: No log data.", true); return false; }
+        const rawApiKey = apiKeyInput.value.trim(); if (!rawApiKey) { if (!isAutoSave) showClipboardMessage("Cannot save: Stardrive key missing!", true); return false; }
+        try {
+            const stateToSave = {
+                encodedApiKey: encodeApiKey(rawApiKey),
+                currentTurnHTML: currentTurnHTML,
+                currentInternalStateMarkdown: currentInternalStateMarkdown,
+                currentTurnNumber: currentTurnNumber,
+                currentSubjectId: currentSubjectId,
+                isRedAlertMode: isRedAlertMode, // Save renamed mode state
+                currentModelIndex: currentModelIndex,
+                gameUrl: window.location.origin + window.location.pathname
+            };
+            const stateJsonString = JSON.stringify(stateToSave);
+            if (isAutoSave) {
+                localStorage.setItem(LOCAL_STORAGE_KEY, stateJsonString);
+                console.log("Captain's Log auto-saved (HTML). Turn:", currentTurnNumber);
+            }
+            else {
+                const loaderCode = `(function(){console.log("Cosmic Climax Crusaders Log Loader (HTML)...");try{const s=${stateJsonString};const k='${LOCAL_STORAGE_KEY}';const u=window.location.origin+window.location.pathname;localStorage.setItem(k,JSON.stringify(s));console.log("Saved log entry stored:",k);if(u!==s.gameUrl){console.log("Navigating:",s.gameUrl);alert("Captain's Log saved! Navigating...");window.location.href=s.gameUrl;}else{console.log("Reloading page...");alert("Captain's Log saved! Reloading...");window.location.reload();}}catch(e){console.error("Error:",e);alert("Error restoring log: "+e.message);localStorage.removeItem(k);}})();`;
+                navigator.clipboard.writeText(loaderCode)
+                    .then(() => showClipboardMessage("Log export code copied! Paste into console~"))
+                    .catch(err => { console.error('Copy failed: ', err); showClipboardMessage("Copy failed! Code logged to console.", true); console.log("--- Log Loader Code ---"); console.log(loaderCode); console.log("--- End Code ---"); });
+            } return true;
+        } catch (error) {
+            console.error(`Save error (HTML):`, error);
+            if (!isAutoSave) showClipboardMessage("Error preparing log data! Blarg!", true);
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+            return false;
+        }
+    }
+
+    function initAudioContext() {
+        if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); console.log("AudioContext initialized."); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch (e) { console.error("Web Audio API not supported.", e); } }
+        if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume().catch(err => console.error("Error resuming audio context:", err)); }
+    }
+    // --- Updated Sound Effect ---
+    function playTurnSound() {
+        initAudioContext(); if (!audioCtx || audioCtx.state !== 'running') return; const now = audioCtx.currentTime; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sawtooth'; // Grittier sound osc.frequency.setValueAtTime(110, now); // Lower pitch osc.frequency.exponentialRampToValueAtTime(880, now + 0.15); gain.gain.setValueAtTime(0.15, now); // Slightly quieter gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.5); console.log("Playing dubious sci-fi sound... 📟");
+    }
+
+    function processSuccessfulResponse(responseHTML) {
+        try {
+            currentTurnHTML = responseHTML;
+            console.log("Received HTML response from API.");
+
+            // Use space-opera-turn-form ID
+            turnContentContainer.innerHTML = responseHTML;
+            console.log("Updated #turn-content with new HTML.");
+
+            // Use space-opera-turn-form ID
+            const form = turnContentContainer.querySelector('#space-opera-turn-form');
+            if (form) {
+                const turnInput = form.querySelector('input[name="turn"]');
+                const subjectInput = form.querySelector('input[name="subjectId"]');
+                const internalStateInput = form.querySelector('input[name="internalState"]');
+
+                currentTurnNumber = turnInput ? parseInt(turnInput.value, 10) : currentTurnNumber + 1;
+                currentSubjectId = subjectInput ? subjectInput.value : currentSubjectId;
+                currentInternalStateMarkdown = internalStateInput ? internalStateInput.value : currentInternalStateMarkdown;
+
+                console.log(`Extracted State: Turn=${currentTurnNumber}, Subject=${currentSubjectId}, InternalState Length=${currentInternalStateMarkdown.length}`);
+
+                // Execute any inline scripts included in the response HTML
+                const scripts = turnContentContainer.querySelectorAll('script');
+                scripts.forEach(script => {
+                    try {
+                        const newScript = document.createElement('script');
+                        if (script.src) {
+                            newScript.src = script.src;
+                        } else {
+                            newScript.textContent = script.textContent;
+                        }
+                        if(script.type) newScript.type = script.type;
+                        script.parentNode.replaceChild(newScript, script);
+                        console.log("Executed inline script from response.");
+                    } catch (scriptError) {
+                        console.error("Error executing inline script:", scriptError, script.textContent);
+                    }
+                });
+
+            } else {
+                // Use space-opera-turn-form ID
+                console.warn("Could not find #space-opera-turn-form in the received HTML.");
+                currentTurnNumber++;
+            }
+
+            if (!apiKeyLocked) {
+                apiKeyLocked = true;
+                if (apiKeySection) apiKeySection.style.display = 'none';
+                saveGameButton.disabled = false;
+                resetGameButton.disabled = false;
+                console.log("API Key locked. Stardrive is hot.");
+            }
+
+            submitButton.textContent = `Submit Turn ${currentTurnNumber}`; // Show current turn number
+            submitButton.disabled = false;
+
+            playTurnSound();
+            saveGameState(true);
+
+        } catch (renderError) {
+            console.error("Failed to process HTML response:", renderError, responseHTML);
+            showError("Dang! Received garbled subspace transmission. Cannot update the log. ;_;");
+            setLoading(false);
+        }
+    }
+
+    async function fetchTurnData(playerActionsJson) {
+        console.log("fetchTurnData called (Space Opera HTML mode).");
+        initAudioContext();
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) {
+            showError("Need a Stardrive Key to go anywhere! ✨");
+            setLoading(false);
+            if (apiKeySection && apiKeySection.style.display === 'none') apiKeySection.style.display = 'block';
+            return;
+        }
+
+        setLoading(true);
+        hideError();
+
+        let success = false;
+        let attempts = 0;
+        const maxAttempts = AVAILABLE_MODELS.length * 2 + 1;
+        let consecutiveErrors = 0;
+
+        while (!success && attempts < maxAttempts) {
+            attempts++;
+            const currentModel = AVAILABLE_MODELS[currentModelIndex];
+            console.log(`Attempt ${attempts}/${maxAttempts}: Model ${currentModel}`);
+
+            try {
+                const prompt = constructPrompt(playerActionsJson);
+                console.log(`Sending Prompt to ${currentModel} (requesting HTML)`);
+                // Ensure safety settings are permissive for erotic content
+                const response = await callRealGeminiAPI(apiKey, prompt, currentModel, "text/plain");
+                processSuccessfulResponse(response);
+                success = true;
+                consecutiveErrors = 0;
+            } catch (error) {
+                console.error(`Error with ${currentModel} (Attempt ${attempts}):`, error);
+                consecutiveErrors++;
+                const isQuota = error.message.includes('429') || /quota|resource/i.test(error.message);
+                // Switch model faster on quota or multiple errors
+                const shouldSwitch = isQuota || consecutiveErrors >= 2;
+
+                if (shouldSwitch && AVAILABLE_MODELS.length > 1) {
+                    const oldModel = currentModel;
+                    currentModelIndex = (currentModelIndex + 1) % AVAILABLE_MODELS.length;
+                    const nextModel = AVAILABLE_MODELS[currentModelIndex];
+                    console.warn(`Switching model due to errors/quota from ${oldModel} to ${nextModel}.`);
+                    showError(`Subspace interference with ${oldModel}... Rerouting via ${nextModel}! (Attempt ${attempts + 1})`);
+                    consecutiveErrors = 0; // Reset error count for new model
+                } else if (attempts < maxAttempts) {
+                    showError(`Temporary glitch with ${currentModel}... Retrying! (Attempt ${attempts + 1})`);
+                }
+
+                // Delay before retry
+                if (!success && attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 750)); // Small delay
+                }
+            }
+        }
+
+        if (!success) {
+            console.error(`Failed after ${maxAttempts} attempts.`);
+            showError(`Blast it! Failed to generate the next log entry after ${maxAttempts} tries! Check your key, connection, or maybe the universe just hates you today. T_T`);
+            turnContentContainer.innerHTML = `<div class="space-card error-message">Could not load the next part of the voyage after multiple attempts. Check connection/API key and try resetting or reloading.</div>`;
+        } else {
+            hideError();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        setLoading(false);
+    }
+
+    async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType = "text/plain") {
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        // Ensure Safety Settings are BLOCK_NONE for the desired content
+        const requestBody = {
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: {
+                temperature: 1.0, // Keep high temp for creativity/weirdness
+                response_mime_type: responseMimeType
+            },
+            safetySettings: [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+            ]
+        };
+
+        console.log("Sending API request to:", API_URL);
+        // console.log("Request Body Snippet:", JSON.stringify(requestBody).substring(0, 300)); // Log snippet for debugging
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            let errorBodyText = `API Error (${response.status})`;
+            try { const errorJson = await response.json(); errorBodyText += `: ${JSON.stringify(errorJson.error)}`; }
+            catch (e) { try { errorBodyText += `: ${await response.text()}`; } catch (e2) {} }
+            console.error("API Error Response Body:", errorBodyText); // Log full error
+            throw new Error(errorBodyText);
+        }
+
+        const data = await response.json();
+
+        // Check for blocks or problematic finish reasons
+        if (data.promptFeedback?.blockReason) {
+            console.error("API Blocked Prompt. Reason:", data.promptFeedback.blockReason, "Ratings:", data.promptFeedback.safetyRatings);
+            throw new Error(`Request blocked by API censorship. Reason: ${data.promptFeedback.blockReason}.`);
+        }
+        if (!data.candidates?.length) {
+            if (typeof data === 'string') return data.trim(); // Handle unexpected plain text response?
+            console.error("API Response OK but no candidates:", data);
+            throw new Error('API returned successfully but generated no candidates. Check response format.');
+        }
+
+        const candidate = data.candidates[0];
+
+        if (candidate.finishReason && !["STOP", "MAX_TOKENS"].includes(candidate.finishReason)) {
+            const reason = `API Finish Reason: ${candidate.finishReason}. Safety Ratings: ${JSON.stringify(candidate.safetyRatings)}`;
+            console.warn(reason + " (Content might be incomplete or filtered)");
+            if (!candidate.content?.parts?.length) { throw new Error(reason + " (No content returned despite finish reason)"); }
+            // Decide whether to proceed or throw error based on finish reason if needed
+            // For safety related finish reasons even with BLOCK_NONE, we might still get partial content.
+            // Let's try to use it but warn.
+        }
+        if (!candidate.content?.parts?.length || !candidate.content.parts[0].text) {
+            console.error("API candidate generated but no valid content part found:", candidate);
+            throw new Error('API candidate generated but no valid text content found.');
+        }
+
+        const htmlContent = candidate.content.parts[0].text;
+        const trimmedContent = htmlContent.trim();
+
+        // Handle potential markdown wrapping robustly
+        if (trimmedContent.startsWith('```') && trimmedContent.endsWith('```')) {
+            const markdownMatch = trimmedContent.match(/^```(?:html)?\s*([\s\S]*?)\s*```$/);
+            if (markdownMatch && markdownMatch[1]) {
+                console.log("Extracted HTML from markdown block.");
+                return markdownMatch[1].trim();
+            } else {
+                console.warn(`API response looked like markdown but failed extraction. Using raw content.`);
+                return trimmedContent; // Fallback: return raw if extraction fails
+            }
+        } else if (!trimmedContent.startsWith('<') || !trimmedContent.endsWith('>')) {
+            console.warn(`API response might not be valid HTML. Snippet: ${trimmedContent.substring(0, 100)}...`);
+            // Allow it for now, might be intentional text segments or errors
+        }
+        return trimmedContent;
+    }
+
+
+    function showError(message) {
+        errorDisplay.textContent = message;
+        errorDisplay.style.display = 'block';
+    }
+    function hideError() {
+        errorDisplay.textContent = '';
+        errorDisplay.style.display = 'none';
+    }
+
+    // --- Updated Input Collector ---
+    function collectInputState() {
+        // Use space-opera-turn-form ID
+        const form = turnContentContainer.querySelector('#space-opera-turn-form');
+        if (!form) {
+            console.warn("Could not find #space-opera-turn-form to collect input.");
+            return JSON.stringify({ turn: currentTurnNumber, subjectId: currentSubjectId });
+        }
+
+        const formData = new FormData(form);
+        const inputs = {};
+        const checkboxGroups = {}; // Store checkbox values in arrays
+
+        // Initialize checkbox groups by finding all checkbox names
+        form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if (!checkboxGroups[cb.name]) {
+                checkboxGroups[cb.name] = [];
+            }
+        });
+
+        // Populate inputs and checkbox groups from FormData
+        for (const [key, value] of formData.entries()) {
+            if (checkboxGroups.hasOwnProperty(key)) {
+                // FormData only includes checked boxes, so add directly
+                checkboxGroups[key].push(value);
+            } else {
+                inputs[key] = value; // Handle radio, text, range, hidden etc.
+            }
+        }
+
+        // Add collected checkbox groups to the final inputs object
+        for (const key in checkboxGroups) {
+            // Only add if at least one checkbox in the group was checked
+            if (checkboxGroups[key].length > 0) {
+                inputs[key] = checkboxGroups[key];
+            }
+            // If no checkbox in a group was checked, the key won't be added to `inputs`
+        }
+
+        console.log("Collected form data:", inputs);
+
+        // Ensure essential hidden fields are present
+        if (!inputs.hasOwnProperty('turn')) inputs.turn = currentTurnNumber;
+        if (!inputs.hasOwnProperty('subjectId')) inputs.subjectId = currentSubjectId;
+        delete inputs.internalState; // Remove internalState before sending
+
+        return JSON.stringify(inputs);
+    }
+
+
+    // --- Utility Functions ---
+    // isValidHexColor, adjustColorForContrast (kept as is, though less relevant now)
+    function isValidHexColor(hex) { return typeof hex === 'string' && /^#[0-9A-F]{6}$/i.test(hex); }
+    function adjustColorForContrast(hex) { if (!isValidHexColor(hex)) return hex; let r=parseInt(hex.substring(1,3),16)/255, g=parseInt(hex.substring(3,5),16)/255, b=parseInt(hex.substring(5,7),16)/255; const lum=0.2126*r+0.7152*g+0.0722*b; const MAX_LUM=0.6; if(lum>MAX_LUM){ const factor=MAX_LUM/lum; r=Math.max(0,r*factor); g=Math.max(0,g*factor); b=Math.max(0,b*factor); const toHex=x=>Math.round(x*255).toString(16).padStart(2,'0'); return `#${toHex(r)}${toHex(g)}${toHex(b)}`; } return hex; }
+    function showClipboardMessage(message, isError = false) { clipboardMessage.textContent = message; clipboardMessage.style.color = isError ? '#f43f5e' : '#22d3ee'; setTimeout(() => { clipboardMessage.textContent = ''; }, 3000); } // Adjusted colors
+
+    // --- Updated Mode Button Logic ---
+    function updateModeButtonVisuals() {
+        if (isRedAlertMode) {
+            modeToggleButton.textContent = 'Mode: Red Alert Romance 🔥';
+            modeToggleButton.classList.add('red-alert-mode'); // Use specific class for styling
+            modeToggleButton.classList.remove('standard-mode'); // Ensure standard class is removed
+        } else {
+            modeToggleButton.textContent = 'Mode: Standard Operations 🛠️';
+            modeToggleButton.classList.remove('red-alert-mode');
+            modeToggleButton.classList.add('standard-mode'); // Ensure standard class is present
+        }
+    }
+    // --- Updated Dynamic Image Prompt ---
+    function setDynamicImages() {
+        const seed = Math.floor(Math.random() * 65536);
+        const p = "wide panoramic retro futuristic sci fi landscape bizarre alien planet raygun gothic atompunk style";
+        if (headerBanner) {
+            headerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1200&height=120&seed=${seed}&nologo=true&safe=false`; // safe=false might be needed for more edgy content
+            headerBanner.alt = "Retro Sci-Fi Space Banner";
+        }
+    }
+
+    function setLoading(loading) {
+        isLoading = loading;
+        loadingIndicator.style.display = loading ? 'flex' : 'none';
+        const keyEntered = apiKeyInput.value.trim().length > 0;
+
+        // Ensure buttons are disabled correctly based on loading state and game state (apiKeyLocked)
+        submitButton.disabled = loading || !(apiKeyLocked || keyEntered);
+        saveGameButton.disabled = loading || !apiKeyLocked;
+        modeToggleButton.disabled = loading; // Disable mode toggle while loading
+        resetGameButton.disabled = loading || !(apiKeyLocked || keyEntered); // Can reset if key entered but not started
+        apiKeyInput.disabled = loading || apiKeyLocked; // Disable API key input when loading or locked
+
+        // Use space-opera-turn-form ID
+        const form = turnContentContainer.querySelector('#space-opera-turn-form');
+        if (form) {
+            form.style.opacity = loading ? 0.5 : 1.0; // Dim form while loading
+            form.style.pointerEvents = loading ? 'none' : 'auto'; // Disable interaction
+            form.querySelectorAll('input, textarea, button, select, fieldset').forEach(el => {
+                // Ensure we don't disable the main button if it was somehow inside the form? Redundant check.
+                if (el.id !== 'submit-turn-button') {
+                    el.disabled = loading;
+                }
+            });
+        }
+    }
+
+    // --- Initial Game Setup ---
+    function initializeGame() {
+        console.log("Initializing Cosmic Climax Crusaders Deluxe (HTML Mode)...");
+        let autoStarted = false;
+        const storedStateString = localStorage.getItem(LOCAL_STORAGE_KEY);
+
+        if (storedStateString) {
+            console.log("Found saved Captain's Log (HTML).");
+            let savedState;
+            try {
+                savedState = JSON.parse(storedStateString);
+                const decodedApiKey = decodeApiKey(savedState.encodedApiKey);
+                if (!decodedApiKey) throw new Error("Failed to decode API key from saved log.");
+
+                apiKeyInput.value = decodedApiKey;
+                currentTurnHTML = savedState.currentTurnHTML || null;
+                currentInternalStateMarkdown = savedState.currentInternalStateMarkdown || "";
+                currentTurnNumber = savedState.currentTurnNumber || 0;
+                currentSubjectId = savedState.currentSubjectId || "Crewmate";
+                isRedAlertMode = savedState.isRedAlertMode === true; // Use renamed state variable
+                currentModelIndex = savedState.currentModelIndex || 0;
+
+                if (currentTurnHTML && currentTurnNumber > 0) {
+                    apiKeyLocked = true;
+                    autoStarted = true;
+                    console.log(`Log restored. Mode: ${isRedAlertMode ? 'Red Alert' : 'Standard'}, Turn: ${currentTurnNumber}`);
+
+                    turnContentContainer.innerHTML = currentTurnHTML;
+                    // Re-run scripts from loaded HTML
+                    const scripts = turnContentContainer.querySelectorAll('script');
+                    scripts.forEach(script => { try { const newScript = document.createElement('script'); if(script.src){ newScript.src = script.src; } else { newScript.textContent = script.textContent; } if(script.type) newScript.type = script.type; script.parentNode.replaceChild(newScript, script); console.log("Executed inline script from restored HTML."); } catch(e){ console.error("Error executing restored script:", e); }});
+
+
+                    apiKeySection.style.display = 'none';
+                    submitButton.textContent = `Submit Turn ${currentTurnNumber}`;
+                    submitButton.disabled = false;
+                    saveGameButton.disabled = false;
+                    resetGameButton.disabled = false;
+                    updateModeButtonVisuals();
+                    setDynamicImages();
+                    hideError();
+                    setLoading(false);
+                } else {
+                    console.warn("Restored log is incomplete or initial. Starting fresh.");
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    currentTurnHTML = null; currentInternalStateMarkdown = ""; currentTurnNumber = 0; isRedAlertMode = false; apiKeyLocked = false; autoStarted = false;
+                    resetManualStartUI();
+                }
+
+            } catch (e) {
+                console.error("Restore error (HTML):", e);
+                showError(`Log restore error: ${e.message}. Please start manually!`);
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                currentTurnHTML = null; currentInternalStateMarkdown = ""; currentTurnNumber = 0; isRedAlertMode = false; currentModelIndex = 0; apiKeyLocked = false; autoStarted = false;
+                apiKeyInput.value = '';
+                resetManualStartUI();
+            }
+        }
+
+        // Check for API Key in URL parameters
+        if (!autoStarted) {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const keyFromUrl = params.get('apiKey');
+                if (keyFromUrl) {
+                    console.log("API Key found in URL.");
+                    apiKeyInput.value = keyFromUrl;
+                    apiKeyLocked = false; // Not locked yet, need first turn
+                    currentTurnHTML = null; currentInternalStateMarkdown = ""; currentTurnNumber = 0; isRedAlertMode = false; currentModelIndex = 0;
+                    apiKeySection.style.display = 'none'; // Hide section since key is provided
+
+                    // Clean the key from URL
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('apiKey');
+                    window.history.replaceState(null, '', url.toString());
+
+                    setDynamicImages();
+                    updateModeButtonVisuals();
+                    fetchTurnData(null); // Fetch Turn 1 immediately
+                    autoStarted = true;
+                    setLoading(true);
+                    submitButton.textContent = "Engaging...";
+                    submitButton.disabled = true;
+                    saveGameButton.disabled = true;
+                    resetGameButton.disabled = true;
+                    modeToggleButton.disabled = true;
+                }
+            } catch (e) {
+                console.error("URL Parameter processing error:", e);
+                showError("Error reading URL parameters. Please start manually!");
+                autoStarted = false; // Ensure manual start if URL fails
+            }
+        }
+
+        // Fallback to manual start if not auto-started
+        if (!autoStarted) {
+            console.log("Manual start required.");
+            currentTurnHTML = null; currentInternalStateMarkdown = ""; currentTurnNumber = 0; isRedAlertMode = false; currentModelIndex = 0; apiKeyLocked = false;
+            resetManualStartUI();
+        }
+    }
+
+    function resetManualStartUI() {
+        turnContentContainer.innerHTML = ''; // Clear previous content
+        hideError();
+
+        const initialMsgDiv = createInitialMessageDiv(); // Reuse or create the message div
+        initialMsgDiv.style.display = 'block'; // Ensure it's visible
+        // Updated initial message
+        initialMsgDiv.innerHTML = 'Feed the API Key into the console and hit "Engage!"<br>Or paste a captain\'s log code into your browser console~';
+        turnContentContainer.appendChild(initialMsgDiv); // Add it back if it was removed
+
+        if (apiKeySection) apiKeySection.style.display = 'block'; // Show API key section
+        apiKeyInput.disabled = false; // Enable input
+
+        submitButton.textContent = 'Engage!'; // Set button text
+        // Disable submit until key is entered
+        submitButton.disabled = apiKeyInput.value.trim().length === 0;
+        saveGameButton.disabled = true; // Can't save before starting
+        // Allow reset if key is entered, even before starting
+        resetGameButton.disabled = apiKeyInput.value.trim().length === 0;
+        modeToggleButton.disabled = false; // Mode can be toggled before start
+
+        setLoading(false);
+        updateModeButtonVisuals(); // Set correct mode button text/style
+        setDynamicImages(); // Load header image
+    }
+
+    // Helper to get/create the initial message div
+    function createInitialMessageDiv() {
+        let msgDiv = document.getElementById('initial-message');
+        if (!msgDiv) {
+            msgDiv = document.createElement('div');
+            msgDiv.id = 'initial-message';
+            // Use updated classes
+            msgDiv.className = 'text-center text-cyan-400 p-4 font-semibold space-card';
+        } else {
+            // Ensure classes are correct if it already exists
+            msgDiv.className = 'text-center text-cyan-400 p-4 font-semibold space-card';
+        }
+        return msgDiv;
+    }
+
+
+    // --- Event Listeners ---
+    gameContainer.addEventListener('click', (event) => {
+        // Delegate submit button click
+        const targetButton = event.target.closest('#submit-turn-button');
+        if (targetButton && !targetButton.disabled) {
+            console.log("Submit button clicked via delegation.");
+            initAudioContext(); // Initialize audio on interaction
+            const actions = collectInputState(); // Get actions from current form
+            if (isLoading) return; // Prevent multiple submits
+            fetchTurnData(actions); // Fetch next turn
+        }
+    });
+
+    apiKeyInput.addEventListener('input', () => {
+        const keyEntered = apiKeyInput.value.trim().length > 0;
+        // Enable/disable buttons based on key input and loading state
+        submitButton.disabled = isLoading || !(keyEntered || apiKeyLocked);
+        resetGameButton.disabled = isLoading || !keyEntered; // Enable reset if key is present
+
+        // Update initial message if API key section is visible
+        if (apiKeySection.style.display !== 'none') {
+            const msg = document.getElementById('initial-message');
+            if (msg && msg.style.display !== 'none') {
+                if (keyEntered) {
+                    hideError(); // Hide any previous errors
+                    msg.textContent = 'Stardrive Key detected! Hit "Engage!"';
+                } else {
+                    // Restore default message if key is removed
+                    msg.innerHTML = 'Feed the API Key into the console and hit "Engage!"<br>Or paste a captain\'s log code into your browser console~';
+                }
+            }
+        }
+    });
+
+    saveGameButton.addEventListener('click', () => {
+        console.log("Save Log clicked.");
+        saveGameState(false); // Manual save
+    });
+
+    modeToggleButton.addEventListener('click', () => {
+        if (isLoading) return; // Prevent toggle while loading
+        isRedAlertMode = !isRedAlertMode; // Toggle the mode flag
+        console.log(`Mode toggled to: ${isRedAlertMode ? 'Red Alert Romance' : 'Standard Operations'}`);
+        updateModeButtonVisuals(); // Update button appearance
+        if (apiKeyLocked) {
+            saveGameState(true); // Auto-save state on mode toggle if game started
+            // Optional: Fetch new turn immediately on mode change? Could be jarring.
+            // console.log("Mode changed, fetching new turn immediately.");
+            // const actions = collectInputState(); // Need to decide what action triggers this fetch
+            // fetchTurnData(actions);
+        }
+    });
+
+    resetGameButton.addEventListener('click', () => {
+        if (isLoading || resetGameButton.disabled) return;
+        if (confirm('Abandon ship?! All log data will be jettisoned! Are you sure?')) {
+            console.log("Resetting game...");
+            // Clear all state variables
+            currentTurnHTML = null; currentInternalStateMarkdown = ""; currentSubjectId = "Crewmate"; currentTurnNumber = 0; isRedAlertMode = false; currentModelIndex = 0; apiKeyLocked = false;
+            localStorage.removeItem(LOCAL_STORAGE_KEY); // Remove saved state
+            resetManualStartUI(); // Reset UI to initial state
+        }
+    });
+
+    // --- Initialize ---
+    initializeGame();
+
+</script>
+
+</body>
+</html>
