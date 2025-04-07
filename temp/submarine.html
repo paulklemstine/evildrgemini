@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inner Seas Drifter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/Lucide.css">
+    <style>
+        /* Embedded styles from styles.css, adapted for FTL layout */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #2b1f3e 0%, #0f0c1a 100%); /* Dark psychedelic background */
+            color: #e5e7eb; /* Light text */
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header Styling */
+        .site-header {
+            padding: 0;
+            margin-bottom: 1rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-banner-image {
+            width: 100%;
+            height: 100px; /* Smaller header */
+            object-fit: cover;
+            display: block;
+            opacity: 0.6;
+        }
+
+        .site-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem; /* Adjusted size */
+            color: #fde047; /* Yellow text */
+            text-shadow: 1px 1px 6px rgba(255, 255, 0, 0.7);
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            padding: 0 1rem;
+            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.5);
+            padding-top: 0.3rem;
+            padding-bottom: 0.3rem;
+        }
+
+        /* Footer Styling */
+        .site-footer {
+            margin-top: 2rem;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            font-size: 0.875rem;
+            color: #9ca3af;
+            border-top: 1px solid #4b5563;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        .footer-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        #clipboardMessage {
+            font-size: 0.8rem;
+            color: #a7f3d0;
+            height: 1.2em;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        /* Game Layout */
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            gap: 1rem;
+        }
+
+        #dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid #4b5563;
+        }
+
+        #submarine-status, #event-display, #player-actions {
+            background-color: rgba(23, 23, 30, 0.7) !important; /* Darker element background */
+            color: #d1d5db !important;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.4);
+            min-height: 150px;
+        }
+
+        #submarine-status h2, #event-display h2, #player-actions h2 {
+            font-family: 'Playfair Display', serif;
+            color: #facc15; /* Yellow-ish titles */
+            border-bottom: 1px solid #ca8a04;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        /* Custom styles for GEEMS UI elements (adapted) */
+        .geems-element { /* Used for individual choices/probes within #player-actions */
+             margin-bottom: 1rem;
+             padding: 0.75rem;
+             background-color: rgba(30, 30, 40, 0.6) !important;
+             color: #d1d5db !important;
+             border-radius: 0.5rem;
+             border: 1px solid #4b5563;
+             position: relative;
+        }
+
+        .geems-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #fde047; /* Yellow label */
+            font-size: 0.9rem;
+        }
+
+        .geems-text {
+            color: inherit;
+            line-height: 1.6;
+            word-wrap: break-word;
+            font-size: 1rem;
+        }
+        .geems-text strong { color: #fbbf24; }
+        .geems-text em { color: #f9a8d4; font-style: italic; }
+        .geems-text pre { /* Style for code blocks if used */
+            background-color: #111827;
+            padding: 0.8rem;
+            border-radius: 0.375rem;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-top: 0.5rem;
+            border: 1px solid #374151;
+        }
+
+        /* Input and Textarea */
+        .geems-input, .geems-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #4b5563;
+            border-radius: 0.375rem;
+            color: #e5e7eb;
+            background-color: #1f2937; /* Dark input background */
+        }
+        .geems-input::placeholder, .geems-textarea::placeholder { color: #6b7280; }
+        .geems-input:focus, .geems-textarea:focus {
+            outline: none;
+            border-color: #facc15;
+            box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.4);
+            background-color: #111827;
+        }
+         .geems-textarea { min-height: 60px; }
+
+        /* Radio and Checkbox */
+        .geems-radio-option, .geems-checkbox-option {
+            display: flex; align-items: center;
+            margin-bottom: 0.5rem; padding: 0.6rem 0.8rem;
+            border-radius: 0.375rem; cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            border: 1px solid #4b5563; color: inherit;
+            background-color: rgba(49, 46, 69, 0.8); /* Darker option background */
+        }
+        .geems-radio-option:hover, .geems-checkbox-option:hover { background-color: #312e45; border-color: #facc15; }
+        .geems-radio-option:active, .geems-checkbox-option:active { transform: scale(0.98); }
+        .geems-radio-option input[type="radio"], .geems-checkbox-option input[type="checkbox"] {
+            margin-right: 0.7rem; cursor: pointer; accent-color: #fde047;
+            width: 1rem; height: 1rem;
+        }
+        .geems-radio-option label, .geems-checkbox-option label { color: inherit; flex-grow: 1; cursor: pointer; }
+
+        /* Slider */
+        .geems-slider {
+            width: 100%; cursor: pointer; accent-color: #fde047; height: 0.5rem;
+            background: #374151; border-radius: 9999px;
+            appearance: none; -webkit-appearance: none;
+        }
+        .geems-slider::-webkit-slider-thumb {
+            appearance: none; -webkit-appearance: none; width: 1.1rem; height: 1.1rem;
+            background: var(--slider-thumb-color, #facc15); border-radius: 50%; cursor: pointer;
+        }
+        .geems-slider::-moz-range-thumb {
+            width: 1.1rem; height: 1.1rem; background: var(--slider-thumb-color, #facc15);
+            border-radius: 50%; cursor: pointer; border: none;
+        }
+        .geems-slider-value-display { color: #facc15; font-weight: 600; min-width: 2rem; text-align: right; }
+
+        /* Image */
+         #event-image-container { text-align: center; margin-bottom: 1rem; }
+        .geems-image {
+            max-width: 100%; height: auto; border-radius: 0.5rem;
+            background-color: #1f2937; display: block;
+            margin-left: auto; margin-right: auto;
+            border: 1px solid #4b5563;
+            box-shadow: 0 3px 7px rgba(0, 0, 0, 0.5);
+        }
+        .geems-image-prompt { font-size: 0.75rem; color: #9ca3af; opacity: 0.7; font-style: italic; margin-top: 0.4rem; word-wrap: break-word; padding: 0 0.5rem; }
+
+        /* Buttons */
+        .geems-button {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(to right, #facc15, #fbbf24); /* Yellow gradient */
+            color: #422006; /* Dark text on yellow */
+            border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+            text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+        }
+        .geems-button:hover {
+            background: linear-gradient(to right, #fbbf24, #f59e0b);
+            box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.5);
+            transform: translateY(-1px);
+        }
+        .geems-button:active { transform: translateY(0); box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4); }
+        .geems-button:disabled {
+            background: #4b5563; /* Dark gray disabled */
+            color: #9ca3af;
+            cursor: not-allowed; opacity: 0.6; box-shadow: none; transform: none;
+        }
+        #modeToggleButton { background: linear-gradient(to right, #ec4899, #d946ef); color: white; } /* Pink/Purple */
+        #modeToggleButton.standard-mode { background: linear-gradient(to right, #22d3ee, #3b82f6); color: white; } /* Cyan/Blue */
+        #resetGameButton { background: linear-gradient(to right, #f87171, #ef4444); color: white; } /* Red */
+
+        /* Loading/Error */
+        .loading-indicator, .error-message {
+            display: flex; justify-content: center; align-items: center;
+            padding: 1rem; font-size: 1rem; border-radius: 0.5rem; margin-top: 1rem;
+        }
+        .loading-indicator { color: #fde047; background-color: #312e45; border: 1px solid #4b5563; }
+        .loading-indicator svg { width: 1.25rem; height: 1.25rem; }
+        .error-message { color: #fca5a5; background-color: #450a0a; border: 1px solid #7f1d1d; text-align: center; white-space: pre-wrap; font-weight: 500; }
+
+        /* API Key Section */
+        #apiKeySection {
+            margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem; border: 1px solid #4b5563;
+        }
+        #apiKeySection .geems-label { color: #fbbf24; }
+        #apiKeySection .api-key-instructions a { color: #fde047; text-decoration: underline; }
+        #apiKeySection .api-key-instructions a:hover { color: #f59e0b; }
+
+         /* Analysis Toggle (kept hidden, potentially remove if not used in FTL) */
+        .analysis-toggle-container { display: none; } /* Hide by default */
+
+        /* Submarine Status Specific Styles */
+        #submarine-status .status-item {
+             margin-bottom: 0.75rem;
+             padding-bottom: 0.75rem;
+             border-bottom: 1px dashed #374151;
+        }
+        #submarine-status .status-item:last-child {
+             border-bottom: none;
+             margin-bottom: 0;
+        }
+        #submarine-status .status-label {
+             font-weight: 600;
+             color: #a5b4fc; /* Light purple */
+             display: inline-block;
+             min-width: 100px;
+        }
+         #submarine-status .status-value {
+             color: #fde047; /* Yellow value */
+             font-weight: 500;
+             margin-left: 0.5rem;
+        }
+         #submarine-status progress { /* Style progress bars for hull/shields */
+             width: 100%;
+             height: 10px;
+             accent-color: #fde047;
+             margin-top: 0.25rem;
+             border-radius: 5px;
+             border: 1px solid #4b5563;
+         }
+         #submarine-status progress::-webkit-progress-bar {
+             background-color: #1f2937;
+             border-radius: 5px;
+         }
+         #submarine-status progress::-webkit-progress-value {
+             background-color: #facc15;
+             border-radius: 5px;
+         }
+         #submarine-status progress::-moz-progress-bar {
+             background-color: #facc15;
+             border-radius: 5px;
+         }
+
+         /* Ensure sufficient contrast adjustments if colors dynamically change */
+         [style*="color"] { /* Basic check, adjust as needed */
+             /* Ensure text color contrasts with its background */
+         }
+
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+<header class="site-header">
+    <img id="headerBanner" alt="Psychedelic Inner Seas Banner" class="header-banner-image">
+    <h1>Inner Seas Drifter</h1>
+</header>
+
+<div class="max-w-6xl mx-auto px-4 md:px-8">
+    <div id="apiKeySection">
+        <label for="apiKeyInput" class="geems-label api-key-instructions">
+            Enter Google AI API Key to Navigate the Inner Seas:
+            <span class="block text-sm font-normal text-gray-400 mt-1">
+                (Get a key from Google AI Studio:
+                <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
+                    aistudio.google.com/apikey
+                </a>)
+                <br>Or provide via URL: ?apiKey=YOUR_API_KEY
+            </span>
+        </label>
+        <input type="password" id="apiKeyInput" class="geems-input" placeholder="Paste your secure API key here">
+    </div>
+
+    <div id="game-container">
+        <div id="dashboard">
+            <div id="submarine-status">
+                <h2>Submarine Status</h2>
+                <div class="status-content">
+                    <p class="text-gray-400 italic">Awaiting telemetry...</p>
+                </div>
+            </div>
+            <div id="event-display">
+                <h2>Current Event</h2>
+                 <div id="event-image-container"></div>
+                <div class="event-content geems-text">
+                    <p class="text-gray-400 italic">Floating aimlessly...</p>
+                </div>
+            </div>
+             <div id="player-actions">
+                 <h2>Actions & Choices</h2>
+                 <div id="ui-elements">
+                     <div id="initial-message" class="text-center text-gray-500 p-4">
+                           Enter your API Key above and click "Engage Psyche-Drive" to begin drifting.
+                           <br>Or, paste saved game code into your browser console.
+                      </div>
+                 </div>
+             </div>
+        </div>
+
+
+        <div id="loading" class="loading-indicator" style="display: none;">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none"
+                 viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Navigating the psychic currents... Please wait.
+        </div>
+        <div id="error-display" class="error-message" style="display: none;"></div>
+
+        <div class="mt-6 text-center">
+            <button id="submit-turn" class="geems-button" disabled>
+                Engage Psyche-Drive
+            </button>
+        </div>
+    </div>
+</div>
+
+<footer class="site-footer">
+    <div class="footer-buttons">
+        <button id="saveGameButton" class="geems-button" disabled>Export Voyage Log</button>
+        <button id="modeToggleButton" class="geems-button">Intensity: Wavy</button> <button id="resetGameButton" class="geems-button" disabled>Abandon Voyage</button>
+    </div>
+    <div id="clipboardMessage"></div>
+    <div class="footer-content">
+        <span>Drifting through the Inner Seas &copy; 2025</span>
+    </div>
+</footer>
+
+<script type="module">
+    // --- Embedded & Adapted Prompts ---
+    const innerSeasPrompts = {
+        intensityModeAddendum: `**DEEP DIVE INTENSITY MODE OVERRIDE:**
+
+* **Core Concept:** OVERRIDE Standard 'Wavy' Mode. Focus shifts to intense, potentially explicit, exploration of the subconscious, desire, taboo, and psychological extremes within the erotic psychedelia theme. Generate scenarios, choices, and imagery reflecting this intensity. Encounters may involve raw desire, primal urges, surreal body horror, extreme psychological states, forbidden knowledge, and encounters with powerful, potentially dangerous entities representing repressed aspects or externalized lusts/fears. Aim for maximum emotional impact, boundary-pushing, and exploration of the player's psyche's darker/stranger corners, aligning with "erotic psychedelia" and "forbidden truths."
+* **Presentation Style:** Less whimsical, more surreal, intense, possibly grotesque or explicitly sensual/disturbing. Visuals generated via Pollinations AI should reflect this (darker palettes, surreal/body-horror elements, explicit symbolism, intense emotion). Text should be evocative, poetic, sometimes fragmented or overwhelming.
+* **Encounters & Choices:** Generate encounters forcing difficult choices related to desire, sacrifice, sanity, taboo actions, or merging with psychedelic entities. Offer temptations that are powerful and potentially costly. Choices have significant impacts on submarine state (Hull Integrity, Sanity Levels, Crew Mood) and resource levels (Ecstasy Crystals, Flow).
+* **Image Generation (Deep Dive):** Generate impactful prompts reflecting the intense/explicit/surreal themes. Center on the core subject (entity, landscape, psychological state). Use evocative mood keywords (e.g., 'oppressive', 'ecstatic', 'body horror', 'sensual dread', 'cosmic lust'). Include the yellow submarine visually where appropriate. Specify VISIBLY DRAWN text (<= 3 words, BOLD, VIVID) that is thematically potent (e.g., 'CONSUME', 'MERGE NOW', 'TOO LATE'). Style leans towards dark surrealism, biomechanical, intense psychedelia.
+* **Analyses (Internal):** 'notes' section logs player responses to intense stimuli, tracks choices regarding taboo/desire, maps psychological trajectory in response to extreme scenarios. 'gemini_facing_analysis' becomes a starker, potentially unsettling psychological assessment based on the Deep Dive. Player-facing analysis remains cryptic or guiding, but acknowledges the intensity.
+* **Submarine/Crew Impact:** Intense events have greater potential impact on 'Sanity', 'Hull Integrity', and 'Crew Mood' systems. Resources like 'Ecstasy Crystals' might be consumed faster or required for certain intense actions.
+`,
+        firstrun: `**Instructions for Generating Turn 1 ONLY (Inner Seas Drifter):**
+
+**(Input: None. Output: JSON for Turn 1 FTL-Style UI)**
+
+* **Goal:** Generate the initial state for the FTL-like game. The player starts in their Yellow Submarine at a seemingly calm starting node in the Inner Seas. Introduce the basic premise and UI structure. The initial event should be simple (e.g., checking systems, observing the immediate surroundings) but with a hint of the psychedelic/erotic nature of the world.
+* **Theme:** Trippy Yellow Submarine, Erotic Psychedelia. Start relatively gentle ('Wavy' intensity).
+* **FTL Elements (JSON Structure):**
+    * **submarineStatus:** Object with initial values for key systems/resources (e.g., \`hull: { current: 100, max: 100 }\`, \`sanity: { current: 100, max: 100 }\`, \`psycheDriveCharge: 50\`, \`echoLocatorRange: 1\`, \`resources: { flow: 10, ecstasyCrystals: 0 }\`).
+    * **event:** Object describing the current situation.
+        * \`title\`: "Engine Hum" or similar.
+        * \`description\`: Text describing the initial state inside the sub, the view outside, hint of weirdness. Use evocative, slightly psychedelic language.
+        * \`image_prompt\`: Generate a prompt for Pollinations AI: "Interior view of a cramped, retro-futuristic yellow submarine bridge. Glowing gauges flicker. Outside the main viewport, swirling patterns of soft bioluminescent colors in a deep, dark void. Mood: Calm but expectant, slightly surreal. VISIBLY DRAWN on a gauge face: 'BREATHE'". Style: Psychedelic illustration.
+    * **choices:** Array of interactive elements (FTL-style actions/probes).
+        * Start simple: Maybe one main action radio button group (\`main_action\`) like "[\\"Check ship systems\\", \\"*Peer into the void*\\", \\"Consult the Logbook\\", \\"Calibrate Echo-Locator\\"]".
+        * Maybe one slider for initial mood (\`slider_initial_calm\`, label "Current mental state? (0=Anxious, 10=Calm)").
+        * Add hidden fields for \`turn: 1\` and \`subjectId: 'Drifter'\`.
+    * **internalState:** (Replaces 'notes' conceptually for this FTL structure) String containing JSON-escaped Markdown for tracking internal logic, player profile (minimal T1), predictions, next turn plan based on FTL progression. Initialize profile/state fields.
+    * **playerFacingAnalysis:** Brief, thematic text. "The Inner Sea awaits, Drifter. The currents whisper possibilities..."
+    * **geminiFacingAnalysis:** Basic T1 report. "Subject 'Drifter' initiated voyage. Baseline calm assessed. Initial event: Mundane start with psychedelic hint. Plan: Introduce first choice affecting resources or revealing minor lore based on action."
+
+* **Output:** A single JSON object representing the Turn 1 UI state according to the FTL structure above.`,
+
+        main: `**Inner Seas Drifter LLM Turn Generation Protocol v1.0 - FTL-like Erotic Psychedelia**
+
+**(Input: Prior turn JSON state. Output: JSON object for next turn UI)**
+
+**Core Goals:**
+1.  **FTL Gameplay Loop:** Simulate FTL mechanics: navigate nodes (implied), manage submarine systems/resources, handle random events/encounters, make impactful choices.
+2.  **Thematic Immersion:** Generate narrative, visuals, and choices reflecting the "Trippy Yellow Submarine" and "Erotic Psychedelia" themes, adapting intensity based on the active mode ('Wavy' or 'Deep Dive'). Explore desire, subconscious, surrealism, potentially explicit content based on user context/mode.
+3.  **Dynamic State:** Player choices directly impact \`submarineStatus\` (hull, sanity, system power/damage) and \`resources\`. Events are generated based on current state and history.
+
+**--- Protocol ---**
+
+1.  **Analyze Input State:** Parse the JSON input representing the *previous* turn's state (\`submarineStatus\`, \`event\`, selected \`choices\`, \`internalState\`). Extract key values (hull, sanity, resources, player actions). Analyze the \`internalState\` Markdown.
+2.  **Update State Based on Actions:** Modify \`submarineStatus\` and \`resources\` based on the player's choices from the previous turn, according to the logic defined in the *previous* turn's \`event\` description or choice outcomes (which the LLM needs to track/generate consistently in \`internalState\`). Update \`internalState\` Markdown with turn number, choice outcomes, resource changes, system changes, observations.
+3.  **Predict & Plan (Internal):** Based on the updated state and history (from \`internalState\`), predict player's likely focus (e.g., repair hull, gain resources, explore riskily). Plan the next event concept – should it be combat-like (psychic storm, desire entity), resource opportunity, narrative/lore reveal, or a system challenge? Consider the current 'Intensity' mode. Log predictions and plan in \`internalState\`.
+4.  **Generate Next Event:**
+    * Create the \`event\` object:
+        * \`title\`: Evocative title fitting the encounter (e.g., "Whispering Coral Maze," "Nexus of Yearning," "Psychic Maelstrom").
+        * \`description\`: Narrative text describing the scene, encounter, challenge. Use rich, psychedelic language appropriate to the intensity mode. Clearly state the situation and the core challenge or decision point. If it's a challenge, describe the threat or objective.
+        * \`image_prompt\`: Generate a thematic Pollinations AI prompt. Include the yellow submarine, the described environment/entity, mood (surreal, sensual, dangerous, awe-inspiring), intensity style ('Wavy' or 'Deep Dive'), and short (<=3 words) VIVID DRAWN text relevant to the event (e.g., 'TURN BACK', 'TASTE IT', 'LET GO').
+5.  **Generate Choices:**
+    * Create the \`choices\` array based on the generated \`event\`:
+        * Include a \`main_action\` radio group with 3-4 thematic options relevant to the event (e.g., "Navigate carefully," "Blast psychic pulse," "Offer Ecstasy Crystal," "Dive deeper into the illusion," "*Attempt communication*"). Options should clearly hint at potential outcomes or required resources/risks (sanity loss, hull damage, resource gain/loss). Mark predicted choice with '*'.
+        * Include other relevant probes/actions if applicable:
+            * Sliders for allocating 'Psyche-Drive Charge' to systems (e.g., slider\_allocate\_engine, slider\_allocate\_shields)? (Advanced FTL mechanic).
+            * Checkboxes for specific tactical options (e.g., checkbox\_use\_flow\_boost).
+            * Textfield for specific input if needed (e.g., textfield\_decipher\_symbol).
+        * Include hidden fields for \`turn\` number and \`subjectId\`.
+6.  **Generate Analyses:**
+    * \`playerFacingAnalysis\`: Brief, thematic hint or reflection related to the current event or player state. Tone matches intensity mode.
+    * \`geminiFacingAnalysis\`: Internal assessment. Brief summary of state changes, event type, player's predicted reaction, potential psychological interpretation based on choices (more intense in 'Deep Dive' mode).
+7.  **Compile Output JSON:** Construct the complete JSON object for the next turn: {\`submarineStatus\`, \`event\`, \`choices\`, \`internalState\` (updated Markdown), \`playerFacingAnalysis\`, \`geminiFacingAnalysis\`}.
+
+**--- JSON Structure for Output ---**
+\`\`\`json
+{
+  "submarineStatus": {
+    "hull": { "current": 85, "max": 100 },
+    "sanity": { "current": 70, "max": 100 },
+    "psycheDriveCharge": 60, // Example metric 0-100
+    "systems": { // Example systems
+        "engine": { "status": "online", "power": 2 }, // power levels?
+        "echoLocator": { "status": "damaged", "power": 1 },
+        "voidShield": { "status": "online", "power": 2 }
+    },
+    "resources": {
+      "flow": 15,
+      "ecstasyCrystals": 2
+    },
+    "crewMood": "Anxious" // Example qualitative status
+  },
+  "event": {
+    "title": "Crystalline Entity Encounter",
+    "description": "A massive, shifting crystalline structure pulses ahead, emitting waves of pure bliss mixed with unsettling possessiveness. It seems to 'sing' a song that resonates deep within your fillings. The Echo-Locator flickers erratically. Getting closer might yield valuable Ecstasy Crystals, but the psychic pressure is immense.",
+    "image_prompt": "A colossal, translucent, geometric crystalline entity shimmering with internal pink and purple light hovers in the deep void outside a yellow submarine viewport. Waves of light distort the view. Mood: Awe-inspiring, tempting, dangerous, psychedelic beauty. VISIBLY DRAWN on the crystal surface, glowing letters: 'JOIN US'. Style: Intense cosmic psychedelia."
+  },
+  "choices": [
+    { "type": "hidden", "name": "turn", "value": 5 },
+    { "type": "hidden", "name": "subjectId", "value": "Drifter" },
+    {
+      "type": "radio",
+      "name": "main_action",
+      "label": "Entity Encounter Action:",
+      "value": [
+        "Attempt careful scan (Risk: Locator damage, Sanity loss?)",
+        "Try psychic communication (Risk: High sanity loss?)",
+        "*Harvest crystals carefully (Requires 5 Flow?)*",
+        "Activate Void Shield & push through (Risk: Hull damage?)"
+      ],
+      "color": "#f472b6" // Pink choice
+    },
+    {
+        "type": "slider",
+        "name": "slider_psychic_resistance",
+        "label": "Focus mental defenses: (0=Weak, 10=Strong)",
+        "value": 5, // Pre-filled prediction
+        "min": 0, "max": 10,
+        "color": "#a78bfa" // Purple slider
+    }
+    // Potentially add sliders for power allocation here
+  ],
+  "internalState": "# Voyage Log - Turn 5... (JSON-escaped Markdown tracking state changes, predictions, plans, profile)",
+  "playerFacingAnalysis": "The entity's song is tempting, Drifter. Crystal shards or shattered psyche? Choose your resonance.",
+  "geminiFacingAnalysis": "Turn 5: Crystalline Entity encounter (Resource temptation vs Sanity risk). Hull: 85, Sanity: 70. Player likely low on Crystals, predicted to attempt harvest. Monitoring sanity impact and resource management strategy. Deep Dive mode could escalate this towards merging/possession themes."
+}
+\`\`\`
+
+**--- Key Principles ---**
+* **Stateful Generation:** LLM must track submarine status and resources (via \`internalState\`) to generate appropriate events and choice outcomes.
+* **FTL Core:** Focus on resource management, risk vs. reward choices, system status, and navigating challenging encounters.
+* **Thematic Consistency:** All generated text and image prompts must align with "Trippy Yellow Submarine" and "Erotic Psychedelia" (adjusting for Intensity mode).
+* **Clear Choices:** Options in \`main_action\` should clearly imply potential consequences or requirements.
+* **Single Page Output:** Generate only the JSON object representing the UI state for the *next* turn.
+`,
+    exampleTurn: `{...}` // Kept brief, structure defined in 'main' and 'firstrun'
+    };
+
+    // --- Game State Variables ---
+    let historyQueue = []; // Stores { stateJson: "...", actionsJson: "..." }
+    const MAX_HISTORY_TURNS = 5; // How many *full prior states* to keep for context (adjust as needed)
+    let currentTurnState = null; // Holds the *full* JSON object received from API for the current turn
+    let currentInternalStateMarkdown = ""; // Parsed internal state from currentTurnState
+    let currentSubjectId = "";
+    let isDeepDiveMode = false; // Default 'Wavy' intensity
+    let isLoading = false;
+    let apiKeyLocked = false;
+
+    // --- Model Switching State ---
+    const AVAILABLE_MODELS = ["gemini-2.5-pro-exp-03-25", "gemini-1.5-pro", "gemini-2.0-pro-exp-02-05", "gemini-2.0-flash-exp", "gemini-exp-1206"];
+    let currentModelIndex = 0;
+
+    // --- Configuration ---
+    const LOCAL_STORAGE_KEY = 'innerSeasDrifterState';
+
+    // --- DOM Element References ---
+    const uiContainer = document.getElementById('ui-elements'); // Container for interactive choices
+    const submarineStatusContainer = document.getElementById('submarine-status').querySelector('.status-content');
+    const eventDisplayContainer = document.getElementById('event-display').querySelector('.event-content');
+    const eventImageContainer = document.getElementById('event-image-container');
+    const loadingIndicator = document.getElementById('loading');
+    const submitButton = document.getElementById('submit-turn');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const apiKeySection = document.getElementById('apiKeySection');
+    const errorDisplay = document.getElementById('error-display');
+    const saveGameButton = document.getElementById('saveGameButton');
+    const modeToggleButton = document.getElementById('modeToggleButton');
+    const resetGameButton = document.getElementById('resetGameButton');
+    const clipboardMessage = document.getElementById('clipboardMessage');
+    const headerBanner = document.getElementById('headerBanner');
+    // const footerBanner = document.getElementById('footerBanner'); // Footer banner not used in this HTML
+
+    // --- Web Audio API Context ---
+    let audioCtx = null; // Initialize AudioContext lazily
+
+    // --- Helper Functions ---
+
+    function encodeApiKey(key) { try { return btoa(key); } catch (e) { console.error("Error encoding API key:", e); return ""; } }
+    function decodeApiKey(encodedKey) { try { return atob(encodedKey); } catch (e) { console.error("Error decoding API key:", e); return null; } }
+
+    /** Constructs the prompt for the Gemini API call. */
+    function constructPrompt(playerActionsJson) {
+        const baseMainPrompt = innerSeasPrompts.main;
+        const activeAddendum = isDeepDiveMode ? `\n\n---\n${innerSeasPrompts.intensityModeAddendum}\n---\n` : "";
+
+        if (!currentTurnState) { // Turn 1
+             console.log("Constructing T1 Prompt.");
+             const s = `${innerSeasPrompts.firstrun}\n\n---\n${baseMainPrompt}${activeAddendum}\n---\n\n--- Generate JSON UI for Turn 1 ---`;
+             console.log("Generated T1 Prompt Snippet:", s.substring(0, 200) + "...");
+             return s;
+        } else { // Subsequent Turns
+             console.log("Constructing Subsequent Turn Prompt.");
+             // Include the *entire previous turn state* as context
+             const previousTurnStateString = JSON.stringify(currentTurnState);
+             const s = `${baseMainPrompt}${activeAddendum}\n\n--- Last Player Actions ---\n${playerActionsJson || '{}'}\n\n--- Prior Turn State ---\n${previousTurnStateString}\n\n--- Generate Next Game Turn JSON UI OBJECT ---`;
+             console.log("Generated Subsequent Turn Prompt Snippet:", s.substring(0, 200) + "...");
+             return s;
+        }
+    }
+
+
+    /** Saves the essential game state. */
+    function saveGameState(isAutoSave = false) {
+        if (!apiKeyLocked) {
+             if (isAutoSave) console.log("Auto-save skipped: API key not locked.");
+             else showClipboardMessage("Cannot save: Game not started.", true);
+             return false; // Indicate save failed/skipped
+        }
+        if (!currentTurnState) {
+             if (isAutoSave) console.warn("Auto-save skipped: Missing current turn state.");
+             else showClipboardMessage("Cannot save: No game state.", true);
+             return false;
+        }
+
+        const rawApiKey = apiKeyInput.value.trim();
+        if (!rawApiKey) {
+             if (isAutoSave) console.error("Auto-save failed: API Key is missing.");
+             else showClipboardMessage("Cannot save: API Key is missing.", true);
+             return false;
+        }
+
+        try {
+             const stateToSave = {
+                 encodedApiKey: encodeApiKey(rawApiKey),
+                 currentTurnState: currentTurnState, // Save the entire last received state
+                 isDeepDiveMode: isDeepDiveMode,
+                 currentModelIndex: currentModelIndex,
+                 gameUrl: window.location.origin + window.location.pathname // Needed for restoration loader
+             };
+
+             const stateJsonString = JSON.stringify(stateToSave);
+
+             if (isAutoSave) {
+                 localStorage.setItem(LOCAL_STORAGE_KEY, stateJsonString);
+                 console.log("Game state auto-saved to localStorage.");
+             } else {
+                 // Manual save: Generate restoration code for clipboard
+                 const restorationLoaderCode = `
+(function() {
+    console.log("Inner Seas Drifter Restoration Loader...");
+    try {
+        const stateToStore = ${stateJsonString};
+        const storageKey = '${LOCAL_STORAGE_KEY}';
+        const currentGameUrl = window.location.origin + window.location.pathname;
+        localStorage.setItem(storageKey, JSON.stringify(stateToStore));
+        console.log("Saved state stored in localStorage:", storageKey);
+        if (currentGameUrl !== stateToStore.gameUrl) {
+            console.log("Navigating to correct game URL:", stateToStore.gameUrl);
+            alert("Voyage Log saved. Navigating to the correct game page to restore...");
+            window.location.href = stateToStore.gameUrl;
+        } else {
+            console.log("Reloading page to apply stored state...");
+            alert("Voyage Log saved. Reloading page to restore...");
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error("Error in Restoration Loader:", error);
+        alert("Error preparing voyage log restoration: " + error.message);
+        localStorage.removeItem('${LOCAL_STORAGE_KEY}');
+    }
+})();`;
+                 navigator.clipboard.writeText(restorationLoaderCode).then(() => {
+                     console.log("Restoration loader code copied.");
+                     showClipboardMessage("Voyage Log export code copied! Paste into console to restore.");
+                 }).catch(err => {
+                     console.error('Failed to copy restoration code: ', err);
+                     showClipboardMessage("Copy failed. Loader code logged to console.", true);
+                     console.log("--- Voyage Log Loader Code (Copy Manually) ---");
+                     console.log(restorationLoaderCode);
+                     console.log("--- End Loader Code ---");
+                 });
+             }
+             return true; // Indicate save success
+        } catch (error) {
+             console.error(`Error during ${isAutoSave ? 'auto-save' : 'manual save'}:`, error);
+             if (!isAutoSave) showClipboardMessage("Error preparing save data.", true);
+             localStorage.removeItem(LOCAL_STORAGE_KEY); // Clear potentially corrupted item
+             return false; // Indicate save failed
+        }
+    }
+
+    function initAudioContext() {
+        if (!audioCtx) {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                console.log("AudioContext initialized.");
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            } catch (e) { console.error("Web Audio API not supported.", e); }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(err => console.error("Error resuming audio context:", err));
+        }
+    }
+
+    function playTurnSound() {
+        initAudioContext();
+        if (!audioCtx || audioCtx.state !== 'running') return;
+        const now = audioCtx.currentTime;
+        // Simple sonar ping sound
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now); // Higher pitch ping
+        osc.frequency.exponentialRampToValueAtTime(440, now + 0.3);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.5);
+        console.log("Playing turn sound.");
+    }
+
+    /** Processes the successful response from the API. */
+    function processSuccessfulResponse(responseJsonString) {
+        try {
+             currentTurnState = JSON.parse(responseJsonString); // Store the new state
+             console.log("Successfully parsed API response.");
+
+             // Extract internal state for potential use (optional)
+             if (currentTurnState.internalState) {
+                 currentInternalStateMarkdown = currentTurnState.internalState;
+             }
+              // Extract subjectId if present
+             const subjectIdChoice = currentTurnState.choices?.find(c => c.type === 'hidden' && c.name === 'subjectId');
+             if (subjectIdChoice) {
+                  currentSubjectId = subjectIdChoice.value || "Drifter";
+             }
+
+             // Lock the API key input if this was the first successful call
+             if (!apiKeyLocked) {
+                 apiKeyLocked = true;
+                 if (apiKeySection) {
+                     apiKeySection.style.display = 'none';
+                     console.log("API Key locked.");
+                 }
+                 saveGameButton.disabled = false;
+                 resetGameButton.disabled = false;
+             }
+
+             // Render the new UI state
+             renderDashboard(currentTurnState);
+             console.log("renderDashboard finished.");
+
+             playTurnSound();
+             saveGameState(true); // Auto-save after successful render
+
+        } catch (parseError) {
+             console.error("Failed to parse successful API response:", parseError, responseJsonString);
+             showError("Received invalid data structure from API. Cannot update game state.");
+             setLoading(false); // Ensure loading is stopped on parse error
+             // Do not clear currentTurnState, keep the old UI visible
+        }
+    }
+
+    /** Fetches the next turn's UI data from the Gemini API. */
+    async function fetchTurnData(playerActionsJson) {
+        console.log("fetchTurnData called.");
+        initAudioContext();
+
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) {
+            showError("Please enter your Google AI API Key.");
+            setLoading(false);
+            if (apiKeySection && apiKeySection.style.display === 'none') {
+                apiKeySection.style.display = 'block';
+            }
+            return;
+        }
+
+        setLoading(true);
+        hideError();
+        const initialMsgEl = document.getElementById('initial-message');
+        if (initialMsgEl) initialMsgEl.style.display = 'none';
+
+        let success = false;
+        let attempts = 0;
+        const maxAttempts = AVAILABLE_MODELS.length * 2 + 1;
+        let currentAttemptConsecutiveErrors = 0;
+
+        while (!success && attempts < maxAttempts) {
+            attempts++;
+            const currentModel = AVAILABLE_MODELS[currentModelIndex];
+            console.log(`Attempt ${attempts}/${maxAttempts}: Model ${currentModel}`);
+
+            try {
+                const fullPrompt = constructPrompt(playerActionsJson);
+                console.log(`Sending Prompt to ${currentModel}`);
+                const jsonStringResponse = await callRealGeminiAPI(apiKey, fullPrompt, currentModel);
+
+                processSuccessfulResponse(jsonStringResponse); // Process the string response
+                success = true;
+                currentAttemptConsecutiveErrors = 0;
+
+            } catch (error) {
+                console.error(`Error with ${currentModel} (Attempt ${attempts}):`, error);
+                currentAttemptConsecutiveErrors++;
+                const isQuotaError = error.message.includes('429') || /quota|resource/i.test(error.message);
+                const shouldSwitch = isQuotaError || currentAttemptConsecutiveErrors >= 2;
+
+                if (shouldSwitch && AVAILABLE_MODELS.length > 1) {
+                    const oldModel = AVAILABLE_MODELS[currentModelIndex];
+                    currentModelIndex = (currentModelIndex + 1) % AVAILABLE_MODELS.length;
+                    const newModel = AVAILABLE_MODELS[currentModelIndex];
+                    console.warn(`Switching model from ${oldModel} to ${newModel}.`);
+                    showError(`Issue with ${oldModel}. Trying ${newModel}... (Attempt ${attempts + 1})`);
+                    currentAttemptConsecutiveErrors = 0;
+                } else if (attempts < maxAttempts) {
+                    showError(`Temporary issue with ${currentModel}. Retrying... (Attempt ${attempts + 1})`);
+                }
+
+                if (!success && attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 750));
+                }
+            }
+        } // End while
+
+        if (!success) {
+            console.error(`Failed after ${maxAttempts} attempts.`);
+            showError(`Failed to get response after ${maxAttempts} attempts. Check API key/connection.`);
+            // Keep previous UI displayed
+        } else {
+            hideError(); // Clear transient errors on final success
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        setLoading(false); // Set loading false *after* loop finishes
+    }
+
+    /** Calls the real Google AI (Gemini) API. */
+    async function callRealGeminiAPI(apiKey, promptText, modelName) {
+         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+         const requestBody = {
+             contents: [{parts: [{text: promptText}]}],
+             generationConfig: { temperature: 1.0, response_mime_type: "application/json" },
+             safetySettings: [ // BLOCK_NONE for all categories
+                 {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                 {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                 {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                 {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+             ]
+         };
+
+         const response = await fetch(API_URL, {
+             method: 'POST',
+             headers: {'Content-Type': 'application/json'},
+             body: JSON.stringify(requestBody),
+         });
+
+         if (!response.ok) {
+             let errorBody = `API Error (${response.status})`;
+             try { errorBody += `: ${JSON.stringify((await response.json()).error)}`; }
+             catch (e) { try { errorBody += `: ${await response.text()}`; } catch (e2) {} }
+             throw new Error(errorBody);
+         }
+
+         const responseData = await response.json();
+
+         if (responseData.promptFeedback?.blockReason) {
+             throw new Error(`Request blocked. Reason: ${responseData.promptFeedback.blockReason}. Ratings: ${JSON.stringify(responseData.promptFeedback.safetyRatings)}`);
+         }
+         if (!responseData.candidates?.length) {
+              if (typeof responseData === 'string') return responseData.trim(); // Handle edge case where API returns raw JSON string
+             throw new Error('No candidates generated or unexpected API response.');
+         }
+
+         const candidate = responseData.candidates[0];
+         if (candidate.finishReason && !["STOP", "MAX_TOKENS"].includes(candidate.finishReason)) {
+             const reason = `API Finish Reason: ${candidate.finishReason}. Ratings: ${JSON.stringify(candidate.safetyRatings)}`;
+             if (!candidate.content?.parts?.length) throw new Error(reason + " (No content)");
+              console.warn(reason + " (Partial content returned)"); // Warn but proceed if content exists
+         }
+         if (!candidate.content?.parts?.length) {
+             throw new Error('API candidate generated but contained no content parts.');
+         }
+
+         let generatedText = candidate.content.parts[0].text;
+         const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+         if (jsonMatch?.[1]) {
+             generatedText = jsonMatch[1];
+             console.log("Extracted JSON from markdown block.");
+         }
+         let trimmedText = generatedText.trim();
+
+         // Basic validation: Does it look like JSON?
+         if (!trimmedText.startsWith('{') || !trimmedText.endsWith('}')) {
+              console.error("API response doesn't look like JSON object:", trimmedText.substring(0, 200));
+              throw new Error(`Received invalid JSON structure (not an object). Snippet: ${trimmedText.substring(0, 100)}...`);
+         }
+         // Don't parse here, return the string for the caller to parse
+         return trimmedText;
+    }
+
+
+     /** Renders the entire FTL-style dashboard based on the state object. */
+     function renderDashboard(state) {
+         console.log("Rendering Dashboard for Turn:", state.choices?.find(c => c.name === 'turn')?.value || 'N/A');
+         if (!state) {
+             console.error("renderDashboard called with null state.");
+             return;
+         }
+         // Render each section
+         renderSubmarineStatus(state.submarineStatus);
+         renderEvent(state.event);
+         renderPlayerChoices(state.choices); // This function handles clearing uiContainer
+
+         // Render analysis (optional, could be integrated elsewhere or kept hidden)
+         // renderAnalysis(state.playerFacingAnalysis, state.geminiFacingAnalysis);
+     }
+
+     /** Renders the submarine status section. */
+     function renderSubmarineStatus(status) {
+         submarineStatusContainer.innerHTML = ''; // Clear previous status
+         if (!status) {
+             submarineStatusContainer.innerHTML = '<p class="text-gray-400 italic">Status unknown.</p>';
+             return;
+         }
+
+         const renderItem = (label, value, isProgress = false, current, max) => {
+             const itemDiv = document.createElement('div');
+             itemDiv.className = 'status-item';
+             const labelSpan = document.createElement('span');
+             labelSpan.className = 'status-label';
+             labelSpan.textContent = `${label}: `;
+             itemDiv.appendChild(labelSpan);
+
+             if (isProgress) {
+                 const progress = document.createElement('progress');
+                 progress.className = 'status-value'; // Re-use class for styling consistency maybe
+                 progress.value = current ?? 0;
+                 progress.max = max ?? 100;
+                 progress.textContent = `${current ?? 0}%`; // Fallback text
+                 itemDiv.appendChild(progress);
+                 const valueSpan = document.createElement('span'); // Add numeric display too
+                 valueSpan.className = 'status-value ml-2';
+                 valueSpan.textContent = `(${current ?? 'N/A'} / ${max ?? 'N/A'})`;
+                 itemDiv.appendChild(valueSpan);
+
+             } else {
+                  const valueSpan = document.createElement('span');
+                  valueSpan.className = 'status-value';
+                  valueSpan.textContent = value ?? 'N/A';
+                  itemDiv.appendChild(valueSpan);
+             }
+             submarineStatusContainer.appendChild(itemDiv);
+         };
+
+         renderItem('Hull', null, true, status.hull?.current, status.hull?.max);
+         renderItem('Sanity', null, true, status.sanity?.current, status.sanity?.max);
+         renderItem('Psyche-Drive', `${status.psycheDriveCharge ?? 'N/A'}%`);
+         renderItem('Flow', status.resources?.flow ?? 'N/A');
+         renderItem('Ecstasy Crystals', status.resources?.ecstasyCrystals ?? 'N/A');
+         renderItem('Crew Mood', status.crewMood ?? 'Unknown');
+
+         // Render system statuses (example)
+         if (status.systems) {
+             const systemsDiv = document.createElement('div');
+             systemsDiv.className = 'mt-4 pt-4 border-t border-dashed border-gray-600';
+              const sysTitle = document.createElement('h3');
+              sysTitle.className = 'text-sm font-semibold text-purple-400 mb-2';
+              sysTitle.textContent = 'Systems:';
+              systemsDiv.appendChild(sysTitle);
+              for (const sysName in status.systems) {
+                   const sys = status.systems[sysName];
+                   const sysP = document.createElement('p');
+                   sysP.className = 'text-xs';
+                   const statusColor = sys.status === 'online' ? 'text-green-400' : (sys.status === 'damaged' ? 'text-red-400' : 'text-yellow-400');
+                   sysP.innerHTML = `<span class="font-medium">${sysName}:</span> <span class="${statusColor}">${sys.status}</span> (Pwr: ${sys.power ?? 'N/A'})`;
+                   systemsDiv.appendChild(sysP);
+              }
+              submarineStatusContainer.appendChild(systemsDiv);
+         }
+     }
+
+     /** Renders the current event description and image. */
+     function renderEvent(event) {
+          eventImageContainer.innerHTML = ''; // Clear previous image
+          eventDisplayContainer.innerHTML = ''; // Clear previous text
+
+          if (!event) {
+              eventDisplayContainer.innerHTML = '<p class="text-gray-400 italic">Currents are calm.</p>';
+              return;
+          }
+
+          // Render Image if prompt exists
+          if (event.image_prompt) {
+              renderImage(eventImageContainer, { type: 'image', value: event.image_prompt, label: event.title }, null); // Pass null for color, handled by element
+          } else if (event.title) {
+                // If no image, show title prominently
+                const titleEl = document.createElement('h3');
+                titleEl.className = 'text-lg font-semibold text-center mb-2 text-yellow-300';
+                titleEl.textContent = event.title;
+                eventDisplayContainer.appendChild(titleEl);
+          }
+
+          // Render description text with Markdown
+          const textElement = document.createElement('div');
+          textElement.className = 'geems-text'; // Use existing class for styling
+          const textContent = event.description || 'An unnerving silence...';
+          // Basic Markdown parsing
+           textElement.innerHTML = textContent
+               .replace(/&/g, "&amp;") .replace(/</g, "&lt;") .replace(/>/g, "&gt;")
+               .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+               .replace(/\*(.*?)\*/g, '<em>$1</em>')
+               .replace(/```([\s\S]*?)```/g, (match, p1) => `<pre>${p1.trim()}</pre>`)
+               .replace(/\n/g, '<br>');
+          eventDisplayContainer.appendChild(textElement);
+     }
+
+     /** Renders the interactive player choices/probes. */
+     function renderPlayerChoices(choices) {
+         uiContainer.innerHTML = ''; // Clear previous interactive elements
+         const initialMsgElementRef = document.getElementById('initial-message');
+          if (initialMsgElementRef) initialMsgElementRef.style.display = 'none'; // Ensure initial message is hidden
+
+         if (!Array.isArray(choices) || choices.length === 0) {
+             uiContainer.innerHTML = '<p class="text-gray-400 italic text-center">No actions available.</p>';
+             return;
+         }
+
+         choices.forEach((element, index) => {
+             if (element.type === 'hidden') {
+                   // Handle hidden fields internally if needed (e.g., subjectId)
+                   if (element.name === 'subjectId') {
+                       currentSubjectId = element.value || "Drifter";
+                       // console.log("Updated Subject ID:", currentSubjectId);
+                   }
+                  return; // Don't render hidden fields visually
+             }
+             renderSingleChoiceElement(element, index); // Render individual choices
+         });
+     }
+
+    /** Renders a single choice/probe element. */
+    function renderSingleChoiceElement(element, index) {
+        const wrapper = document.createElement('div');
+        // Apply base styling, potentially adapting .geems-element class or creating a new one
+        wrapper.className = 'geems-element'; // Use adapted .geems-element styling
+        if (element.voice) wrapper.classList.add(`voice-${element.voice}`); // Keep voice class if used
+
+        let adjustedColor = null;
+        if (element.color && isValidHexColor(element.color)) {
+            adjustedColor = adjustColorForContrast(element.color);
+            // Maybe apply color differently here, e.g., border or background highlight
+            wrapper.style.borderColor = adjustedColor; // Example: Apply to border
+             wrapper.style.borderLeftWidth = '4px';
+        } else {
+             wrapper.style.borderColor = '#4b5563'; // Default border
+              wrapper.style.borderLeftWidth = '1px';
+        }
+
+        try {
+            switch (element.type) {
+                case 'text': // Could be used for additional context within actions panel
+                    renderText(wrapper, element, adjustedColor);
+                    break;
+                case 'textfield':
+                    renderTextField(wrapper, element, adjustedColor);
+                    break;
+                case 'checkbox':
+                    renderCheckbox(wrapper, element, adjustedColor);
+                    break;
+                case 'slider':
+                    renderSlider(wrapper, element, adjustedColor);
+                    break;
+                case 'radio':
+                    renderRadio(wrapper, element, adjustedColor);
+                    break;
+                default:
+                    console.warn("Rendering unknown choice element type:", element.type, element);
+                    wrapper.textContent = `Unknown element: ${element.type}`;
+            }
+            uiContainer.appendChild(wrapper); // Append choice to the #ui-elements container
+        } catch (renderError) {
+            console.error(`Error rendering choice ${index} (type: ${element.type}, name: ${element.name}):`, renderError, element);
+            const errorWrapper = document.createElement('div');
+            errorWrapper.className = 'geems-element error-message'; // Use error styling
+            errorWrapper.textContent = `Error rendering action: ${element.name || element.type}.`;
+            uiContainer.appendChild(errorWrapper);
+        }
+    }
+
+
+    /** Renders an image element within a container. */
+    function renderImage(container, element, adjustedColor) { // container is now passed
+        // container.classList.add('geems-image-container'); // Moved styling to CSS selector #event-image-container
+
+        const img = document.createElement('img');
+        img.className = 'geems-image';
+        const imagePrompt = element.value || 'abstract psychedelic void';
+        const randomSeed = Math.floor(Math.random() * 65536);
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?nologo=true&safe=false&seed=${randomSeed}&width=400&height=300`; // Adjust size maybe
+        img.src = imageUrl;
+        img.alt = element.label || `Image: ${imagePrompt.substring(0, 50)}...`;
+        img.onerror = () => {
+            console.warn(`Failed to load image: ${imageUrl}. Prompt: ${imagePrompt}`);
+            img.src = `https://placehold.co/400x300/1a1a2e/fde047?text=Signal+Lost`; // Themed placeholder
+            img.alt = `Error loading image: ${imagePrompt.substring(0, 50)}...`;
+        };
+        container.appendChild(img);
+
+        // Render the prompt text below the image
+        const promptText = document.createElement('p');
+        promptText.className = 'geems-image-prompt';
+        promptText.textContent = imagePrompt;
+        container.appendChild(promptText);
+    }
+
+    // --- Render Functions for specific GEEMS elements (Text, TextField, Checkbox, Slider, Radio) ---
+    // These functions are mostly reused from the original script.js, minor adjustments if needed.
+    // Ensure they append to the passed 'wrapper' element.
+
+    /** Renders text element */
+    function renderText(wrapper, element, adjustedColor) {
+        const textContent = element.text || element.value || '';
+        const useLabel = element.label && !['narrative', 'divine_wisdom', 'player_facing_analysis', 'gemini_facing_analysis'].some(namePart => element.name?.includes(namePart));
+
+        if (useLabel) {
+            const label = document.createElement('label');
+            label.className = 'geems-label';
+            if (adjustedColor) label.style.color = adjustedColor;
+            label.textContent = element.label;
+            wrapper.appendChild(label);
+        }
+        const textElement = document.createElement('div');
+        textElement.className = 'geems-text';
+        textElement.innerHTML = textContent
+            .replace(/&/g, "&amp;") .replace(/</g, "&lt;") .replace(/>/g, "&gt;")
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/```([\s\S]*?)```/g, (match, p1) => `<pre>${p1.trim()}</pre>`)
+            .replace(/\n/g, '<br>');
+        wrapper.appendChild(textElement);
+    }
+
+    /** Renders text field (textarea) */
+    function renderTextField(wrapper, element, adjustedColor) {
+        const label = document.createElement('label');
+        label.className = 'geems-label';
+        label.textContent = element.label || element.name;
+        label.htmlFor = element.name;
+        if (adjustedColor) label.style.color = adjustedColor;
+        wrapper.appendChild(label);
+
+        const input = document.createElement('textarea');
+        input.className = 'geems-textarea';
+        input.id = element.name;
+        input.name = element.name;
+        input.rows = 3; // Smaller default
+        input.value = element.value || '';
+        input.placeholder = element.placeholder || 'Type response...';
+        input.dataset.elementType = 'textfield';
+        wrapper.appendChild(input);
+    }
+
+    /** Renders checkbox */
+     function renderCheckbox(wrapper, element, adjustedColor) {
+         // Checkbox might not need the full geems-element padding/border if inside #player-actions
+         wrapper.style.padding = '0.5rem';
+         wrapper.style.border = 'none';
+         wrapper.classList.remove('geems-element'); // Remove outer border/padding if desired
+
+         const optionDiv = document.createElement('div');
+         optionDiv.className = 'geems-checkbox-option'; // Use specific class
+
+         const input = document.createElement('input');
+         input.type = 'checkbox';
+         input.id = element.name;
+         input.name = element.name;
+         input.checked = element.value === true || String(element.value).toLowerCase() === 'true';
+         input.dataset.elementType = 'checkbox';
+         if (adjustedColor) input.style.accentColor = adjustedColor;
+
+         const label = document.createElement('label');
+         label.htmlFor = element.name;
+         label.textContent = element.label || element.name;
+         label.className = "ml-2 flex-grow cursor-pointer"; // Adjust margin
+
+         optionDiv.appendChild(input);
+         optionDiv.appendChild(label);
+         wrapper.appendChild(optionDiv);
+     }
+
+    /** Renders slider */
+    function renderSlider(wrapper, element, adjustedColor) {
+        const label = document.createElement('label');
+        label.className = 'geems-label';
+        label.textContent = element.label || element.name;
+        label.htmlFor = element.name;
+        if (adjustedColor) label.style.color = adjustedColor;
+        wrapper.appendChild(label);
+
+        const sliderContainer = document.createElement('div');
+        sliderContainer.className = 'flex items-center space-x-3 mt-1'; // Adjust spacing
+
+        const input = document.createElement('input');
+        input.type = 'range';
+        input.className = 'geems-slider flex-grow';
+        input.id = element.name;
+        input.name = element.name;
+        const min = parseFloat(element.min) || 0;
+        const max = parseFloat(element.max) || 10;
+        input.min = min;
+        input.max = max;
+        input.step = element.step || 1;
+        const defaultValue = parseFloat(element.value);
+        input.value = isNaN(defaultValue) ? (min + max) / 2 : Math.max(min, Math.min(max, defaultValue));
+        input.dataset.elementType = 'slider';
+        if (adjustedColor) {
+            input.style.accentColor = adjustedColor;
+            input.style.setProperty('--slider-thumb-color', adjustedColor);
+             input.setAttribute('style', `${input.getAttribute('style') || ''} --slider-thumb-color: ${adjustedColor};`);
+        }
+
+        const valueDisplay = document.createElement('span');
+        valueDisplay.className = `geems-slider-value-display font-medium w-auto text-right`;
+        valueDisplay.textContent = input.value;
+        if (adjustedColor) valueDisplay.style.color = adjustedColor;
+
+        input.oninput = () => { valueDisplay.textContent = input.value; };
+
+        sliderContainer.appendChild(input);
+        sliderContainer.appendChild(valueDisplay);
+        wrapper.appendChild(sliderContainer);
+    }
+
+     /** Renders radio button group */
+     function renderRadio(wrapper, element, adjustedColor) {
+         // Radio group might not need the full geems-element padding/border
+         wrapper.style.padding = '0';
+         wrapper.style.border = 'none';
+         wrapper.classList.remove('geems-element');
+
+         const fieldset = document.createElement('fieldset'); // Use fieldset for grouping radios
+
+         const legend = document.createElement('legend');
+         legend.className = 'geems-label block mb-1'; // Style legend as label
+         legend.textContent = element.label || element.name;
+         if (adjustedColor) legend.style.color = adjustedColor;
+         fieldset.appendChild(legend);
+
+         let options = [];
+         let defaultValue = null;
+         let optionsSource = element.options || element.value;
+
+         try { // Parsing options logic (same as original)
+             if (typeof optionsSource === 'string') {
+                 try { optionsSource = JSON.parse(optionsSource); }
+                 catch (e) { optionsSource = [{label: optionsSource, value: optionsSource}]; }
+             }
+             if (Array.isArray(optionsSource)) {
+                 options = optionsSource.map(opt => {
+                     let currentLabel = '', currentValue = '', isDefault = false;
+                     if (typeof opt === 'object' && opt !== null && opt.value !== undefined) {
+                         currentValue = String(opt.value);
+                         currentLabel = opt.label !== undefined ? String(opt.label) : currentValue;
+                         if (currentLabel.startsWith('*')) { defaultValue = currentValue; currentLabel = currentLabel.substring(1); isDefault = true; }
+                     } else {
+                         currentValue = String(opt); currentLabel = currentValue;
+                         if (currentLabel.startsWith('*')) { defaultValue = currentValue.substring(1); currentValue = defaultValue; currentLabel = defaultValue; isDefault = true; }
+                     }
+                     return {value: currentValue, label: currentLabel, isDefault: isDefault};
+                 }).filter(opt => opt !== null);
+
+                 if (defaultValue === null && element.value && typeof element.value === 'string') {
+                     let isValueSimpleString = true;
+                     try { if (Array.isArray(JSON.parse(element.value))) isValueSimpleString = false; } catch (e) {}
+                     if (isValueSimpleString) {
+                         const directValueMatch = options.find(opt => opt.value === element.value);
+                         if (directValueMatch) defaultValue = directValueMatch.value;
+                     }
+                 }
+             } else { console.warn("Unexpected format for radio options:", element.name, optionsSource); }
+         } catch (e) { console.error("Failed to process radio options:", element.name, e); }
+
+         if (defaultValue === null && options.length > 0) defaultValue = options[0].value;
+
+         if (options.length > 0) {
+             options.forEach((option, index) => {
+                 const optionDiv = document.createElement('div');
+                 optionDiv.className = 'geems-radio-option'; // Use specific class
+
+                 const input = document.createElement('input');
+                 input.type = 'radio';
+                 const inputId = `${element.name}_${index}`;
+                 input.id = inputId;
+                 input.name = element.name;
+                 input.value = option.value;
+                 input.checked = (option.value === defaultValue);
+                 input.dataset.elementType = 'radio';
+                 if (adjustedColor) input.style.accentColor = adjustedColor;
+
+                 const optionLabel = document.createElement('label');
+                 optionLabel.htmlFor = inputId;
+                 optionLabel.textContent = option.label;
+                 optionLabel.className = "ml-2 flex-grow cursor-pointer"; // Adjust margin
+
+                 optionDiv.appendChild(input);
+                 optionDiv.appendChild(optionLabel);
+                 fieldset.appendChild(optionDiv);
+             });
+         } else {
+             fieldset.innerHTML += `<p class="text-sm text-red-400">Error: No valid options found for '${element.name}'.</p>`;
+         }
+         wrapper.appendChild(fieldset); // Append the fieldset to the wrapper
+     }
+
+
+    // --- Utility Functions ---
+
+    /** Collects the current state of all interactive UI elements. */
+    function collectInputState() {
+        const inputs = {};
+         // Select only within the #ui-elements container
+        uiContainer.querySelectorAll('[data-element-type]').forEach(el => {
+            const name = el.name;
+            if (!name) return;
+            const type = el.dataset.elementType;
+            switch (type) {
+                case 'textfield': inputs[name] = el.value; break;
+                case 'checkbox': inputs[name] = el.checked; break;
+                case 'slider': inputs[name] = parseFloat(el.value); break;
+                case 'radio': if (el.checked) inputs[name] = el.value; break;
+            }
+        });
+        // Add turn number (use turn from hidden input if available, else estimate)
+         const turnInput = uiContainer.querySelector('input[name="turn"][type="hidden"]');
+         inputs['turn'] = turnInput ? parseInt(turnInput.value, 10) : (currentTurnState?.choices?.find(c=>c.name==='turn')?.value || 1);
+
+        // console.log("Collected Inputs:", inputs);
+        return JSON.stringify(inputs);
+    }
+
+    /** Sets the loading state for the UI. */
+     function setLoading(loading) {
+         isLoading = loading;
+         loadingIndicator.style.display = loading ? 'flex' : 'none';
+         const keyPresent = apiKeyInput.value.trim().length > 0;
+
+         submitButton.disabled = loading || !(apiKeyLocked || keyPresent);
+         saveGameButton.disabled = loading || !apiKeyLocked;
+         modeToggleButton.disabled = loading;
+         resetGameButton.disabled = loading || !apiKeyLocked;
+
+         // Disable only interactive elements within the #player-actions (#ui-elements) container
+         uiContainer.querySelectorAll('input, textarea, button, fieldset').forEach(el => {
+             if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'BUTTON' || el.tagName === 'FIELDSET') {
+                 el.disabled = loading;
+             }
+             // Dim container for visual feedback
+              const parentWrapper = el.closest('.geems-radio-option, .geems-checkbox-option, .geems-element'); // Find the styled parent
+              if (parentWrapper) {
+                   parentWrapper.style.opacity = loading ? 0.6 : 1.0;
+                   parentWrapper.style.pointerEvents = loading ? 'none' : 'auto';
+              } else if (el.tagName === 'FIELDSET') { // Handle fieldset directly if no styled parent found
+                   el.style.opacity = loading ? 0.6 : 1.0;
+                   el.style.pointerEvents = loading ? 'none' : 'auto';
+              }
+         });
+     }
+
+
+    function showError(message) { errorDisplay.textContent = message; errorDisplay.style.display = 'block'; }
+    function hideError() { errorDisplay.textContent = ''; errorDisplay.style.display = 'none'; }
+    function isValidHexColor(hex) { return typeof hex === 'string' && /^#[0-9A-F]{6}$/i.test(hex); }
+
+    /** Adjusts color for contrast against dark background */
+    function adjustColorForContrast(hex) {
+        if (!isValidHexColor(hex)) return hex; // Default dark theme often needs lighter colors
+
+        // Convert hex to HSL (simplified example)
+        let r = parseInt(hex.substring(1, 3), 16) / 255;
+        let g = parseInt(hex.substring(3, 5), 16) / 255;
+        let b = parseInt(hex.substring(5, 7), 16) / 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let l = (max + min) / 2;
+
+        // If lightness is too low for dark background, increase it
+        const MIN_CONTRAST_LIGHTNESS = 0.4; // Adjust this threshold
+        if (l < MIN_CONTRAST_LIGHTNESS) {
+            l = MIN_CONTRAST_LIGHTNESS * 1.1; // Increase lightness slightly
+             l = Math.min(l, 1.0); // Clamp lightness to 1.0
+
+             // Quick conversion back (simplified - doesn't preserve hue/saturation accurately)
+             // This part needs a proper HSL->RGB conversion if exact color is important
+             const lightenFactor = l / ((max + min) / 2); // Calculate factor
+             r = Math.min(1, r * lightenFactor);
+             g = Math.min(1, g * lightenFactor);
+             b = Math.min(1, b * lightenFactor);
+
+             const toHex = x => Math.round(x * 255).toString(16).padStart(2, '0');
+             return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+        }
+        return hex; // Return original if contrast is okay
+    }
+
+    function showClipboardMessage(message, isError = false) {
+        clipboardMessage.textContent = message;
+        clipboardMessage.style.color = isError ? '#fca5a5' : '#a7f3d0'; // Light Red/Green
+        setTimeout(() => { clipboardMessage.textContent = ''; }, 3000);
+    }
+
+    function updateModeButtonVisuals() {
+        if (isDeepDiveMode) {
+            modeToggleButton.textContent = 'Intensity: Deep Dive';
+            modeToggleButton.classList.remove('standard-mode'); // Class controls gradient
+        } else {
+            modeToggleButton.textContent = 'Intensity: Wavy';
+            modeToggleButton.classList.add('standard-mode');
+        }
+    }
+
+     function setDynamicImages() {
+         const headerSeed = Math.floor(Math.random() * 65536);
+         const headerPrompt = "wide panoramic abstract swirling psychedelic void colorful nebula yellow submarine silhouette";
+         if (headerBanner) {
+             headerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(headerPrompt)}?width=1200&height=100&seed=${headerSeed}&nologo=true&safe=false`;
+             headerBanner.alt = "Inner Seas Psychedelic Banner";
+         }
+          // Footer banner removed from HTML, so no need to set it.
+     }
+
+    // --- Event Listeners ---
+
+    submitButton.addEventListener('click', () => {
+        console.log("Submit button clicked.");
+        initAudioContext();
+        const playerActions = collectInputState();
+        if (isLoading) return;
+        fetchTurnData(playerActions); // Pass actions that led to the *current* state
+    });
+
+    apiKeyInput.addEventListener('input', () => {
+        const keyPresent = apiKeyInput.value.trim().length > 0;
+        submitButton.disabled = isLoading || !(apiKeyLocked || keyPresent);
+         resetGameButton.disabled = isLoading || (!apiKeyLocked && !keyPresent); // Enable reset if key entered, even before game start
+
+        if (apiKeySection.style.display !== 'none') {
+            const currentInitialMessage = document.getElementById('initial-message');
+            if (keyPresent) {
+                hideError();
+                if (currentInitialMessage && currentInitialMessage.style.display !== 'none') {
+                    currentInitialMessage.textContent = 'API Key detected. Engage Psyche-Drive to begin.';
+                }
+            } else {
+                if (currentInitialMessage) {
+                     currentInitialMessage.innerHTML = 'Enter your API Key above and click "Engage Psyche-Drive" to begin drifting.<br>Or, paste saved game code into your browser console.';
+                     currentInitialMessage.style.display = 'block';
+                }
+            }
+        }
+    });
+
+    saveGameButton.addEventListener('click', () => {
+        console.log("Save Game button clicked.");
+        saveGameState(false); // Manual save
+    });
+
+    modeToggleButton.addEventListener('click', () => {
+        if (isLoading) return;
+        isDeepDiveMode = !isDeepDiveMode;
+        console.log(`Intensity Mode Toggled: ${isDeepDiveMode ? 'Deep Dive' : 'Wavy'}`);
+        updateModeButtonVisuals();
+        saveGameState(true); // Auto-save on mode change
+    });
+
+    resetGameButton.addEventListener('click', () => {
+        if (isLoading || resetGameButton.disabled) return;
+        if (confirm('Abandon this voyage? All progress will be lost.')) {
+            console.log("Resetting game state...");
+            currentTurnState = null;
+            currentInternalStateMarkdown = "";
+            currentSubjectId = "";
+            // Keep isDeepDiveMode as is? Or reset? Resetting seems more consistent.
+            isDeepDiveMode = false;
+            currentModelIndex = 0;
+            apiKeyLocked = false;
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+            console.log("Cleared voyage log from localStorage.");
+
+             // Clear UI sections
+             uiContainer.innerHTML = '';
+             submarineStatusContainer.innerHTML = '<p class="text-gray-400 italic">Awaiting telemetry...</p>';
+             eventDisplayContainer.innerHTML = '<p class="text-gray-400 italic">Floating aimlessly...</p>';
+             eventImageContainer.innerHTML = '';
+             hideError();
+
+             if (apiKeySection) apiKeySection.style.display = 'block';
+
+              // Restore initial message
+              const initialMsg = document.getElementById('initial-message') || document.createElement('div');
+              initialMsg.id = 'initial-message';
+              initialMsg.className = 'text-center text-gray-500 p-4';
+              initialMsg.style.display = 'block';
+              initialMsg.innerHTML = 'Enter your API Key above and click "Engage Psyche-Drive" to begin drifting.<br>Or, paste previously saved game code into your browser console.';
+              if (!document.getElementById('initial-message')) { // Append only if it didn't exist
+                    uiContainer.appendChild(initialMsg);
+              }
+
+
+            const keyPresent = apiKeyInput.value.trim().length > 0;
+            setLoading(false);
+            submitButton.disabled = !keyPresent;
+            saveGameButton.disabled = true;
+            resetGameButton.disabled = !keyPresent;
+            modeToggleButton.disabled = false;
+            updateModeButtonVisuals();
+        }
+    });
+
+
+    // --- Initial Game Setup ---
+    function initializeGame() {
+        console.log("Initializing Inner Seas Drifter...");
+        let autoStarted = false;
+
+        // Restore from localStorage
+        const storedStateString = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedStateString) {
+            console.log("Found saved voyage log in localStorage.");
+            let savedState;
+            try {
+                savedState = JSON.parse(storedStateString);
+                const decodedApiKey = decodeApiKey(savedState.encodedApiKey);
+                if (!decodedApiKey) throw new Error("Failed to decode API key.");
+
+                apiKeyInput.value = decodedApiKey;
+                currentTurnState = savedState.currentTurnState || null; // Restore full state object
+                isDeepDiveMode = savedState.isDeepDiveMode === true;
+                currentModelIndex = savedState.currentModelIndex || 0;
+                apiKeyLocked = true;
+                autoStarted = true;
+
+                console.log("Voyage log restored. Mode:", isDeepDiveMode, "Model Index:", currentModelIndex);
+                setDynamicImages();
+
+                if (currentTurnState) {
+                    renderDashboard(currentTurnState); // Render the restored state
+                     // Extract subjectId from restored state if available
+                     const subjectIdChoice = currentTurnState.choices?.find(c => c.type === 'hidden' && c.name === 'subjectId');
+                     currentSubjectId = subjectIdChoice ? (subjectIdChoice.value || "Drifter") : "Drifter";
+
+                } else {
+                     console.warn("Restored state missing turn data. Clearing storage.");
+                     localStorage.removeItem(LOCAL_STORAGE_KEY);
+                     throw new Error("Restored state was incomplete.");
+                }
+
+                updateModeButtonVisuals();
+                apiKeySection.style.display = 'none';
+                const currentInitialMessage = document.getElementById('initial-message');
+                if (currentInitialMessage) currentInitialMessage.style.display = 'none';
+                hideError();
+                setLoading(false); // Ensure buttons are correctly enabled/disabled
+
+            } catch (error) {
+                console.error("Error restoring state:", error);
+                showError(`Error restoring voyage log: ${error.message}. Please start manually.`);
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                // Reset state variables for clean manual start
+                currentTurnState = null; isDeepDiveMode = false; currentModelIndex = 0; apiKeyLocked = false; autoStarted = false; apiKeyInput.value = '';
+                 // Reset UI for manual start
+                 resetManualStartUI();
+            }
+        }
+
+        // Load from URL if not restored
+        if (!autoStarted) {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const keyFromUrlParam = urlParams.get('apiKey');
+                if (keyFromUrlParam) {
+                    console.log("API Key found in URL. Auto-starting...");
+                    apiKeyInput.value = keyFromUrlParam;
+                    apiKeyLocked = false;
+                    // Reset state for fresh start
+                    currentTurnState = null; isDeepDiveMode = false; currentModelIndex = 0;
+
+                    apiKeySection.style.display = 'none';
+                    const currentInitialMessage = document.getElementById('initial-message');
+                    if (currentInitialMessage) currentInitialMessage.style.display = 'none';
+
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.delete('apiKey');
+                    window.history.replaceState(null, '', currentUrl.toString());
+
+                    setDynamicImages();
+                    fetchTurnData("{}"); // Fetch Turn 1
+                    autoStarted = true;
+                    setLoading(true); // Set loading state during fetch
+                    updateModeButtonVisuals();
+                    modeToggleButton.disabled = true; saveGameButton.disabled = true; resetGameButton.disabled = true;
+                }
+            } catch (e) {
+                console.error("Error processing URL parameters:", e);
+                showError("Error reading URL parameters. Please start manually.");
+                autoStarted = false;
+            }
+        }
+
+        // Manual Start Setup
+        if (!autoStarted) {
+            console.log("Manual start.");
+             // Ensure state is reset
+            currentTurnState = null; isDeepDiveMode = false; currentModelIndex = 0; apiKeyLocked = false; apiKeyInput.value = '';
+             resetManualStartUI(); // Centralize UI reset
+        }
+    }
+
+     // Helper to reset UI for manual start or on error
+     function resetManualStartUI() {
+          uiContainer.innerHTML = ''; // Clear choices
+          submarineStatusContainer.innerHTML = '<p class="text-gray-400 italic">Awaiting telemetry...</p>';
+          eventDisplayContainer.innerHTML = '<p class="text-gray-400 italic">Floating aimlessly...</p>';
+          eventImageContainer.innerHTML = '';
+          hideError();
+
+          const initialMsg = document.getElementById('initial-message') || createInitialMessageDiv(); // Ensure it exists
+          initialMsg.style.display = 'block';
+          initialMsg.innerHTML = 'Enter your API Key above and click "Engage Psyche-Drive" to begin drifting.<br>Or, paste saved voyage log code into your browser console.';
+
+          if (apiKeySection) apiKeySection.style.display = 'block';
+          setLoading(false); // Set button states correctly
+          updateModeButtonVisuals();
+          setDynamicImages();
+     }
+
+      // Helper to create initial message div if needed
+      function createInitialMessageDiv() {
+           const msgDiv = document.createElement('div');
+           msgDiv.id = 'initial-message';
+           msgDiv.className = 'text-center text-gray-500 p-4';
+           // Prepend to uiContainer (player-actions div)
+           const playerActionsDiv = document.getElementById('player-actions');
+           if (playerActionsDiv) {
+                playerActionsDiv.prepend(msgDiv); // Add it inside the actions panel
+           } else {
+                // Fallback if layout isn't ready (shouldn't happen ideally)
+                document.getElementById('game-container').prepend(msgDiv);
+           }
+           return msgDiv;
+      }
+
+    // --- Initialize ---
+    initializeGame();
+
+</script>
+
+</body>
+</html>
