@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUIDED EXTREME EMOTIONAL MENTAL STATES</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/Lucide.css">
+    <link rel="stylesheet" href="styles.css"> <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script type="module">
+        // Firebase Initialization
+        import {initializeApp} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+        import {getAnalytics} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        // IMPORTANT: Replace with your actual Firebase config.
+        const firebaseConfig = {
+            apiKey: "AIzaSyCl32VbjykZX-k3TNEZrXbZ4IWRSKweq3E", // Note: Use environment variables or secure methods in production
+            authDomain: "geems-60187.firebaseapp.com",
+            projectId: "geems-60187",
+            storageBucket: "geems-60187.appspot.com", // Corrected domain usually ends in .appspot.com
+            messagingSenderId: "353260647182",
+            appId: "1:353260647182:web:6f44d9c68fe379534f5d5f",
+            measurementId: "G-4SB7BD55RY" // Optional
+        };
+
+        // Initialize Firebase
+        try {
+            const app = initializeApp(firebaseConfig);
+            const analytics = getAnalytics(app);
+            console.log("Firebase Initialized.");
+        } catch(e) {
+            console.error("Firebase Initialization Failed. Ensure config is correct and services are enabled.", e);
+            // Optionally display an error to the user
+            const errorDisplayElement = document.getElementById('error-display');
+            if (errorDisplayElement) { // Check if error display exists yet
+                errorDisplayElement.textContent = "Error connecting to backend services.";
+                errorDisplayElement.style.display = 'block';
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-inter"> <header class="site-header">
+    <img id="headerBanner" alt="GEEMS Header Banner" class="header-banner-image">
+    <h1>Guided Extreme Emotional Mental States</h1>
+</header>
+
+<div class="max-w-3xl mx-auto px-4 md:px-8 py-8"> <div id="apiKeySection" class="mb-6 p-4 bg-white rounded shadow"> <label for="apiKeyInput" class="geems-label api-key-instructions">
+    Enter Google AI API Key to Start:
+    <span class="block text-sm font-normal text-gray-600 mt-1">
+                (Need a key? Get one from Google AI Studio:
+                <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
+                    aistudio.google.com/apikey
+                </a>)
+                <br>Or provide via URL parameter: ?apiKey=YOUR_API_KEY
+            </span>
+</label>
+    <input type="password" id="apiKeyInput" class="geems-input" placeholder="Paste your secure API key here">
+</div>
+
+    <div id="game-container" class="bg-white p-4 md:p-6 rounded-lg shadow-lg"> <div id="ui-elements">
+        <div id="initial-message" class="text-center text-gray-500 p-6">
+            Enter your API Key above (or provide in URL) and click "Submit Turn" to start.
+        </div>
+    </div>
+
+        <div id="loading" class="loading-indicator" style="display: none;">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                 viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Generating next turn... Please wait.
+        </div>
+
+        <div class="mt-8 text-center">
+            <button id="submit-turn" class="geems-button" disabled>
+                Submit Turn
+            </button>
+        </div>
+    </div>
+</div> <div id="analysisModal" class="modal" style="display: none;"> <div class="modal-content">
+    <span id="analysisModalClose" class="modal-close" title="Close">&times;</span>
+    <h2 class="text-xl font-semibold mb-4">Top Secret!</h2> <div id="analysisModalBody" class="geems-text" style="max-height: 60vh; overflow-y: auto; margin-top: 1rem;">
+    <p>Loading analysis...</p> </div>
+</div>
+</div>
+
+<footer class="site-footer">
+
+    <div id="peer-list" class="peer-list-container">
+    </div>
+    <div class="footer-buttons">
+        <button id="modeToggleButton" class="geems-button standard-mode">Mode: Standard</button>
+        <button id="resetGameButton" class="geems-button" disabled>Reset Game</button>
+    </div>
+    <div id="clipboardMessage" class="text-center h-5"></div>
+    <div id="error-display" class="error-message" ></div>
+    <img id="footerBanner" alt="GEEMS Footer Banner" class="footer-banner-image">
+    <div class="footer-content">
+    <span>Copyright &copy; 2025 EvilDrGemini v1.1.1.1. All rights reserved.<br>click on banner for top secret analysis.</span>
+
+    </div>
+</footer>
+
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script type="module" src="prompts.js"></script>
+<script type="module" src="mp.js"></script>
+<script type="module" src="script.js"></script>
+
+</body>
+</html>

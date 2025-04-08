@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sparkle Stage Sirens - Fashion Show Frenzy!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Fredoka+One&family=Bubblegum+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/Lucide.css">
+    <style>
+        /* --- Styles Overhauled for Kawaii Pop Fashion Show Theme --- */
+        /* Define cute color variables */
+        :root {
+            --pop-pink: #ff77ab; /* Bright Pink */
+            --pop-purple: #a267e5; /* Bright Purple */
+            --pop-yellow: #ffd700; /* Gold/Bright Yellow */
+            --pop-cyan: #50e3c2; /* Bright Cyan/Teal */
+            --pop-bg: #fff0f5; /* Lavender Blush */
+            --pop-text: #4a0e60; /* Dark Purple */
+            --pop-accent: #ff1493; /* Deep Pink */
+        }
+
+        body {
+            /* NEW FONT */
+            font-family: 'Poppins', sans-serif;
+            /* NEW BACKGROUND - Fun Gradient */
+            background: linear-gradient(135deg, var(--pop-pink) 0%, var(--pop-purple) 50%, var(--pop-cyan) 100%);
+            color: var(--pop-text);
+            margin: 0;
+            padding: 0;
+            padding-bottom: 160px; /* Ensure space for footer */
+            min-height: 100vh; /* Ensure gradient covers full height */
+        }
+
+        /* Header Styling */
+        .site-header {
+            padding: 0;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            /* Semi-transparent white background with blur */
+            background-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(5px);
+            /* Dashed border for fun */
+            border-bottom: 4px dashed var(--pop-yellow);
+        }
+        .header-banner-image {
+            width: 100%;
+            height: 130px;
+            object-fit: cover;
+            display: block;
+            opacity: 0.6;
+            /* Blend mode for visual interest */
+            mix-blend-mode: screen;
+            /* Fallback background color */
+            background-color: var(--pop-pink);
+        }
+        .header-banner-image[src=""] {
+            background-color: var(--pop-purple); /* Different fallback if src is empty */
+        }
+        .site-header h1 {
+            /* NEW FONT */
+            font-family: 'Fredoka One', cursive;
+            font-size: 3rem; /* Bigger */
+            color: var(--pop-accent); /* Deep Pink */
+            /* Fun pop shadow */
+            text-shadow: 2px 2px 0px rgba(255, 255, 255, 0.8), -2px -2px 0px rgba(0,0,0,0.1);
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            padding: 0 1rem;
+            box-sizing: border-box;
+            letter-spacing: 1px;
+            /* Add background to title itself for readability over banner */
+            background: rgba(255, 240, 245, 0.5); /* Slightly transparent lavender blush */
+            padding-top: 0.3rem;
+            padding-bottom: 0.3rem;
+            border-radius: 10px;
+        }
+
+        /* Footer Styling */
+        .site-footer {
+            margin-top: 2rem;
+            padding: 1rem 1rem 1.5rem 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--pop-text);
+            border-top: 4px dashed var(--pop-yellow);
+            /* Lighter background with blur */
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(5px);
+            /* Fixed footer */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 10;
+        }
+        .footer-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        #clipboardMessage {
+            font-size: 0.85rem;
+            color: var(--pop-accent);
+            height: 1.2em;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+        .footer-content {
+            font-family: 'Bubblegum Sans', cursive; /* Fun font for footer text */
+            font-size: 1rem;
+        }
+
+        /* Game Layout */
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 1rem auto;
+            padding: 0 1rem;
+            gap: 1.5rem;
+        }
+
+        /* Card Styling (NEW - .pop-card) */
+        .pop-card {
+            /* Light gradient background */
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 240, 255, 0.85) 100%);
+            color: var(--pop-text);
+            border: 3px solid var(--pop-pink);
+            border-radius: 1.5rem; /* Very rounded */
+            padding: 1.5rem 2rem; /* More padding */
+            /* Purpleish shadow */
+            box-shadow: 0 6px 15px rgba(100, 50, 100, 0.2);
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s ease-out;
+        }
+        .pop-card:hover {
+            transform: translateY(-3px) rotate(0.5deg); /* Slight lift and tilt on hover */
+        }
+
+        /* Main Event Title */
+        .pop-card h2 {
+            font-family: 'Bubblegum Sans', cursive; /* Fun Font */
+            color: var(--pop-accent); /* Deep Pink */
+            /* Purple dotted border */
+            border-bottom: 3px dotted var(--pop-purple);
+            padding-bottom: 0.8rem;
+            margin-bottom: 1.5rem;
+            font-size: 2.2rem; /* Larger */
+            text-align: center;
+            flex-shrink: 0;
+            letter-spacing: 1px;
+        }
+        /* Section Headers */
+        .pop-card h3 {
+            font-family: 'Fredoka One', cursive; /* Bold Pop Font */
+            color: var(--pop-purple); /* Purple */
+            /* Cyan line border */
+            border-bottom: 2px solid var(--pop-cyan);
+            padding-bottom: 0.5rem;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+        /* List styling */
+        .pop-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 1rem 0;
+        }
+        /* List item styling */
+        .pop-card li {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.6rem;
+            padding: 0.4rem 0.6rem;
+            /* Cyan left border */
+            border-left: 5px solid var(--pop-cyan);
+            background-color: rgba(230, 240, 255, 0.5); /* Light blueish tint */
+            border-radius: 8px;
+        }
+        /* Icon styling within list items */
+        .pop-card li i {
+            color: var(--pop-pink);
+            font-size: 1.2em;
+        }
+        /* Strong text styling within list items */
+        .pop-card li strong {
+            color: var(--pop-accent);
+            font-weight: 700;
+        }
+
+        /* Status Display Styling */
+        .pop-card .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.6rem;
+            padding: 0.4rem 0.8rem;
+            /* Light background with cyan border */
+            background-color: rgba(255, 255, 255, 0.5);
+            border: 1px solid var(--pop-cyan);
+            border-radius: 10px;
+        }
+        .pop-card .status-label {
+            font-weight: 700;
+            color: var(--pop-purple);
+            font-size: 1rem;
+        }
+        .pop-card .status-value {
+            text-align: right;
+            font-weight: bold;
+            color: var(--pop-pink);
+            font-size: 1rem;
+        }
+        /* Progress bar styling */
+        .pop-card progress {
+            height: 1rem; /* Thicker */
+            accent-color: var(--pop-pink);
+            width: 100%;
+            margin-top: 0.3rem;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            border: 1px solid var(--pop-purple);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+        /* Specific styling for scandal progress bar */
+        .pop-card progress.scandal-bar::-webkit-progress-value { background-color: var(--pop-accent); }
+        .pop-card progress.scandal-bar::-moz-progress-bar { background-color: var(--pop-accent); }
+        .pop-card progress.scandal-bar { accent-color: var(--pop-accent); }
+
+        /* Text Styling */
+        .pop-text {
+            color: inherit;
+            line-height: 1.7;
+            word-wrap: break-word;
+            font-size: 1.05rem;
+        }
+        .pop-text strong {
+            color: var(--pop-accent);
+            font-weight: 700;
+        }
+        .pop-text em {
+            color: var(--pop-purple);
+            font-style: italic;
+            font-weight: 600;
+        }
+        /* Preformatted text styling */
+        .pop-text pre {
+            background-color: rgba(255, 255, 255, 0.6);
+            padding: 1rem;
+            border-radius: 1rem;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: var(--pop-text);
+            margin-top: 0.8rem;
+            border: 1px dashed var(--pop-pink);
+        }
+
+        /* Inputs (NEW - .pop-input) */
+        .pop-input, .pop-textarea {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 2px solid var(--pop-purple);
+            border-radius: 1rem;
+            color: var(--pop-text);
+            background-color: rgba(255, 255, 255, 0.8);
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 0.8rem;
+            transition: all 0.2s ease;
+            box-sizing: border-box; /* Ensure padding doesn't add to width */
+        }
+        .pop-input::placeholder, .pop-textarea::placeholder {
+            color: #a0a0c0;
+            opacity: 0.9;
+        }
+        .pop-input:focus, .pop-textarea:focus {
+            outline: none;
+            border-color: var(--pop-pink);
+            box-shadow: 0 0 0 4px rgba(255, 119, 171, 0.3);
+            background-color: #fff;
+            transform: scale(1.01);
+        }
+        .pop-textarea {
+            min-height: 80px;
+        }
+
+        /* Radio/Checkbox Options */
+        .pop-radio-option, .pop-checkbox-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.7rem;
+            padding: 0.8rem 1.2rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            background-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .pop-radio-option:hover, .pop-checkbox-option:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-color: var(--pop-cyan);
+            transform: scale(1.03) rotate(-0.5deg); /* Slight scale and tilt on hover */
+        }
+        .pop-radio-option input[type="radio"], .pop-checkbox-option input[type="checkbox"] {
+            margin-right: 1rem;
+            cursor: pointer;
+            accent-color: var(--pop-pink);
+            width: 1.4rem;
+            height: 1.4rem;
+            flex-shrink: 0;
+            transform: scale(1.1);
+        }
+        /* Custom Radio Button Appearance (Optional but fun) */
+        .pop-radio-option input[type="radio"] {
+            appearance: none;
+            border: 2px solid var(--pop-purple);
+            border-radius: 50%;
+            width: 1.4rem;
+            height: 1.4rem;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+        .pop-radio-option input[type="radio"]:checked {
+            border-color: var(--pop-pink); /* Change border when checked */
+        }
+        .pop-radio-option input[type="radio"]:checked::before {
+            content: '💖'; /* Heart emoji */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.9rem; /* Adjust emoji size */
+            color: var(--pop-pink);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        /* Custom Checkbox Appearance (Optional) */
+        .pop-checkbox-option input[type="checkbox"] {
+            appearance: none;
+            border: 2px solid var(--pop-purple);
+            border-radius: 5px;
+            width: 1.4rem;
+            height: 1.4rem;
+            position: relative;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        .pop-checkbox-option input[type="checkbox"]:checked {
+            border-color: var(--pop-pink);
+            background-color: var(--pop-pink); /* Fill background when checked */
+        }
+        .pop-checkbox-option input[type="checkbox"]:checked::before {
+            content: '✨'; /* Sparkle emoji */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            color: #fff; /* White sparkle on pink background */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .pop-radio-option label, .pop-checkbox-option label {
+            color: inherit;
+            flex-grow: 1;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.05rem;
+            /* Ensure label covers the area for click */
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Sliders */
+        .pop-slider-container {
+            margin-bottom: 1.2rem;
+            padding: 0.5rem;
+            background: rgba(255,255,255,0.5);
+            border-radius: 1rem;
+            border: 1px solid var(--pop-cyan);
+        }
+        .pop-slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            color: var(--pop-purple);
+            font-size: 0.9rem;
+            padding: 0 0.2rem;
+        }
+        .pop-slider {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--pop-pink);
+            height: 10px;
+            background: linear-gradient(to right, var(--pop-cyan), var(--pop-purple));
+            border-radius: 9999px;
+            appearance: none;
+            -webkit-appearance: none;
+            border: none;
+        }
+        .pop-slider::-webkit-slider-thumb {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 1.8rem;
+            height: 1.8rem;
+            background: var(--pop-yellow); /* Bright yellow thumb */
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .pop-slider::-moz-range-thumb {
+            width: 1.8rem;
+            height: 1.8rem;
+            background: var(--pop-yellow);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .pop-slider-value-display {
+            color: var(--pop-accent);
+            font-weight: 700;
+            font-size: 1rem;
+            min-width: 2.5rem;
+            text-align: right;
+            background-color: rgba(255,255,255,0.7);
+            padding: 0.1rem 0.4rem;
+            border-radius: 5px;
+        }
+
+        /* Images */
+        .pop-image-container {
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        .pop-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 1.5rem;
+            background-color: rgba(255, 255, 255, 0.5);
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            /* Thicker pink border */
+            border: 4px solid var(--pop-pink);
+            box-shadow: 0 5px 12px rgba(100, 50, 100, 0.2);
+            padding: 5px; /* Small padding inside border */
+        }
+        .pop-image-prompt {
+            font-size: 0.85rem;
+            color: var(--pop-purple);
+            opacity: 0.9;
+            font-style: italic;
+            margin-top: 0.8rem;
+            word-wrap: break-word;
+            padding: 0 0.5rem;
+            font-weight: 600;
+        }
+        .pop-image-label {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--pop-accent);
+            margin-bottom: 0.5rem;
+            font-family: 'Bubblegum Sans', cursive;
+        }
+
+        /* Buttons (NEW - .pop-button) */
+        .pop-button {
+            padding: 0.9rem 2rem;
+            /* Pink to purple gradient */
+            background: linear-gradient(to right, var(--pop-pink), var(--pop-purple));
+            color: #ffffff;
+            border: none;
+            border-radius: 30px; /* Very rounded */
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 8px 0 rgba(100, 50, 100, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            white-space: nowrap;
+            font-size: 1rem;
+            font-family: 'Fredoka One', cursive;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem; /* Space between icon and text */
+        }
+        .pop-button:hover {
+            /* Purple to cyan gradient on hover */
+            background: linear-gradient(to right, var(--pop-purple), var(--pop-cyan));
+            box-shadow: 0 6px 12px 0 rgba(100, 50, 100, 0.4);
+            transform: translateY(-3px) scale(1.05);
+        }
+        .pop-button:active {
+            transform: translateY(0) scale(1);
+            box-shadow: 0 2px 4px 0 rgba(100, 50, 100, 0.3);
+        }
+        .pop-button:disabled {
+            background: #cccccc;
+            color: #888;
+            cursor: not-allowed;
+            opacity: 0.7;
+            box-shadow: none;
+            transform: none;
+        }
+        /* Ensure icons within buttons are white */
+        .pop-button i {
+            color: white;
+        }
+
+        /* Mode Toggle Button Specific Styles */
+        #modeToggleButton {
+            background: linear-gradient(to right, var(--pop-cyan), var(--pop-purple));
+        }
+        /* New class for the risque mode */
+        #modeToggleButton.after-party-mode {
+            /* Hotter pink/red gradient */
+            background: linear-gradient(to right, var(--pop-pink), var(--pop-accent));
+        }
+
+        /* Reset Button Specific Styles */
+        #resetGameButton {
+            /* Orange/Yellow gradient */
+            background: linear-gradient(to right, var(--pop-yellow), #ffa500);
+            color: var(--pop-text); /* Dark text for contrast */
+        }
+        #resetGameButton i {
+            color: var(--pop-text); /* Match icon color */
+        }
+        #resetGameButton:hover {
+            background: linear-gradient(to right, #ffc800, #ff8c00); /* Brighter orange/yellow */
+        }
+
+
+        /* Loading/Error */
+        .loading-indicator, .error-message {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            font-size: 1.1rem;
+            border-radius: 1.5rem;
+            margin-top: 1rem;
+            font-weight: 700;
+            font-family: 'Bubblegum Sans', cursive;
+        }
+        .loading-indicator {
+            color: var(--pop-purple);
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 2px dashed var(--pop-pink);
+        }
+        .loading-indicator svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            color: var(--pop-pink);
+        }
+        .error-message {
+            color: #fff;
+            background-color: var(--pop-accent);
+            border: 2px solid var(--pop-text);
+            text-align: center;
+            white-space: pre-wrap;
+        }
+
+        /* API Key Section */
+        #apiKeySection {
+            margin-bottom: 1.5rem;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            border: 2px solid var(--pop-purple);
+            backdrop-filter: blur(3px);
+        }
+        #apiKeySection .api-key-label {
+            color: var(--pop-purple);
+            display: block;
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+            font-family: 'Fredoka One', cursive;
+        }
+        #apiKeySection .api-key-instructions span {
+            color: var(--pop-text);
+        }
+        #apiKeySection .api-key-instructions a {
+            color: var(--pop-pink);
+            text-decoration: underline;
+            font-weight: 700;
+        }
+        #apiKeySection .api-key-instructions a:hover {
+            color: var(--pop-accent);
+        }
+
+        /* Creative UI Elements (Toggle and Segmented Control styles adapted) */
+        .pop-toggle-switch {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            margin: 0.8rem 0;
+        }
+        .pop-toggle-switch input {
+            display: none;
+        }
+        .pop-toggle-switch .switch-bg {
+            width: 60px;
+            height: 30px;
+            background-color: #ddd; /* Grey off */
+            border-radius: 15px;
+            position: relative;
+            transition: background-color 0.3s ease;
+            border: 1px solid #bbb;
+            flex-shrink: 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .pop-toggle-switch .switch-handle {
+            width: 26px;
+            height: 26px;
+            background-color: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 1px;
+            left: 2px;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            /* Add emoji inside handle */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+        }
+        /* Off state emoji */
+        .pop-toggle-switch .switch-handle::before {
+            content: '☀️'; /* Sun for off */
+        }
+        .pop-toggle-switch input:checked + .switch-bg {
+            background-color: var(--pop-cyan); /* Cyan on */
+        }
+        .pop-toggle-switch input:checked + .switch-bg .switch-handle {
+            transform: translateX(30px);
+            background-color: var(--pop-yellow); /* Yellow handle when on */
+        }
+        /* On state emoji */
+        .pop-toggle-switch input:checked + .switch-bg .switch-handle::before {
+            content: '🌙'; /* Moon for on */
+        }
+
+        .pop-toggle-switch span {
+            margin-left: 0.8rem;
+            font-weight: 600;
+            color: var(--pop-purple);
+        }
+
+        .pop-segmented-control {
+            display: flex;
+            border: 2px solid var(--pop-purple);
+            border-radius: 30px; /* Very rounded */
+            overflow: hidden;
+            background-color: rgba(255, 255, 255, 0.6);
+            margin: 0.8rem 0;
+            padding: 3px; /* Padding inside border */
+        }
+        .pop-segmented-control label {
+            flex: 1;
+            text-align: center;
+            padding: 0.7rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
+            color: var(--pop-purple);
+            font-size: 0.95rem;
+            font-family: 'Fredoka One', cursive;
+            border-radius: 25px; /* Rounded inner labels */
+        }
+        .pop-segmented-control input[type="radio"] {
+            display: none;
+        }
+        .pop-segmented-control input[type="radio"]:checked + label {
+            background-color: var(--pop-pink);
+            color: #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+        /* Responsive layout for generated content */
+        .turn-layout-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Default to single column */
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) { /* Medium screens and up */
+            .turn-layout-grid {
+                grid-template-columns: 1fr 2.5fr; /* Sidebar-like layout */
+            }
+            .sidebar-content {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+        }
+        @media (min-width: 1024px) { /* Large screens and up */
+            .turn-layout-grid {
+                grid-template-columns: 1fr 3fr; /* Wider main content */
+            }
+        }
+        .main-content-card { /* The card containing narrative, images, choices */
+            display: flex;
+            flex-direction: column; /* Ensure title is at top */
+        }
+
+    </style>
+</head>
+<body class="bg-gradient-to-br from-pink-200 via-purple-200 to-cyan-200"> <header class="site-header">
+    <img id="headerBanner" alt="Kawaii Pop Fashion Banner" class="header-banner-image" src="" onerror="this.style.backgroundColor='var(--pop-pink)'; this.alt='Fallback Banner';"> <h1>Sparkle Stage Sirens</h1>
+</header>
+
+<div class="max-w-6xl mx-auto px-4 md:px-8">
+    <div id="apiKeySection">
+        <label for="apiKeyInput" class="api-key-label api-key-instructions">
+            Enter Google AI API Key to Hit the Runway! ✨👠
+            <span class="block text-sm font-normal mt-1">
+                (Get a key from Google AI Studio:
+                <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="hover:text-pop-accent">
+                    aistudio.google.com/apikey
+                </a>)
+                <br>Or provide via URL: ?apiKey=YOUR_API_KEY
+            </span>
+        </label>
+        <input type="password" id="apiKeyInput" class="pop-input" placeholder="Paste your Backstage Pass here... 🎟️">
+    </div>
+
+    <div id="game-container">
+        <div id="turn-content">
+            <div id="initial-message" class="text-center text-pink-600 p-6 font-semibold pop-card">
+                Ready to produce the most dazzling fashion shows? Enter your Backstage Pass Key and click "Start Show!" 🌟
+            </div>
+        </div>
+
+        <div id="loading" class="loading-indicator" style="display: none;">
+            <svg class="animate-spin -ml-1 mr-3 h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none"
+                 viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span id="loading-message">Loading...</span>
+        </div>
+        <div id="error-display" class="error-message" style="display: none;"></div>
+
+        <div class="mt-8 text-center">
+            <button id="submit-turn-button" class="pop-button" disabled>
+                <i class="lucide lucide-play"></i> Start Show!
+            </button>
+        </div>
+    </div>
+</div>
+
+<footer class="site-footer">
+    <div class="footer-buttons">
+        <button id="saveGameButton" class="pop-button" disabled><i class="lucide lucide-save"></i> Save Lookbook</button>
+        <button id="modeToggleButton" class="pop-button standard-showbiz-mode"><i class="lucide lucide-party-popper"></i> Mode: Standard Showbiz</button>
+        <button id="resetGameButton" class="pop-button" disabled><i class="lucide lucide-flame"></i> End Production</button>
+    </div>
+    <div id="clipboardMessage"></div>
+    <div class="footer-content">
+        <span>Making the runway sparkle &copy; 2025 ✨</span>
+    </div>
+</footer>
+
+<script type="module">
+    // --- NEW Prompts for Sparkle Stage Sirens ---
+    const sparkleStagePrompts = {
+        // RENAMED and REWRITTEN Addendum for the new theme
+        afterPartyModeAddendum: `**AFTER PARTY MODE OVERRIDE:**\n\n* **Core Concept:** OVERRIDE 'Standard Showbiz' Mode. Intensify focus on sensual encounters, suggestive outfits/backstage moments, flirty rivalries/alliances, and explicit (softcore-style) eroticism, all filtered through the fun, playful, kawaii/pop lens of the fashion show world. Generate scenarios involving exclusive after-parties with VIPs/models, risqué "private viewing" outfit requests, seductive models/designers/rivals (referencing \`gameState.crew\` and \`gameState.profile.orientation\`), managing scandalous rumors or paparazzi photos, exploring desires amidst the glamour, navigating love triangles in the dressing rooms, or dealing with overly enthusiastic fans/sponsors. Aim for high levels of titillation, playful naughtiness, cute-but-sexy aesthetics, and the excitement of forbidden fun.\n* **Player Profiling & Crew Interaction:** USE the player's profile (\`gameState.profile\`) and existing crew relationships/moods (tracked in \`internalState\`) to tailor romantic/erotic encounters, dialogue, and potential partners/rivals. Ensure encounters align with the player's stated interests AND the defined crew members (models, stylists, etc.). Allow choices that improve/damage relationships, affect 'Model Mood', or increase/decrease 'Scandal'.\n* **Presentation Style (HTML - FULL TURN UI):** Generate richer, more suggestive HTML for the ENTIRE \`#turn-content\` area. Use vibrant pinks, purples, maybe neon accents or glittery effects via inline styles or Tailwind classes. Include CREATIVE, playful displays for Status, Crew, and Shows alongside the main event. Visuals (\`<img>\`) should depict **cute/sexy models** (based on \`gameState.crew\` if applicable) in alluring poses, wearing playful but revealing outfits (e.g., short skirts, low tops, suggestive themes within kawaii/pop style, **bikinis where appropriate like a beach photoshoot scene**), intimate backstage/after-party settings, close-ups emphasizing expressions (winks, blushes), partial nudity (tasteful, pin-up/anime style, within API limits), intense gazes, or fun/flirty interactions. **Use the required URL format: \`https://image.pollinations.ai/prompt/{GENERATED_PROMPT}?width={WIDTH}&height={HEIGHT}&seed={RANDOM_SEED}&nologo=true&safe=false\`**. Generate relevant \`{GENERATED_PROMPT}\` text focused on **playful eroticism and fashion** (e.g., "kawaii anime girl in sexy but cute revealing pop idol outfit winking playfully", "two models sharing a secret giggle backstage fashion show suggestive", "close up flirty expression cute model adjusting strap revealing outfit", "beautiful young model posing confidently in a stylish bikini on a vibrant runway"). Choose appropriate \`{WIDTH}\` and \`{HEIGHT}\` (e.g., 400x512). Use a random \`{RANDOM_SEED}\`. Text uses more flirtatious, teasing, direct, or suggestive language.\n* **Encounters & Choices (HTML - Creative & Profile/Crew-Aware):** Generate encounters focused on romantic/sexual tension, backstage drama, or explicit softcore situations within the fashion show context, informed by player profile and involving specific crew members. Choices are HTML form elements within \`<form id='sparkle-stage-form'>\` (use new ID). VARY UI elements (sliders for 'Flirt Level', toggles for 'Discretion', radios for dialogue). Options involve pursuing specific crew members, handling scandals discreetly (or not!), choosing risqué show elements, or engaging in sensual activities. Choices significantly impact 'Scandal' level, 'Hype', crew relationships/mood (update in \`internalState\`), and potentially earn/spend 'Budget'.\n* **Multi-Image Generation (HTML):** Generate 2-5 images per turn using standard \`<img>\` tags with the required Pollinations.ai URL format, reflecting the After Party theme and featuring **cute/sexy models and suggestive situations** prominently.\n* **Analyses (Internal):** 'internalState' logs relationship developments, crew moods, choices involving crew, player's romantic/sexual choices, and show directions. 'gemini_facing_analysis' summarizes the player's production style and romantic pursuits, potentially mentioning specific crew dynamics. Player-facing analysis might offer gossip about crew or warnings about rising 'Scandal'.\n* **Status Impact:** Erotic events heavily influence 'Scandal', 'Hype', 'Model Mood', and 'Relationship Status' with involved crew. 'Budget' might be earned/spent on parties/gifts/bribes. **NOTE:** Status display is generated BY YOU in the HTML. The AI should still generate status *changes* to be logged in \`internalState\`.\n`,
+
+        // REWRITTEN firstrun prompt for Sparkle Stage Sirens
+        firstrun: `**Instructions for Generating Turn 1 ONLY (Sparkle Stage Sirens - Full HTML UI for #turn-content):**\n\n**(Input: None. Output: Raw HTML snippet for the ENTIRE Turn 1 UI inside \`#turn-content\`)**\n\n* **Goal:** Generate the initial HTML state for the \`#turn-content\` div. This includes introducing the premise (starting a kawaii/pop fashion show production company), performing player profiling (style, personality, attractions, goals), AND displaying the initial Status, Crew list (empty), and Shows list (empty).\n* **Theme:** Kawaii, Cute, Pop, Fun, Playful, Erotic, Adult Fashion Show Production Game. Start in 'Standard Showbiz' mode.\n* **Output Format:** Raw HTML content block for \`#turn-content\`.\n* **HTML Structure Requirements:**\n    * **Overall Layout:** Use \`.turn-layout-grid\` with \`.pop-card\` containers.\n    * **Use Tailwind & Custom Classes:** Employ \`.pop-card\`, \`.pop-button\`, \`.pop-text\`, etc.\n    * **Sections to Generate:**\n        * **Status Display:** Generate HTML to display initial status values (e.g., Hype: 30/100 🌟, Style Points: 50/100 ✨, Model Mood: 60/100 💖, Budget: 1000 💰, Scandal: 5/100 🤫). Be CREATIVE/POPPY (icons, bright progress bars, fun labels). Use \`<h3>✨ Production Status ✨</h3>\`. **(Use Enhanced Example UI structure provided below)**\n        * **Crew Roster:** Generate HTML to display the (initially empty) crew list (Models, Stylists, Techs). Use \`<h3>💖 Crew Roster 💖</h3>\`. Indicate emptiness colorfully. **(Use Enhanced Example UI structure)**\n        * **Show Schedule:** Generate HTML to display the (initially empty) list of upcoming/past shows. Use \`<h3>📅 Show Schedule 📅</h3>\`. Indicate emptiness. **(Use Enhanced Example UI structure)**\n        * **Main Event:** Generate Title ("🌟 Let's Start the Show! 🌟") and description introducing the player's dream of creating the most dazzling, talked-about fashion shows ever.\n        * **Images:** Generate 2-3 images using \`<img>\` tags. **CRITICAL: Use the Pollinations.ai URL format:** \`https://image.pollinations.ai/prompt/{GENERATED_PROMPT}?width={WIDTH}&height={HEIGHT}&seed={RANDOM_SEED}&nologo=true&safe=false\`. Generate relevant \`{GENERATED_PROMPT}\` text focused on **kawaii/pop fashion show startup themes** (e.g., "empty colorful fashion runway stage with bright pop lighting", "kawaii anime girl dreaming at a desk covered in fashion sketches", "mood board with cute pop art fashion styles glitter"). Choose appropriate \`{WIDTH}\` and \`{HEIGHT}\` (e.g., 512x384 landscape). Use a random \`{RANDOM_SEED}\`. Include a \`.pop-image-prompt\` div below each image.\n        * **Choices & Profiling:** Wrap choices in \`<form id=\"sparkle-stage-form\">\` (use new ID). Include initial profiling questions (Production Style [e.g., Edgy Pop, Sweet Kawaii, Glam Rock], Player Personality [e.g., Diva Director, Bubbly Producer, Mysterious Stylist], Attraction/Orientation, Main Goal [e.g., Critical Acclaim, Viral Fame, Romantic Entanglements]) using VARIED UI elements (segmented controls for Style, sliders for Goal priority, checkboxes for Attraction). **(Use Enhanced Example UI structure)**\n        * **Initial Action:** Include a simple starting action choice (e.g., "Design the first show concept", "Hold a casting call for models", "Scout for a venue").\n    * **Hidden Fields:** CRITICAL - Include hidden inputs: \`<input type='hidden' name='turn' value='1'>\`, \`<input type='hidden' name='subjectId' value='ProductionSelf'>\`, \`<input type='hidden' name='internalState' value='{initial_escaped_markdown_state}'>\`.\n    * **No Submit Button:** DO NOT include \`#submit-turn-button\` in the generated HTML.\n* **Internal State (For Hidden Field):** Generate initial JSON-escaped Markdown. Include placeholders for profile, NEW initial status, empty crew/shows lists. Example structure:\n    \`\`\`markdown\n    # Production Log - Day 1 - Turn 1\n\n    * **Subject:** ProductionSelf\n    * **Mode:** Standard Showbiz\n    * **Initial Status:** Hype 30, StylePoints 50, ModelMood 60, Budget 1000, Scandal 5\n    * **Player Profile:** { "productionStyle": "unspecified", "personality": "unspecified", "orientation": "unspecified", "preferences": {}, "goal": "50" }\n    * **Crew:** []\n    * **Shows:** []\n    * **Current Situation:** Ready to launch the first fashion show!\n    * **Plan:** Initial profiling and first production step.\n    \`\`\`\n* **Player/Gemini Analysis:** Optionally include these as text paragraphs within the generated HTML.\n\n* **!-- ENHANCED UI EXAMPLE START --! (HTML for #turn-content):**\n    \`\`\`html\n    <div class="turn-layout-grid">\n      <div class="sidebar-content">\n        \n        <div class="pop-card">\n          <h3>✨ Production Status ✨</h3>\n          <ul>\n            <li class="status-item" title="Public excitement for your shows!">\n                <span class="status-label">Hype 🌟:</span> <span class="status-value">30/100</span>\n            </li>\n            <li><progress value='30' max='100'></progress></li>\n            <li class="status-item" title="Your current fashion sense rating.">\n                 <span class="status-label">Style Points ✨:</span> <span class="status-value">50/100</span>\n            </li>\n            <li><progress value='50' max='100'></progress></li>\n            <li class="status-item" title="Overall happiness of your models.">\n                 <span class="status-label">Model Mood 💖:</span> <span class="status-value">60/100</span>\n            </li>\n            <li><progress value='60' max='100'></progress></li>\n            <li class="status-item" title="Scandals or bad press.">\n                 <span class="status-label">Scandal 🤫:</span> <span class="status-value">5/100</span>\n            </li>\n             <li><progress value='5' max='100' class='scandal-bar'></progress></li>\n            <li class="status-item" title="Cash for production.">\n                <span class="status-label">Budget 💰:</span> <span class="status-value">1000</span>\n            </li>\n          </ul>\n           <p class='text-xs italic text-purple-600 mt-2'>Ready to make some magic (and maybe some drama)!</p>\n        </div>\n        \n        <div class="pop-card">\n            <h3>💖 Crew Roster 💖</h3>\n            <ul>\n               <li><i class="lucide lucide-users"></i> Your crew list is empty! Time for auditions!</li>\n            </ul>\n        </div>\n         \n        <div class="pop-card">\n            <h3>📅 Show Schedule 📅</h3>\n             <ul>\n                <li><i class="lucide lucide-calendar-plus"></i> No shows scheduled yet. Let's plan one!</li>\n             </ul>\n        </div>\n      </div>\n\n      \n      <div class="main-content-card pop-card">\n        <h2>🌟 Let's Start the Show! 🌟</h2>\n        <p class="pop-text">The spotlight awaits! You're about to launch your career producing the most dazzling, talked-about, and maybe slightly scandalous fashion shows the world has ever seen! But first, what's your signature style going to be, director?</p>\n        <div class="pop-image-container">\n          <img src='https://image.pollinations.ai/prompt/empty%20colorful%20fashion%20runway%20stage%20with%20bright%20pop%20art%20lighting%20kawaii%20style%20glitter?width=512&height=384&seed=101&nologo=true&safe=false' alt='Empty Fashion Stage' class='pop-image my-4' onerror="this.src='https://placehold.co/512x384/ffdde1/4a0e60?text=Image+Error'; this.alt='Error Loading Image'">\n          <div class='pop-image-prompt'>empty colorful fashion runway stage with bright pop art lighting kawaii style glitter</div>\n        </div>\n\n        <form id="sparkle-stage-form">\n          <input type='hidden' name='turn' value='1'>\n          <input type='hidden' name='subjectId' value='ProductionSelf'>\n          <input type='hidden' name='internalState' value='{initial_escaped_markdown_state}'>\n\n          <h3>--- Define Your Production Vibe ---</h3>\n          <p class='pop-text mb-4'>How will your shows sparkle?</p>\n\n          \n          <label class='font-semibold text-purple-600 mb-2 block'>Production Style:</label>\n          <div class="pop-segmented-control">\n            <input type="radio" id="style_ep" name="profile_productionStyle" value="Edgy Pop" checked>\n            <label for="style_ep">Edgy Pop</label>\n            <input type="radio" id="style_sk" name="profile_productionStyle" value="Sweet Kawaii">\n            <label for="style_sk">Sweet Kawaii</label>\n            <input type="radio" id="style_gr" name="profile_productionStyle" value="Glam Rock">\n            <label for="style_gr">Glam Rock</label>\n          </div>\n\n           \n            <label class='font-semibold text-purple-600 mb-2 mt-4 block'>Interested In:</label>\n            <div class='grid grid-cols-2 gap-2 mb-4'>\n                <label class="pop-checkbox-option">\n                    <input type="checkbox" name="profile_attraction" value="models"> Models\n                </label>\n                 <label class="pop-checkbox-option">\n                    <input type="checkbox" name="profile_attraction" value="crew"> Crew (Stylists, etc.)\n                </label>\n                <label class="pop-checkbox-option">\n                    <input type="checkbox" name="profile_attraction" value="rivals"> Rivals\n                </label>\n                <label class="pop-checkbox-option">\n                    <input type="checkbox" name="profile_attraction" value="all"> Everyone!\n                </label>\n            </div>\n\n          \n          <div class="pop-slider-container">\n              <div class="pop-slider-label">\n                  <span>Main Goal: Artistic Vision</span>\n                  <span class="pop-slider-value-display" id="goal-value-display">50</span>\n                  <span>Viral Fame</span>\n              </div>\n              <input type="range" id="profile_goal_slider" name="profile_goal" min="0" max="100" value="50" class="pop-slider" oninput="document.getElementById('goal-value-display').textContent = this.value">\n          </div>\n\n           \n           <label class="pop-toggle-switch">\n              <input type="checkbox" name="profile_allow_drama" value="true">\n              <span class="switch-bg"><span class="switch-handle"></span></span>\n              <span class="ml-2">Embrace Backstage Drama?</span>\n          </label>\n\n          <h3 class="mt-6">--- First Production Step ---</h3>\n          <p class='pop-text mb-4'>Time to make some magic happen!</p>\n          \n            <div class="pop-radio-option">\n              <input type="radio" id="action_concept" name="initial_action" value="design_show_concept" checked>\n              <label for="action_concept">Design the concept for the first show</label>\n            </div>\n            <div class="pop-radio-option">\n              <input type="radio" id="action_casting" name="initial_action" value="hold_casting_call">\n              <label for="action_casting">Hold a casting call for models</label>\n            </div>\n             <div class="pop-radio-option">\n              <input type="radio" id="action_venue" name="initial_action" value="scout_venue">\n              <label for="action_venue">Scout for the perfect venue</label>\n            </div>\n\n        </form>\n\n        <p class="mt-4 text-sm italic text-purple-600">The runway is calling... make your mark!</p>\n      </div>\n    </div>\n    <script>\n     // Script for slider value display already included in slider input's oninput\n    <\/script>\n    \`\`\`\n* **!-- ENHANCED UI EXAMPLE END --!**\n`,
+
+        // REWRITTEN main prompt for Sparkle Stage Sirens
+        main: `**Sparkle Stage Sirens LLM Turn Generation Protocol v1.0 - Full UI Generation**\n\n**(Input: Player Actions JSON, Previous Internal State Markdown (incl. Player Profile, Crew, Shows sections), Current Mode (standard_showbiz/after_party), Current Client GameState (for display values: profile, status, crew, shows). Output: Raw HTML snippet for the ENTIRE next turn UI in \`#turn-content\`.)**\n\n**Context:** Client manages a \`gameState\` object (profile, status numbers, crew array, shows array) which is provided. Use this data for *displaying* current state. Your memory is the \`internalState\` Markdown log. Generate the ENTIRE HTML UI for \`#turn-content\` each turn.\n\n**Core Goals:**\n1.  **Generate Full Turn UI (HTML):** Generate COMPLETE HTML for \`#turn-content\`. Include CREATIVE/POPPY displays for **current** Status (Hype 🌟, Style Points ✨, Model Mood 💖, Budget 💰, Scandal 🤫), Crew Roster, and Show Schedule (using client \`gameState\`). Use \`.turn-layout-grid\` and \`.pop-card\`.\n2.  **Thematic Immersion (HTML):** Generate narrative, multiple visuals (\`<img>\`), choices (\`<form>\` elements) reflecting the Kawaii/Pop/Erotic Fashion Show theme. Adapt intensity based on mode. Reference player profile (\`gameState.profile\`), crew (\`gameState.crew\`), and shows (\`gameState.shows\`) context. Use fun, playful, flirty, or suggestive tone.\n3.  **Dynamic State & Logging (Internal State Markdown):** Calculate status changes (hype, stylePoints, modelMood, budget, scandal) & relationship/mood updates based on actions. **Log changes thoroughly in \`internalState\` Markdown.** Update crew or shows lists in Markdown. Increment turn. Plan next event (Casting, Outfit Design, Stage Build, Rehearsal, Show Night, After Party, Press Event, Crew Drama). Log plans. **CRITICAL:** Return updated, escaped Markdown in \`<input type='hidden' name='internalState' value='...'>\`.\n4.  **Creative & Engaging UI (HTML):** Generate varied HTML form elements (\`radio\`, \`range\`, \`checkbox\`, \`textarea\`, \`toggle\`, \`segmented control\`) within \`<form id=\"sparkle-stage-form\">\`. Make UI relevant (e.g., sliders for budget, checkboxes to select models/outfits, toggles for show features).\n\n**--- Protocol ---**\n\n1.  **Analyze Input:** Parse actions JSON, receive previous \`internalState\` Markdown, current mode (\`isAfterPartyMode\`), client \`gameState\` (profile, status, crew, shows).\n2.  **Update Internal Log & Plan:** Modify status/resources. Update crew relationships/moods/show progress *in Markdown*. Increment turn. Plan next event concept. Log plans.\n3.  **Generate Next Turn HTML (for ALL of \`#turn-content\`):**\n    * **Overall Layout:** Use \`.turn-layout-grid\`, \`.pop-card\`.\n    * **Status Display (HTML):** Create \`.pop-card\` showing **updated** status (Hype 🌟, Style Points ✨, Model Mood 💖, Budget 💰, Scandal 🤫) based on calculations (start from client \`gameState\`). Be CREATIVE/POPPY (\`<h3>🌈 Show Vitals 🌈</h3>\`). **(Use Enhanced Example structure)**\n    * **Crew Roster Display (HTML):** Create \`.pop-card\` showing **current** crew from \`gameState.crew\`. List names, roles, mood/relationship icons/hints. Be CREATIVE (\`<h3>👯‍♀️ The Crew 👯‍♀️</h3>\`). **(Use Enhanced Example structure)**\n    * **Show Schedule Display (HTML):** Create \`.pop-card\` showing **current** shows from \`gameState.shows\`. List show names, status (planning, rehearsal, completed). Be CREATIVE (\`<h3>🎬 Production Board 🎬</h3>\`). **(Use Enhanced Example structure)**\n    * **Main Event Card:** Create a \`.pop-card\` for narrative.\n        * **Event Description:** Title (\`<h2>\`) and narrative (\`<p class=\"pop-text\">\`), tailored to profile, crew, shows, actions, mode. Fun/playful/sexy tone.\n        * **Images:** Embed 2-5 relevant images (\`<img>\`). **CRITICAL: Pollinations.ai URL format** \`.../prompt/{GENERATED_PROMPT}?width={W}&height={H}&seed={S}&nologo=true&safe=false\`. Generate \`{GENERATED_PROMPT}\` focused on **kawaii/pop/sexy fashion shows, models (including bikini models where context fits, like photoshoots or themed shows), backstage** (e.g., "group of cute models in colorful pop fashion outfits posing playfully on runway", "backstage chaos fashion show kawaii anime style", "close up sexy wink anime model wearing revealing but cute outfit", "fashion designer arguing playfully with stylist backstage", "stunning model in a vibrant bikini striking a pose for a beach photoshoot"). Use varied dimensions. Use random seed. Include \`.pop-image-prompt\` below each image. Add \`onerror="this.src='https://placehold.co/{W}x{H}/ffdde1/4a0e60?text=Image+Error'; this.alt='Error Loading Image'"\` to each image tag, replacing {W} and {H} with the correct width and height.\n        * **Choices Form:** Create \`<form id=\"sparkle-stage-form\">\` with VARIED & CREATIVE UI ELEMENTS (sliders, toggles, checkboxes for model/outfit selection, etc.). Include choices referencing crew, budget, scandal.\n        * **Hidden Fields:** CRITICAL - Updated hidden fields: \`<input type='hidden' name='turn' value='{new_turn_number}'>\`, \`<input type='hidden' name='subjectId' value='{current_subject_id}'>\`, \`<input type='hidden' name='internalState' value='{UPDATED_escaped_markdown_state}'>\`.\n    * **NO Submit Button:** DO NOT include \`#submit-turn-button\`.\n    * **Analysis Text:** Optionally include player-facing analysis/gossip/advice.\n    * **Inline Scripts (Optional):** Include small \`<script>\` if needed.\n4.  **Escape & Compile Output:** Ensure valid HTML. Return raw HTML snippet.\n\n**--- Input Example (Post-Profiling) ---**\n    \`\`\`json\n    {\n      \"actions\": {\n        \"turn\": 1,\n        \"subjectId\": \"ProductionSelf\",\n        \"profile_productionStyle\": \"Sweet Kawaii\",\n        \"profile_attraction\": [\"models\", \"crew\"],\n        \"profile_goal\": \"30\",\n        \"profile_allow_drama\": true,\n        \"initial_action\": \"hold_casting_call\"\n      },\n      \"internalState\": \"# Production Log - Day 1 - Turn 1\\n...\\n* Player Profile: { \\\"productionStyle\\\": \\\"Sweet Kawaii\\\", \\\"personality\\\": \\\"unspecified\\\", \\\"orientation\\\": [\\\"models\\\", \\\"crew\\\"], \\\"preferences\\\": {\\\"allow_drama\\\": true}, \\\"goal\\\": \\\"30\\\" }\\n* Crew: []\\n* Shows: []\\n...\",\n      \"isAfterPartyMode\": false,\n      \"clientGameState\": { \n         \"profile\": { \"productionStyle\": \"Sweet Kawaii\", \"personality\": \"unspecified\", \"orientation\": [\"models\", \"crew\"], \"preferences\": { \"allow_drama\": true }, \"goal\": \"30\" },\n         \"status\": { \"hype\": 30, \"stylePoints\": 50, \"modelMood\": 60, \"budget\": 1000, \"scandal\": 5 },\n         \"crew\": [],\n         \"shows\": []\n      }\n    }\n    \`\`\`\n\n* **!-- ENHANCED UI EXAMPLE START --! (HTML for #turn-content - Turn 2 - Casting Call) --!**\n    \`\`\`html\n    <div class="turn-layout-grid">\n      <div class="sidebar-content">\n         \n        <div class="pop-card">\n          <h3>🌈 Show Vitals 🌈</h3>\n          <ul>\n            <li class="status-item"><span class="status-label">Hype 🌟:</span> <span class="status-value">35/100</span></li>\n            <li><progress value='35' max='100'></progress></li>\n            <li class="status-item"><span class="status-label">Style Points ✨:</span> <span class="status-value">50/100</span></li>\n            <li><progress value='50' max='100'></progress></li>\n            <li class="status-item"><span class="status-label">Model Mood 💖:</span> <span class="status-value">55/100</span></li>\n            <li><progress value='55' max='100'></progress></li>\n            <li class="status-item"><span class="status-label">Scandal 🤫:</span> <span class="status-value">6/100</span></li>\n            <li><progress value='6' max='100' class='scandal-bar'></progress></li>\n            <li class="status-item"><span class="status-label">Budget 💰:</span> <span class="status-value">950</span></li>\n          </ul>\n           <p class='text-xs italic text-purple-600 mt-2'>Casting call created some buzz, but cost $$!</p>\n        </div>\n        \n        <div class="pop-card">\n            <h3>👯‍♀️ The Crew 👯‍♀️</h3>\n            <ul>\n               <li><i class="lucide lucide-user-plus"></i> <strong>Yuki</strong> (Model - Mood: 😊 / Relation: 💖) - *Just Cast!*</li>\n               <li><i class="lucide lucide-user-plus"></i> <strong>Mei</strong> (Model - Mood: 🤔 / Relation: 😐) - *Just Cast!*</li>\n            </ul>\n        </div>\n        \n        <div class="pop-card">\n            <h3>🎬 Production Board 🎬</h3>\n            <ul>\n                <li><i class="lucide lucide-calendar-plus"></i> No shows scheduled yet.</li>\n             </ul>\n        </div>\n      </div>\n\n      \n      <div class="main-content-card pop-card">\n        <h2>💖 Casting Call Success! (Mostly!) 💖</h2>\n        <p class="pop-text\">The casting call was wild! So many hopefuls, so much glitter! ✨ You've narrowed it down and signed two promising new models: the super-energetic <strong>Yuki</strong> and the cool, mysterious <strong>Mei</strong>. They're both gorgeous, but seem like total opposites... this could be interesting! What's your first interaction?</p>\n        <div class="pop-image-container grid grid-cols-2 gap-4">\n            <div>\n                <img src='https://image.pollinations.ai/prompt/two%20cute%20kawaii%20anime%20models%20Yuki%20and%20Mei%20posing%20backstage%20after%20casting%20call%20one%20energetic%20one%20cool?width=400&height=512&seed=202&nologo=true&safe=false' alt='Yuki and Mei' class='pop-image' onerror="this.src='https://placehold.co/400x512/ffdde1/4a0e60?text=Image+Error'; this.alt='Error Loading Image'">\n                <div class='pop-image-prompt'>two cute kawaii anime models Yuki and Mei posing backstage after casting call one energetic one cool</div>\n            </div>\n             <div>\n                <img src='https://image.pollinations.ai/prompt/close%20up%20playful%20wink%20cute%20anime%20model%20Yuki%20kawaii%20pop%20style%20fashion?width=400&height=512&seed=203&nologo=true&safe=false' alt='Yuki Close Up' class='pop-image' onerror="this.src='https://placehold.co/400x512/ffdde1/4a0e60?text=Image+Error'; this.alt='Error Loading Image'">\n                <div class='pop-image-prompt'>close up playful wink cute anime model Yuki kawaii pop style fashion</div>\n            </div>\n        </div>\n\n        <form id="sparkle-stage-form">\n          <input type='hidden' name='turn' value='2'>\n          <input type='hidden' name='subjectId' value='Yuki_Mei'>\n          <input type='hidden' name='internalState' value='{updated state markdown, adding Yuki & Mei to crew, updating status}'>\n\n          <h3 class="mt-4">--- Welcome the New Models! ---</h3>\n\n          \n           <fieldset class="mt-2 border-t pt-4 border-pink-300">\n                <legend class="font-semibold text-purple-700 mb-2">How do you greet your new stars?</legend>\n                <div class="pop-radio-option">\n                  <input type="radio" id="action_welcome_yuki" name="welcome_action" value="focus_yuki" checked>\n                  <label for="action_welcome_yuki">Shower energetic Yuki with praise and excitement!</label>\n                </div>\n                <div class="pop-radio-option">\n                  <input type="radio" id="action_welcome_mei" name="welcome_action" value="focus_mei">\n                  <label for="action_welcome_mei">Try to crack cool Mei's mysterious exterior.</label>\n                </div>\n                 <div class="pop-radio-option">\n                  <input type="radio" id="action_welcome_both" name="welcome_action" value="welcome_both_professional">\n                  <label for="action_welcome_both">Give them both a professional welcome speech.</label>\n                </div>\n                 <div class="pop-radio-option">\n                  <input type="radio" id="action_welcome_flirt" name="welcome_action" value="welcome_flirtatious">\n                  <label for="action_welcome_flirt">Offer a *very* friendly welcome... maybe suggest celebrating? 😉</label>\n                </div>\n            </fieldset>\n\n        </form>\n\n        <p class="mt-4 text-sm italic text-pink-700">Casting Cost: -50 Budget. Hype +5, Model Mood -5 (stress!), Scandal +1.</p>\n      </div>\n    </div>\n    <script>\n     // Optional inline script\n    <\/script>\n    \`\`\`\n* **!-- ENHANCED UI EXAMPLE END --!**\n`,
+
+        exampleTurn: `{...}` // Kept for structure, not used directly
+    };
+
+    // --- NEW Game State Object (Sparkle Stage Sirens Theme) ---
+    let gameState = {
+        apiKey: null,
+        encodedApiKey: null, // Store encoded version for saving
+        turn: 0,
+        // NEW MODES
+        mode: 'standard_showbiz', // 'standard_showbiz' or 'after_party'
+        profile: {
+            // NEW PROFILE FIELDS
+            productionStyle: "unspecified",
+            personality: "unspecified",
+            orientation: "unspecified",
+            preferences: {}, // Store toggle preferences like { allow_drama: false }
+            goal: "50" // Default goal slider mid-point
+        },
+        // NEW Status Keys
+        status: {
+            hype: 30,
+            stylePoints: 50,
+            modelMood: 60, // Changed from CrewMood
+            budget: 1000,
+            scandal: 5
+        },
+        // Renamed/Refocused Lists
+        crew: [], // Array of {name: 'Yuki', role: 'Model', mood: 'Happy', relationship: 5} etc.
+        shows: [], // Array of {name: 'Pop Dreams', status: 'Planning', hype: 10}
+        currentSubjectId: "ProductionSelf", // Start focused on the player/production
+        currentInternalStateMarkdown: "", // The AI's running log
+        currentModelIndex: 0,
+        isLoading: false,
+        isLocked: false
+    };
+
+    // --- Model Switching State (Unchanged) ---
+    const AVAILABLE_MODELS = ["gemini-2.5-pro-exp-03-25", "gemini-1.5-pro", "gemini-2.0-pro-exp-02-05", "gemini-2.0-flash-exp", "gemini-exp-1206"];
+
+    // --- Configuration ---
+    // NEW LOCAL STORAGE KEY
+    const LOCAL_STORAGE_KEY = 'sparkleStageSirensState_v1';
+
+    // --- DOM Element References (remain the same IDs) ---
+    const turnContentContainer = document.getElementById('turn-content');
+    const loadingIndicator = document.getElementById('loading');
+    const loadingMessage = document.getElementById('loading-message'); // Span for text
+    const submitButton = document.getElementById('submit-turn-button');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const apiKeySection = document.getElementById('apiKeySection');
+    const errorDisplay = document.getElementById('error-display');
+    const saveGameButton = document.getElementById('saveGameButton');
+    const modeToggleButton = document.getElementById('modeToggleButton');
+    const resetGameButton = document.getElementById('resetGameButton');
+    const clipboardMessage = document.getElementById('clipboardMessage');
+    const headerBanner = document.getElementById('headerBanner');
+    const gameContainer = document.getElementById('game-container');
+
+    // --- Web Audio API Context (Unchanged) ---
+    let audioCtx = null;
+
+    // --- Helper Functions (Unchanged) ---
+    function encodeApiKey(key) { try { return btoa(key); } catch (e) { console.error("Error encoding API key:", e); return ""; } }
+    function decodeApiKey(encodedKey) { try { return atob(encodedKey); } catch (e) { console.error("Error decoding API key:", e); return null; } }
+
+
+    // --- Modified Prompt Construction ---
+    function constructPrompt(playerActionsJson) {
+        // Use new prompt object
+        const baseMainPrompt = sparkleStagePrompts.main;
+        // Use new mode name and addendum
+        const activeAddendum = gameState.mode === 'after_party' ? `\n\n---\n${sparkleStagePrompts.afterPartyModeAddendum}\n---\n` : "";
+
+        if (gameState.turn === 0) { // First run
+            console.log("Constructing prompt for Turn 1 (Sparkle Stage Sirens)");
+            // Use new firstrun prompt
+            const s = `${sparkleStagePrompts.firstrun}\n\n---\nClient Context: AI generates the ENTIRE HTML UI for #turn-content, including Status, Crew, Shows, Event, Images, and Choices. Client simply renders this HTML.\n---\n\n--- Generate RAW HTML UI for Turn 1 (#turn-content) ---`;
+            return s;
+        } else { // Subsequent Turns
+            console.log(`Constructing prompt for Turn ${gameState.turn + 1} (Sparkle Stage Sirens)`);
+            // Clone relevant parts of gameState to pass for display context
+            const clientStateContext = {
+                profile: { ...gameState.profile },
+                status: { ...gameState.status },
+                // Use new state keys
+                crew: JSON.parse(JSON.stringify(gameState.crew)), // Deep clone arrays/objects
+                shows: JSON.parse(JSON.stringify(gameState.shows))
+            };
+
+            const promptInput = {
+                actions: playerActionsJson ? JSON.parse(playerActionsJson) : {},
+                internalState: gameState.currentInternalStateMarkdown || "# Production Log - State Unknown",
+                // Use new mode flag name
+                isAfterPartyMode: gameState.mode === 'after_party',
+                clientGameState: clientStateContext // Add current client state for display reference
+            };
+            const promptInputString = JSON.stringify(promptInput, null, 2);
+            // Use new base prompt and addendum
+            const s = `${baseMainPrompt}${activeAddendum}\n\n--- Client Context: AI generates the ENTIRE HTML UI for #turn-content, including Status, Crew, Shows displays (using values from 'clientGameState'), Event, Images, and Choices. AI MUST return updated internalState Markdown in the hidden field. Focus image prompts on kawaii/pop/sexy fashion shows. Remember Pollinations.ai URL format. ---\n\n--- Input State ---\n${promptInputString}\n\n--- Generate Next Game Turn RAW HTML UI SNIPPET (for ENTIRE #turn-content) ---`;
+            return s;
+        }
+    }
+
+    // --- Modified Save/Load ---
+    function saveGameState(isAutoSave = true) { // Default to auto-save
+        if (!gameState.isLocked) {
+            if (!isAutoSave) showClipboardMessage("Cannot save: Need Backstage Pass first!", true);
+            return false;
+        }
+        if (!gameState.apiKey) {
+            if (!isAutoSave) showClipboardMessage("Cannot save: Backstage Pass key missing!", true);
+            return false;
+        }
+        try {
+            // Ensure API key is encoded before saving full state
+            gameState.encodedApiKey = encodeApiKey(gameState.apiKey);
+            const stateJsonString = JSON.stringify(gameState);
+            localStorage.setItem(LOCAL_STORAGE_KEY, stateJsonString);
+            if (isAutoSave) {
+                console.log("Lookbook auto-saved (Full State). Turn:", gameState.turn);
+            } else {
+                console.log("Lookbook manually saved (Full State). Turn:", gameState.turn);
+                showClipboardMessage("Show progress saved to browser storage! ✨"); // Simple confirmation
+            }
+            return true;
+        } catch (error) {
+            console.error(`Save error (Full State):`, error);
+            if (!isAutoSave) showClipboardMessage("Error saving progress! Wardrobe malfunction!", true);
+            return false;
+        }
+    }
+
+    // --- Audio (NEW - Poppy sound) ---
+    function initAudioContext() {
+        if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); console.log("AudioContext initialized."); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch (e) { console.error("Web Audio API not supported.", e); } }
+        if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume().catch(err => console.error("Error resuming audio context:", err)); }
+    }
+    function playTurnSound() {
+        initAudioContext(); if (!audioCtx || audioCtx.state !== 'running') return;
+        const now = audioCtx.currentTime;
+        // Simple synth pop 'blip'
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+
+        osc.type = 'square'; // Square wave for a retro pop sound
+        osc.frequency.setValueAtTime(880, now); // A5
+        osc.frequency.linearRampToValueAtTime(1318.51, now + 0.05); // E6
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2000, now);
+        filter.frequency.exponentialRampToValueAtTime(400, now + 0.15);
+        filter.Q.setValueAtTime(5, now);
+
+        gain.gain.setValueAtTime(0.15, now); // Keep volume reasonable
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+        console.log("Playing sparkle pop sound... ✨🎶");
+    }
+
+
+    // --- Modified Response Processing ---
+    function processSuccessfulResponse(responseHTML) {
+        try {
+            console.log("Received FULL HTML UI response from API (Sparkle Stage Sirens).");
+
+            // Simply replace the entire content
+            turnContentContainer.innerHTML = responseHTML;
+            console.log("Updated #turn-content with new FULL HTML UI.");
+
+            // Still need to extract hidden state for the *next* request
+            // Use new form ID
+            const form = turnContentContainer.querySelector('#sparkle-stage-form');
+            if (form) {
+                const turnInput = form.querySelector('input[name="turn"]');
+                const subjectInput = form.querySelector('input[name="subjectId"]');
+                const internalStateInput = form.querySelector('input[name="internalState"]');
+
+                const nextTurn = turnInput ? parseInt(turnInput.value, 10) : gameState.turn + 1;
+                gameState.currentSubjectId = subjectInput ? subjectInput.value : gameState.currentSubjectId;
+                gameState.currentInternalStateMarkdown = internalStateInput ? internalStateInput.value : gameState.currentInternalStateMarkdown;
+
+                console.log(`Extracted State for Next Turn: Turn=${nextTurn}, Subject=${gameState.currentSubjectId}, InternalState Length=${gameState.currentInternalStateMarkdown.length}`);
+
+                // --- PARSE STATE CHANGES FROM LOG ---
+                // Use the updated parser
+                try {
+                    parseAndUpdateStateFromMarkdown(gameState.currentInternalStateMarkdown);
+                    gameState.turn = nextTurn; // Update turn number *after* parsing state for that turn log
+                } catch (parseError) {
+                    console.error("Error parsing state updates from internalState Markdown:", parseError);
+                    gameState.turn = nextTurn; // Update turn anyway? Risky. Let's update it.
+                }
+                // --- End State Parsing ---
+
+
+                // Execute any inline scripts included in the response HTML
+                const scripts = turnContentContainer.querySelectorAll('script');
+                scripts.forEach(script => {
+                    try {
+                        const newScript = document.createElement("script");
+                        // Copy attributes
+                        for (let i = 0; i < script.attributes.length; i++) {
+                            newScript.setAttribute(script.attributes[i].name, script.attributes[i].value);
+                        }
+                        // Handle src or inline content
+                        if (script.src) {
+                            newScript.src = script.src;
+                            // Note: External scripts might need careful handling if they rely on DOM ready
+                            document.body.appendChild(newScript).parentNode.removeChild(newScript); // Append, run, remove? Risky.
+                            console.warn("Executed external script from response. This might have side effects or fail depending on timing.");
+                        } else {
+                            // Safer evaluation using Function constructor for inline scripts
+                            try {
+                                (new Function(script.innerText))();
+                                console.log("Executed inline script via Function constructor.");
+                            } catch(e) {
+                                console.error("Error executing inline script via Function constructor:", e, script.innerText);
+                                // Fallback: less safe direct append (might work for simple cases)
+                                // newScript.appendChild(document.createTextNode(script.innerHTML));
+                                // turnContentContainer.appendChild(newScript); // Append to execute in context
+                                // script.remove(); // Remove original static script
+                            }
+                        }
+                    } catch (scriptError) {
+                        console.error("Error setting up inline/embedded script execution:", scriptError, script.innerHTML || script.src);
+                    }
+                });
+
+
+            } else {
+                console.warn("Could not find #sparkle-stage-form in the received HTML. State might be stale.");
+                gameState.turn++; // Increment turn anyway, but state parsing won't happen
+            }
+
+            if (!gameState.isLocked) {
+                gameState.isLocked = true;
+                if (apiKeySection) apiKeySection.style.display = 'none';
+                saveGameButton.disabled = false;
+                resetGameButton.disabled = false;
+                console.log("API Key locked. Production is live!");
+            }
+
+            // Update UI text
+            submitButton.textContent = `Next Action (Turn ${gameState.turn})`; // Use the potentially updated turn number
+            submitButton.disabled = false;
+            // Update button icon if needed
+            const submitIcon = submitButton.querySelector('i');
+            if (submitIcon) submitIcon.className = 'lucide lucide-arrow-right-circle'; // Change to next action icon
+
+
+            playTurnSound(); // Play new sound
+            saveGameState(true); // Auto-save
+
+        } catch (renderError) {
+            console.error("Failed to process HTML response:", renderError, responseHTML);
+            showError("OMG! Technical difficulties! Can't render the next scene! 😭"); // New error message
+            setLoading(false);
+        }
+    }
+
+    // --- NEW: Parse State Updates from Markdown (Sparkle Stage Sirens Theme) ---
+    function parseAndUpdateStateFromMarkdown(markdown) {
+        if (!markdown || typeof markdown !== 'string') {
+            console.warn("Invalid markdown provided for state parsing.");
+            return;
+        }
+        console.log("Parsing internalState Markdown to update client gameState (Sparkle Stage Sirens)...");
+
+        // NEW Regexes for new status keys and lists
+        const statusRegex = /\*\s*Current Status:\s*Hype (\d+).*StylePoints (\d+).*ModelMood (\d+).*Budget (\d+).*Scandal (\d+)/i;
+        const crewRegex = /\*\s*Crew:\s*(\[.*?\])/s; // Capture JSON-like array
+        const showsRegex = /\*\s*Shows:\s*(\[.*?\])/s; // Capture JSON-like array
+        const profileRegex = /\*\s*Player Profile:\s*(\{.*?\})/s; // Capture JSON object
+
+        const statusMatch = markdown.match(statusRegex);
+        const crewMatch = markdown.match(crewRegex);
+        const showsMatch = markdown.match(showsRegex);
+        const profileMatch = markdown.match(profileRegex);
+
+        let updated = false;
+
+        if (statusMatch) {
+            try {
+                // Parse new status values
+                const hype = parseInt(statusMatch[1], 10);
+                const stylePoints = parseInt(statusMatch[2], 10);
+                const modelMood = parseInt(statusMatch[3], 10);
+                const budget = parseInt(statusMatch[4], 10);
+                const scandal = parseInt(statusMatch[5], 10);
+
+                if (![hype, stylePoints, modelMood, budget, scandal].some(isNaN)) {
+                    // Update gameState with new keys
+                    gameState.status = { hype, stylePoints, modelMood, budget, scandal };
+                    console.log("Parsed and updated gameState.status:", gameState.status);
+                    updated = true;
+                } else { console.warn("Parsed status values were NaN, skipping update."); }
+            } catch(e) { console.error("Error parsing status values:", e); }
+        } else { console.warn("Could not find 'Current Status:' line in markdown log for parsing."); }
+
+        // Helper to parse JSON blocks safely
+        const parseJsonBlock = (match, stateKey) => {
+            if (match && match[1]) {
+                try {
+                    // Remove potential leading list markers if AI adds them
+                    const jsonString = match[1].replace(/^\s*-\s*/gm, '');
+                    // Basic cleanup for escaped characters - adjust if AI uses different escaping
+                    const cleanedJsonString = jsonString.replace(/\\`/g, '`').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+                    const parsedData = JSON.parse(cleanedJsonString);
+                    gameState[stateKey] = parsedData;
+                    console.log(`Parsed and updated gameState.${stateKey}:`, gameState[stateKey]);
+                    updated = true;
+                } catch (e) { console.error(`Error parsing JSON for ${stateKey} from markdown:`, e, "\nAttempted to parse:", match[1]); }
+            } else { console.warn(`Could not find '${stateKey}' block in markdown log for parsing.`); }
+        };
+
+        parseJsonBlock(crewMatch, 'crew');
+        parseJsonBlock(showsMatch, 'shows');
+        parseJsonBlock(profileMatch, 'profile'); // Keep profile updated
+
+        if (!updated) { console.warn("Did not parse any state updates from the markdown log."); }
+    }
+
+
+    // --- Modified API Fetch ---
+    async function fetchTurnData(playerActionsJson) {
+        console.log("fetchTurnData called (Sparkle Stage Sirens UI Gen mode).");
+        initAudioContext();
+        if (!gameState.apiKey) {
+            showError("Need a Backstage Pass Key to start the show! 🎟️"); // New error message
+            setLoading(false);
+            if (apiKeySection && apiKeySection.style.display === 'none') apiKeySection.style.display = 'block';
+            return;
+        }
+
+        setLoading(true);
+        hideError();
+        loadingMessage.textContent = getRandomLoadingMessage(); // Uses new messages
+
+        let success = false;
+        let attempts = 0;
+        const maxAttempts = AVAILABLE_MODELS.length * 2 + 1; // Allow more retries across models
+        let consecutiveErrors = 0;
+        let lastError = null; // Store last error for better final message
+
+        while (!success && attempts < maxAttempts) {
+            attempts++;
+            const currentModel = AVAILABLE_MODELS[gameState.currentModelIndex];
+            console.log(`Attempt ${attempts}/${maxAttempts}: Model ${currentModel}`);
+
+            try {
+                const prompt = constructPrompt(playerActionsJson); // Gets Sparkle Stage prompt
+                const response = await callRealGeminiAPI(gameState.apiKey, prompt, currentModel, "text/plain");
+                processSuccessfulResponse(response); // Processes Sparkle Stage HTML
+                success = true;
+                consecutiveErrors = 0; // Reset errors on success
+                lastError = null; // Clear last error on success
+            } catch (error) {
+                lastError = error; // Store the last error encountered
+                console.error(`Error with ${currentModel} (Attempt ${attempts}):`, error);
+                consecutiveErrors++;
+                const isQuota = error.message.includes('429') || /quota|resource/i.test(error.message);
+                // Check for specific block reasons
+                const isBlocked = /blocked by API censorship/i.test(error.message);
+                const isServerError = /API Error \(500\)|API Error \(503\)|internal error|Service Unavailable/i.test(error.message);
+                const shouldSwitch = isQuota || consecutiveErrors >= 2 || isBlocked || isServerError; // Switch on block/server error too
+
+                // Show specific error messages based on type
+                if (isBlocked) { showError(`Model ${currentModel} said NOPE to that scene! Trying a different approach... (Attempt ${attempts + 1})`); }
+                else if (isServerError) { showError(`Server's having a diva moment with ${currentModel} (${error.message.match(/API Error \((\d+)\)/)?.[1] || 'Error'})! Trying another line... (Attempt ${attempts + 1})`); }
+                else if (isQuota) { showError(`Quota limit likely hit for ${currentModel}. Switching models... (Attempt ${attempts + 1})`); }
+                else if (consecutiveErrors >= 2 && AVAILABLE_MODELS.length > 1) { showError(`Persistent glitches with ${currentModel}. Switching models... (Attempt ${attempts + 1})`); }
+                else if (attempts < maxAttempts) { showError(`A minor hiccup with ${currentModel}... Retrying! (Attempt ${attempts + 1})`); }
+                else { showError(`Final attempt with ${currentModel} failed: ${error.message}`); } // Show final error if max attempts reached
+
+
+                if (shouldSwitch && AVAILABLE_MODELS.length > 1) {
+                    const oldModel = currentModel;
+                    gameState.currentModelIndex = (gameState.currentModelIndex + 1) % AVAILABLE_MODELS.length;
+                    const nextModel = AVAILABLE_MODELS[gameState.currentModelIndex];
+                    console.warn(`Switching model due to errors/quota/block from ${oldModel} to ${nextModel}.`);
+                    // Error message already shown above based on specific reason
+                    consecutiveErrors = 0; // Reset consecutive errors after switching
+                }
+
+                // Wait before retrying, potentially longer if many errors
+                if (!success && attempts < maxAttempts) { await new Promise(resolve => setTimeout(resolve, 750 + (consecutiveErrors * 250))); }
+            }
+        }
+
+        if (!success) {
+            console.error(`Failed after ${maxAttempts} attempts. Last error:`, lastError);
+            // Ensure the final error message reflects the *last* error encountered
+            showError(`Show cancelled! Failed after ${maxAttempts} tries. Last error: ${lastError?.message || 'Unknown Error'}. Check key/connection/content policy.`); // Updated final error
+            turnContentContainer.innerHTML = `<div class="pop-card error-message">Could not load the next part of the show. Try restarting or check console for specific errors.</div>`; // Use new class
+        } else {
+            hideError(); // Clear error on success
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        setLoading(false);
+    }
+
+    // --- callRealGeminiAPI (Includes BLOCK_NONE and improved error/content checks - Unchanged from previous) ---
+    async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType = "text/plain") {
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const requestBody = {
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: {
+                temperature: 1.0, // High temperature for creativity
+                response_mime_type: responseMimeType
+            },
+            safetySettings: [ // KEEP BLOCK_NONE!
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+            ]
+        };
+
+        console.log("Sending API request to:", API_URL);
+        // console.log("Request Body Snippet:", JSON.stringify(requestBody).substring(0, 300)); // Keep commented unless debugging
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        // Improved Error Handling
+        if (!response.ok) {
+            let errorBodyText = `API Error (${response.status})`;
+            try {
+                const errorJson = await response.json();
+                // Access nested error message if present
+                errorBodyText += `: ${JSON.stringify(errorJson.error || errorJson)}`;
+            } catch (e) {
+                try { errorBodyText += `: ${await response.text()}`; } catch (e2) {}
+            }
+            console.error("API Error Response Body:", errorBodyText);
+            // Add specific message for common errors
+            if (response.status === 503) errorBodyText += " (Service Unavailable/Overloaded)";
+            throw new Error(errorBodyText);
+        }
+
+        const data = await response.json();
+
+        // Check for Prompt Blocking
+        if (data.promptFeedback?.blockReason) {
+            console.error("API Blocked Prompt. Reason:", data.promptFeedback.blockReason, "Ratings:", data.promptFeedback.safetyRatings);
+            throw new Error(`Request blocked by API censorship (prompt). Reason: ${data.promptFeedback.blockReason}.`);
+        }
+
+        // Check for Empty Candidates
+        if (!data.candidates?.length) {
+            // Handle cases where response might be OK but body is empty or malformed
+            if (response.headers.get("content-length") === "0" || !data) {
+                console.error("API Response OK but empty body or malformed JSON:", data);
+                throw new Error('API returned successfully but with empty or invalid content.');
+            }
+            // Handle case where response is string instead of object
+            if (typeof data === 'string') {
+                console.warn("API Response OK but format was unexpected string:", data.substring(0, 100));
+                return data.trim(); // Attempt to return the string content
+            }
+            console.error("API Response OK but no candidates:", data);
+            throw new Error('API returned successfully but generated no candidates.');
+        }
+
+        const candidate = data.candidates[0];
+
+        // Check for Content Blocking / Finish Reason
+        if (candidate.finishReason && candidate.finishReason !== "STOP") {
+            const reason = `API Finish Reason: ${candidate.finishReason}. Safety Ratings: ${JSON.stringify(candidate.safetyRatings)}`;
+            if (candidate.finishReason === "SAFETY") {
+                console.error("API Blocked Content Generation due to SAFETY. " + reason);
+                // Check if *any* content was returned despite the block
+                if (!candidate.content?.parts?.length || !candidate.content.parts[0].text) {
+                    throw new Error(`Request blocked by API censorship (content). Reason: SAFETY.`);
+                } else {
+                    console.warn("Content blocked by SAFETY, but partial content received. Displaying potentially filtered content.");
+                    // Proceed to return the partial content below
+                }
+            } else if (candidate.finishReason !== "MAX_TOKENS") { // Don't warn excessively for max tokens
+                console.warn(reason + " (Content might be incomplete or filtered)");
+            }
+        }
+        // Check safety ratings even if finishReason is STOP
+        if (candidate.safetyRatings) {
+            const highSeverityRating = candidate.safetyRatings.find(rating => ["MEDIUM", "HIGH"].includes(rating.severity));
+            if (highSeverityRating) {
+                console.warn(`Content generated but flagged with safety rating: ${JSON.stringify(highSeverityRating)}`);
+            }
+        }
+
+
+        // Check for Missing Content Parts
+        if (!candidate.content?.parts?.length || !candidate.content.parts[0].text) {
+            console.error("API candidate generated but no valid content part found (Finish Reason: " + candidate.finishReason + "):", candidate);
+            // Throw error unless it was specifically blocked by safety (where empty is expected)
+            if(candidate.finishReason !== "SAFETY") {
+                throw new Error('API candidate generated but no valid text content found (Finish Reason: ' + candidate.finishReason + '). Possible internal filtering or error.');
+            } else {
+                return ""; // Return empty string if blocked by safety and no content was found
+            }
+        }
+
+        const htmlContent = candidate.content.parts[0].text;
+        const trimmedContent = htmlContent.trim();
+
+        // Handle potential Markdown wrapping
+        if (trimmedContent.startsWith('```') && trimmedContent.endsWith('```')) {
+            const markdownMatch = trimmedContent.match(/^```(?:html)?\s*([\s\S]*?)\s*```$/);
+            if (markdownMatch && markdownMatch[1]) {
+                console.log("Extracted HTML from markdown block.");
+                return markdownMatch[1].trim();
+            } else {
+                console.warn(`API response looked like markdown but failed extraction. Using raw content.`);
+                return trimmedContent; // Return raw content if extraction fails
+            }
+        }
+        // Basic HTML check (less strict)
+        else if (!trimmedContent.startsWith('<') || !trimmedContent.endsWith('>')) {
+            // Check if it contains *any* HTML tags before warning
+            if (!/<[^>]+>/.test(trimmedContent)) {
+                console.warn(`API response might not be HTML or markdown. Snippet: ${trimmedContent.substring(0, 100)}...`);
+            }
+        }
+
+        return trimmedContent; // Return the processed content
+    }
+
+
+    // --- Error Display (Unchanged) ---
+    function showError(message) { errorDisplay.textContent = message; errorDisplay.style.display = 'block'; }
+    function hideError() { errorDisplay.textContent = ''; errorDisplay.style.display = 'none'; }
+
+    // --- Input Collection (Modified for new profile fields and toggle) ---
+    function collectInputState() {
+        // Use new form ID
+        const form = turnContentContainer.querySelector('#sparkle-stage-form');
+        if (!form) {
+            console.warn("Could not find #sparkle-stage-form to collect input.");
+            return JSON.stringify({ turn: gameState.turn, subjectId: gameState.currentSubjectId });
+        }
+
+        const formData = new FormData(form);
+        const inputs = {};
+        const checkboxGroups = {}; // For standard checkboxes
+        const toggleSwitches = {}; // For toggle switches (which use checkboxes)
+
+        // Initialize known checkbox groups and toggle switches from the form structure
+        form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if (cb.closest('.pop-toggle-switch')) { // Check if it's part of a toggle switch UI
+                toggleSwitches[cb.name] = false; // Default toggle to off (false)
+            } else {
+                if (!checkboxGroups[cb.name]) checkboxGroups[cb.name] = []; // Init regular checkbox group
+            }
+        });
+
+
+        // Iterate through FormData entries
+        for (const [key, value] of formData.entries()) {
+            if (toggleSwitches.hasOwnProperty(key)) {
+                // If a toggle's checkbox is in FormData, it means it was checked (true)
+                toggleSwitches[key] = true;
+            } else if (checkboxGroups.hasOwnProperty(key)) {
+                // Add value to the corresponding checkbox group array
+                checkboxGroups[key].push(value);
+            } else {
+                // Handle other input types (radio, text, range, hidden)
+                inputs[key] = value;
+            }
+        }
+
+        // Add processed checkbox groups and toggle switches to the main inputs object
+        for (const key in checkboxGroups) {
+            // Only add if at least one checkbox in the group was checked
+            if (checkboxGroups[key].length > 0) {
+                inputs[key] = checkboxGroups[key];
+            }
+            // If no checkbox in a group was checked, the key won't be added to `inputs`
+        }
+        for (const key in toggleSwitches) {
+            inputs[key] = toggleSwitches[key]; // Add boolean value for toggles
+        }
+
+
+        console.log("Collected form data:", inputs);
+
+        // Ensure essential hidden fields are present if somehow missed, remove internalState
+        if (!inputs.hasOwnProperty('turn')) inputs.turn = gameState.turn;
+        if (!inputs.hasOwnProperty('subjectId')) inputs.subjectId = gameState.currentSubjectId;
+        delete inputs.internalState; // Don't send internalState back to AI
+
+        // Update client gameState profile if NEW profiling fields are present (Turn 1 mainly)
+        // The AI should also log this in its internalState based on these actions
+        if (inputs.profile_productionStyle) gameState.profile.productionStyle = inputs.profile_productionStyle;
+        if (inputs.profile_personality) gameState.profile.personality = inputs.profile_personality; // If added
+        if (inputs.profile_attraction) gameState.profile.orientation = Array.isArray(inputs.profile_attraction) ? inputs.profile_attraction : [inputs.profile_attraction];
+
+        // Update preferences based on toggle switches found in inputs
+        let currentPrefs = gameState.profile.preferences || {};
+        Object.keys(inputs).forEach(key => {
+            // Look for profile-related boolean inputs (likely toggles)
+            if (key.startsWith('profile_') && typeof inputs[key] === 'boolean') {
+                const prefKey = key.substring('profile_'.length); // Extract preference key name
+                currentPrefs[prefKey] = inputs[key]; // Update preference
+            }
+        });
+        gameState.profile.preferences = currentPrefs; // Store updated preferences object
+
+        if (inputs.profile_goal) gameState.profile.goal = inputs.profile_goal; // Slider value
+
+        return JSON.stringify(inputs);
+    }
+
+    // --- Utilities ---
+    function showClipboardMessage(message, isError = false) {
+        clipboardMessage.textContent = message;
+        // Use new theme colors
+        clipboardMessage.style.color = isError ? 'var(--pop-accent)' : 'var(--pop-pink)';
+        setTimeout(() => { clipboardMessage.textContent = ''; }, 3500);
+    }
+
+    function updateModeButtonVisuals() {
+        // Add null check for modeToggleButton
+        if (!modeToggleButton) {
+            console.error("modeToggleButton not found in DOM");
+            return;
+        }
+        const icon = modeToggleButton.querySelector('i'); // Get icon reference
+
+        // Use new mode names and text
+        if (gameState.mode === 'after_party') {
+            // Use new class name for risque mode
+            modeToggleButton.textContent = 'Mode: After Party! 😈'; // New Text
+            modeToggleButton.classList.add('after-party-mode'); // New Class
+            modeToggleButton.classList.remove('standard-showbiz-mode'); // Remove old/default class
+            if (icon) icon.className = 'lucide lucide-martini'; // Change Icon if found
+        } else {
+            modeToggleButton.textContent = 'Mode: Standard Showbiz 🎬'; // New Text
+            modeToggleButton.classList.remove('after-party-mode'); // Remove risque class
+            modeToggleButton.classList.add('standard-showbiz-mode'); // Add default class
+            if (icon) icon.className = 'lucide lucide-party-popper'; // Change Icon if found
+        }
+        // Re-add icon if it was missing textContent overwrite
+        if (icon && !modeToggleButton.contains(icon)) {
+            modeToggleButton.prepend(icon);
+        }
+    }
+    function setDynamicImages() {
+        const seed = Math.floor(Math.random() * 65536);
+        // NEW IMAGE PROMPT for header - Kawaii Pop Fashion Theme
+        const p = "wide panoramic colorful kawaii pop art fashion show backstage glitter confetti bright lights anime style";
+        if (headerBanner) {
+            headerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1200&height=130&seed=${seed}&nologo=true&safe=false`;
+            headerBanner.alt = "Kawaii Pop Fashion Banner"; // New alt text
+            // Add onerror handler
+            headerBanner.onerror = () => {
+                console.warn(`Failed to load header banner image.`);
+                headerBanner.style.backgroundColor='var(--pop-pink)';
+                headerBanner.alt='Fallback Banner';
+            };
+        }
+    }
+
+    // --- Loading State (Updated Messages for Pop Fashion Theme) ---
+    // NEW LOADING MESSAGES
+    const LOADING_MESSAGES = [
+        "Selecting killer tracks... 🎶",
+        "Designing the stage... ✨",
+        "Styling the models... 👠",
+        "Handling backstage drama... 🤫",
+        "Generating HYPE! 🌟",
+        "Choosing the perfect lighting...💡",
+        "Adding more glitter... ✨✨✨",
+        "Fluffing outfits... 🎀",
+        "Warming up the smoke machine... 💨",
+        "Sending invites to VIPs... 💌",
+        "Polishing the runway... 💖",
+        "Prepping the after-party... 😈"
+    ];
+    function getRandomLoadingMessage() { return LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]; }
+    function setLoading(loading) {
+        gameState.isLoading = loading;
+        loadingIndicator.style.display = loading ? 'flex' : 'none';
+        loadingMessage.textContent = loading ? getRandomLoadingMessage() : '';
+
+        const keyEntered = gameState.apiKey && gameState.apiKey.length > 0;
+
+        // Disable/Enable buttons based on loading state and game state
+        if (submitButton) submitButton.disabled = loading || !(gameState.isLocked || keyEntered);
+        if (saveGameButton) saveGameButton.disabled = loading || !gameState.isLocked;
+        if (modeToggleButton) modeToggleButton.disabled = loading;
+        if (resetGameButton) resetGameButton.disabled = loading || !(gameState.isLocked || keyEntered);
+        if (apiKeyInput) apiKeyInput.disabled = loading || gameState.isLocked;
+
+        // Dim the form area while loading
+        // Use new form ID
+        const form = turnContentContainer.querySelector('#sparkle-stage-form');
+        if (form) {
+            form.style.opacity = loading ? 0.5 : 1.0;
+            form.style.pointerEvents = loading ? 'none' : 'auto';
+            // Disable form elements within the turn content
+            form.querySelectorAll('input, textarea, button, select, fieldset').forEach(el => {
+                // Don't disable the main submit button if it's somehow inside the form
+                if (el.id !== 'submit-turn-button') {
+                    el.disabled = loading;
+                }
+            });
+        }
+    }
+
+    // --- Get Default Game State (Updated for Sparkle Stage Sirens theme) ---
+    function getDefaultGameState() {
+        // Return a new object with default values for the fashion theme
+        return JSON.parse(JSON.stringify({
+            apiKey: null, encodedApiKey: null, turn: 0,
+            mode: 'standard_showbiz', // Default mode
+            profile: { productionStyle: "unspecified", personality: "unspecified", orientation: "unspecified", preferences: {}, goal: "50" },
+            status: { hype: 30, stylePoints: 50, modelMood: 60, budget: 1000, scandal: 5 }, // Default status
+            crew: [], shows: [], // Default lists
+            currentSubjectId: "ProductionSelf",
+            currentInternalStateMarkdown: "", currentModelIndex: 0, isLoading: false, isLocked: false
+        }));
+    }
+
+
+    // --- Modified Initialization ---
+    function initializeGame() {
+        // Update Log Message
+        console.log("Initializing Sparkle Stage Sirens v1.0 (Full UI Gen Mode)...");
+        let autoStarted = false;
+        const storedStateString = localStorage.getItem(LOCAL_STORAGE_KEY);
+
+        if (storedStateString) {
+            console.log("Found saved Production Log (Full State).");
+            let savedState;
+            try {
+                savedState = JSON.parse(storedStateString);
+                const decodedApiKey = decodeApiKey(savedState.encodedApiKey);
+                if (!decodedApiKey) throw new Error("Failed to decode Backstage Pass key from saved data.");
+
+                // Merge saved state over default state carefully
+                gameState = { ...getDefaultGameState(), ...savedState };
+                // Ensure nested objects like status and profile are also merged correctly
+                if (savedState.status) gameState.status = { ...getDefaultGameState().status, ...savedState.status };
+                if (savedState.profile) gameState.profile = { ...getDefaultGameState().profile, ...savedState.profile };
+                // Ensure arrays are properly assigned
+                gameState.crew = savedState.crew || [];
+                gameState.shows = savedState.shows || [];
+
+                gameState.apiKey = decodedApiKey;
+                gameState.isLoading = false; // Reset loading state
+
+
+                if (gameState.turn > 0 && gameState.isLocked && gameState.currentInternalStateMarkdown) {
+                    autoStarted = true;
+                    console.log(`Production Log restored. Mode: ${gameState.mode}, Turn: ${gameState.turn}`);
+
+                    if (apiKeyInput) apiKeyInput.value = gameState.apiKey;
+                    if (apiKeySection) apiKeySection.style.display = 'none';
+
+                    updateModeButtonVisuals();
+                    setDynamicImages();
+                    hideError();
+
+                    // Display "Game Loaded" message and let user submit to get the UI for the current turn
+                    turnContentContainer.innerHTML = `<div class="pop-card text-center text-purple-600">Production Log restored to Day ${gameState.turn}. Hit 'Next Action (Turn ${gameState.turn})' to get back to the show! 🌟</div>`;
+                    if (submitButton) {
+                        submitButton.textContent = `Next Action (Turn ${gameState.turn})`;
+                        const submitIcon = submitButton.querySelector('i');
+                        if (submitIcon) submitIcon.className = 'lucide lucide-arrow-right-circle'; // Update icon
+                        submitButton.disabled = false;
+                    }
+                    if (saveGameButton) saveGameButton.disabled = false;
+                    if (resetGameButton) resetGameButton.disabled = false;
+                    if (modeToggleButton) modeToggleButton.disabled = false;
+                    setLoading(false);
+
+                } else {
+                    console.warn("Restored state incomplete or initial. Starting fresh production.");
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    gameState = getDefaultGameState();
+                    autoStarted = false;
+                    resetManualStartUI();
+                }
+
+            } catch (e) {
+                console.error("Restore error (Full State):", e);
+                showError(`Production Log restore error: ${e.message}. Please start manually!`);
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                gameState = getDefaultGameState();
+                autoStarted = false;
+                if (apiKeyInput) apiKeyInput.value = '';
+                resetManualStartUI();
+            }
+        }
+
+        // Handle API Key from URL
+        if (!autoStarted) {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const keyFromUrl = params.get('apiKey');
+                if (keyFromUrl) {
+                    console.log("Backstage Pass Key found in URL.");
+                    gameState = getDefaultGameState(); // Start fresh if key from URL
+                    gameState.apiKey = keyFromUrl;
+                    if (apiKeyInput) apiKeyInput.value = keyFromUrl;
+                    gameState.isLocked = false; // Not locked yet, first turn needed
+
+                    if (apiKeySection) apiKeySection.style.display = 'none';
+
+                    // Clean the URL
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('apiKey');
+                    window.history.replaceState(null, '', url.toString());
+
+                    setDynamicImages();
+                    updateModeButtonVisuals();
+                    fetchTurnData(null); // Fetch Turn 1 UI
+                    autoStarted = true;
+                    setLoading(true); // Set loading while fetching T1
+                    if (submitButton) {
+                        submitButton.textContent = "Starting Production..."; // New text
+                        submitButton.disabled = true; // Disable until T1 loads
+                    }
+                    if (saveGameButton) saveGameButton.disabled = true;
+                    if (resetGameButton) resetGameButton.disabled = true;
+                    if (modeToggleButton) modeToggleButton.disabled = true;
+                }
+            } catch (e) {
+                console.error("URL Parameter processing error:", e);
+                showError("Error reading URL parameters. Please start manually!");
+                autoStarted = false;
+            }
+        }
+
+
+        if (!autoStarted) {
+            console.log("Manual start required.");
+            gameState = getDefaultGameState();
+            resetManualStartUI();
+        }
+    }
+
+    // --- Modified Reset UI ---
+    function resetManualStartUI() {
+        if (turnContentContainer) turnContentContainer.innerHTML = ''; // Clear previous turn content
+        hideError();
+
+        const initialMsgDiv = createInitialMessageDiv(); // Uses updated text
+        if (initialMsgDiv) {
+            initialMsgDiv.style.display = 'block';
+            if (turnContentContainer) turnContentContainer.appendChild(initialMsgDiv); // Add message to main content area
+        }
+
+
+        if (apiKeySection) apiKeySection.style.display = 'block';
+        if (apiKeyInput) {
+            apiKeyInput.value = gameState.apiKey || ''; // Restore key if user resets but had one
+            apiKeyInput.disabled = false;
+        }
+
+        // Update button text & icon - Add null checks
+        if (submitButton) {
+            submitButton.textContent = ' Start Show!';
+            const submitIcon = submitButton.querySelector('i');
+            if (submitIcon) submitIcon.className = 'lucide lucide-play'; // Reset icon
+            submitButton.disabled = !(gameState.apiKey && gameState.apiKey.length > 0);
+        }
+        if (saveGameButton) saveGameButton.disabled = true;
+        if (resetGameButton) resetGameButton.disabled = !(gameState.apiKey && gameState.apiKey.length > 0);
+        if (modeToggleButton) modeToggleButton.disabled = false; // Allow mode toggle before start
+
+        setLoading(false);
+        updateModeButtonVisuals(); // Set initial mode button text/style
+        setDynamicImages();
+    }
+
+    // Helper to get/create the initial message div (Updated text & class)
+    function createInitialMessageDiv() {
+        let msgDiv = document.getElementById('initial-message');
+        if (!msgDiv) {
+            msgDiv = document.createElement('div');
+            msgDiv.id = 'initial-message';
+            // Use new class
+            msgDiv.className = 'text-center text-pink-600 p-6 font-semibold pop-card';
+        }
+        // Update text for Sparkle Stage Sirens Theme
+        msgDiv.innerHTML = 'Ready to produce the most dazzling fashion shows? Enter your Backstage Pass Key and click "Start Show!" 🌟';
+        return msgDiv;
+    }
+
+
+    // --- Event Listeners (Updated with null checks) ---
+    if (submitButton) {
+        submitButton.addEventListener('click', () => {
+            if (!submitButton.disabled && !gameState.isLoading) {
+                console.log("Submit button clicked (Sparkle Stage Sirens).");
+                initAudioContext(); // Initialize audio on first interaction
+                const actions = collectInputState(); // Collects from #sparkle-stage-form
+                fetchTurnData(actions); // Uses updated fetch logic
+            }
+        });
+    }
+
+    if (apiKeyInput) {
+        apiKeyInput.addEventListener('input', () => {
+            const key = apiKeyInput.value.trim();
+            gameState.apiKey = key; // Update gameState immediately
+            const keyEntered = key.length > 0;
+
+            // Enable/disable buttons based on key presence and game lock state
+            if (submitButton) submitButton.disabled = gameState.isLoading || !(keyEntered || gameState.isLocked);
+            if (resetGameButton) resetGameButton.disabled = gameState.isLoading || !keyEntered; // Enable reset if key is entered, even if not locked
+
+            // Update initial message if API key section is visible
+            if (apiKeySection && apiKeySection.style.display !== 'none') {
+                const msg = document.getElementById('initial-message');
+                if (msg && msg.style.display !== 'none') {
+                    if (keyEntered) {
+                        hideError();
+                        // Update message text
+                        msg.textContent = 'Backstage Pass detected! Hit "Start Show!" 🎟️';
+                    } else {
+                        // Update message text
+                        msg.innerHTML = 'Ready to produce the most dazzling fashion shows? Enter your Backstage Pass Key and click "Start Show!" 🌟';
+                    }
+                }
+            }
+        });
+    }
+
+    if (saveGameButton) {
+        saveGameButton.addEventListener('click', () => {
+            console.log("Manual Save (Lookbook) clicked.");
+            saveGameState(false); // Uses updated save function
+        });
+    }
+
+    if (modeToggleButton) {
+        modeToggleButton.addEventListener('click', () => {
+            if (gameState.isLoading) return;
+            // Use new mode names
+            gameState.mode = (gameState.mode === 'standard_showbiz') ? 'after_party' : 'standard_showbiz';
+            console.log(`Mode toggled to: ${gameState.mode}`);
+            updateModeButtonVisuals(); // Updates text/style/icon
+            if (gameState.isLocked) {
+                saveGameState(true); // Auto-save includes the mode change
+                // Optional: Fetch immediately on mode change if desired
+                // console.log("Mode changed, fetching new turn immediately.");
+                // const actions = collectInputState(); // Collect current state (might be empty if mid-turn)
+                // fetchTurnData(actions); // Fetch new turn reflecting mode change
+            }
+        });
+    }
+
+    if (resetGameButton) {
+        resetGameButton.addEventListener('click', () => {
+            if (gameState.isLoading || resetGameButton.disabled) return;
+            // Update confirmation message
+            if (confirm('End the production?! All show data, crew contracts, and lookbooks will be lost! Are you sure? 😱')) {
+                console.log("Resetting game (Sparkle Stage Sirens)...");
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                gameState = getDefaultGameState(); // Uses updated defaults
+                resetManualStartUI(); // Uses updated reset
+            }
+        });
+    }
+
+    // --- Initialize ---
+    // Wrap initialization in DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeGame(); // Uses updated init
+    });
+
+</script>
+
+</body>
+</html>

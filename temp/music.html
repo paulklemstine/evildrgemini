@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Music Machine</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        /* --- Basic Styles --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+
+        /* --- Connection UI --- */
+        .connection-ui, .instrument-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        #status, #peer-id-display {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block; /* Ensure it takes full width */
+            word-wrap: break-word; /* Prevent long IDs from overflowing */
+            font-size: 0.9em;
+        }
+        #peer-id-display code {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        .peer-list-container {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .peer-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: #71717a; /* Default grey */
+            color: white;
+            font-weight: bold;
+            font-size: 0.8em;
+            cursor: default;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            position: relative; /* For tooltip */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .peer-icon.self {
+            background-color: #4f46e5; /* Blue for self */
+        }
+        .peer-icon.host {
+            border: 2px solid #facc15; /* Yellow border for host */
+        }
+        /* --- Instrument Styles --- */
+        .instrument-container {
+            text-align: center;
+        }
+        .piano {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            position: relative;
+            height: 150px; /* Adjust height */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .key {
+            border: 1px solid #333;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: background-color 0.05s ease;
+        }
+        .key.white {
+            background-color: #ffffff;
+            width: 40px;
+            height: 100%;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+            z-index: 1;
+        }
+        .key.black {
+            background-color: #333333;
+            width: 25px;
+            height: 60%;
+            position: absolute;
+            top: 0;
+            margin-left: -12.5px; /* Half of its width */
+            border-bottom-left-radius: 3px;
+            border-bottom-right-radius: 3px;
+            z-index: 2;
+            border: 1px solid #222;
+            box-shadow: inset 0 -2px 3px rgba(255,255,255,0.1), 0 2px 3px rgba(0,0,0,0.3);
+        }
+        /* Specific positioning for black keys */
+        .key.black[data-note="C#4"] { left: 27.5px; }
+        .key.black[data-note="D#4"] { left: 67.5px; }
+        .key.black[data-note="F#4"] { left: 147.5px; }
+        .key.black[data-note="G#4"] { left: 187.5px; }
+        .key.black[data-note="A#4"] { left: 227.5px; }
+        .key.black[data-note="C#5"] { left: 307.5px; }
+        .key.black[data-note="D#5"] { left: 347.5px; }
+
+
+        .key:active, .key.playing {
+            background-color: #7dd3fc; /* Light blue when pressed */
+        }
+        .key.black:active, .key.black.playing {
+            background-color: #3b82f6; /* Darker blue for black keys */
+            box-shadow: inset 0 -1px 2px rgba(255,255,255,0.1), 0 1px 1px rgba(0,0,0,0.2);
+        }
+
+        /* --- Theremin --- */
+        .theremin-area {
+            width: 90%;
+            max-width: 400px;
+            height: 250px;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            background-color: rgba(0, 0, 0, 0.2);
+            margin: 20px auto;
+            cursor: crosshair;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            touch-action: none; /* Prevent scrolling on touch */
+        }
+        .theremin-indicator {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: #fde047; /* Yellow indicator */
+            border-radius: 50%;
+            pointer-events: none; /* Don't interfere with mouse events */
+            box-shadow: 0 0 10px #fde047;
+            display: none; /* Hidden initially */
+        }
+
+    </style>
+</head>
+<body>
+
+<h1>Multiplayer Music Machine</h1>
+
+<div class="connection-ui">
+    <span id="status">Initializing...</span>
+    <div id="peer-id-display">Your ID: <code>Waiting...</code></div>
+    <div class="peer-list-container" id="peer-list">
+    </div>
+</div>
+
+<div class="instrument-container">
+    <h2>Piano</h2>
+    <div class="piano">
+        <div class="key white" data-note="C4"></div>
+        <div class="key white" data-note="D4"></div>
+        <div class="key white" data-note="E4"></div>
+        <div class="key white" data-note="F4"></div>
+        <div class="key white" data-note="G4"></div>
+        <div class="key white" data-note="A4"></div>
+        <div class="key white" data-note="B4"></div>
+        <div class="key white" data-note="C5"></div>
+        <div class="key white" data-note="D5"></div>
+        <div class="key white" data-note="E5"></div>
+        <div class="key black" data-note="C#4"></div>
+        <div class="key black" data-note="D#4"></div>
+        <div class="key black" data-note="F#4"></div>
+        <div class="key black" data-note="G#4"></div>
+        <div class="key black" data-note="A#4"></div>
+        <div class="key black" data-note="C#5"></div>
+        <div class="key black" data-note="D#5"></div>
+    </div>
+</div>
+
+<div class="instrument-container">
+    <h2>Theremin</h2>
+    <div class="theremin-area" id="theremin-area">
+        <div class="theremin-indicator" id="theremin-indicator"></div>
+    </div>
+</div>
+
+<script type="module">
+    const MPLib = (() => {
+        let peer = null; let localPeerId = null; let targetHostId = 'default-mp-channel'; let isHost = false; let hostPeerId = null; let isAttemptingHostId = false; const connections = new Map(); const pendingConnections = new Set(); const seenMessageIds = new Set(); const MAX_SEEN_MESSAGES = 1000; let initialSyncComplete = false; let hostCheckTimeout = null;
+        let config = { targetHostId: targetHostId, debugLevel: 0, onStatusUpdate: (msg, type) => logMessage(msg, type), onError: (type, err) => logMessage(`Error (${type}): ${err?.message || err}`, 'error'), onPeerJoined: (peerId, conn) => logMessage(`Peer joined: ${peerId.slice(-6)}`, 'info'), onPeerLeft: (peerId) => logMessage(`Peer left: ${peerId.slice(-6)}`, 'info'), onDataReceived: (peerId, data) => logMessage(`Data from ${peerId.slice(-6)}: ${JSON.stringify(data)}`, 'info'), onConnectedToHost: (hostId) => logMessage(`Connected to host: ${hostId.slice(-6)}`, 'info'), onBecameHost: () => logMessage(`Became host!`, 'info'), onInitialSync: (syncData) => logMessage(`Received initial sync: ${JSON.stringify(syncData)}`, 'info'), getInitialSyncData: () => ({}), maxConnections: 8, messageTTL: 4, hostConnectionTimeoutMs: 7000, forceClientOnly: false, };
+        function generateUniqueId(prefix = 'msg') { return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`; }
+        function logMessage(message, type = 'info') { const logFunc = type === 'error' ? console.error : (type === 'warn' ? console.warn : console.log); logFunc(`[MPLib] ${message}`); if (config.onStatusUpdate) { config.onStatusUpdate(`${message}`, type); } }
+        function initialize(options = {}) { if (peer && !peer.destroyed) { logMessage("Peer already initialized.", 'warn'); return; } config = { ...config, ...options }; targetHostId = config.targetHostId || targetHostId; logMessage(`Initializing PeerJS... Attempting host ID: ${targetHostId}`); config.onStatusUpdate(`Initializing network...`, 'info'); isAttemptingHostId = true; initialSyncComplete = false; try { if (peer) { try { peer.destroy(); } catch (e) { } } peer = null; peer = new Peer(targetHostId, { debug: config.debugLevel }); setupPeerListeners(peer); } catch (e) { logMessage(`Fatal PeerJS initialization error: ${e.message}`, 'error'); config.onError('init', e); resetState(); } }
+        function initializeAsClient() { logMessage("Host ID taken or unavailable. Initializing with random ID..."); config.onStatusUpdate("Host ID taken. Getting random ID...", 'info'); isAttemptingHostId = false; try { if (peer && !peer.destroyed) { try { peer.destroy(); } catch (e) { } } peer = null; peer = new Peer(undefined, { debug: config.debugLevel }); setupPeerListeners(peer); } catch (e) { logMessage(`Fatal PeerJS client initialization error: ${e.message}`, 'error'); config.onError('client_init', e); resetState(); } }
+        function setupPeerListeners(currentPeer) { if (!currentPeer) return; currentPeer.off('open'); currentPeer.off('connection'); currentPeer.off('disconnected'); currentPeer.off('close'); currentPeer.off('error'); currentPeer.on('open', (id) => { if (!id) { logMessage("Error: Received null ID from PeerJS.", 'error'); config.onError('null_id', 'PeerJS returned a null ID'); if (isAttemptingHostId) { initializeAsClient(); } else { resetState(); } return; } localPeerId = id; logMessage(`PeerJS opened with ID: ${id}`, 'info'); if (isAttemptingHostId && id === targetHostId) { becomeHost(); } else { isHost = false; hostPeerId = targetHostId; if (isAttemptingHostId) { logMessage(`Host ID ${targetHostId} was taken. Now client ${id}.`, 'warn'); } else { logMessage(`Operating as client with ID ${id}.`, 'info'); } config.onStatusUpdate(`Connected as ${id.slice(-6)}. Finding host ${targetHostId.slice(-6)}...`, 'info'); connectToPeer(targetHostId); if (!config.forceClientOnly) { if (hostCheckTimeout) clearTimeout(hostCheckTimeout); hostCheckTimeout = setTimeout(() => { if (!connections.has(targetHostId) && !isHost) { logMessage("Host connection timed out. Assuming host role.", 'warn'); becomeHost(); } }, config.hostConnectionTimeoutMs); } } }); currentPeer.on('connection', (conn) => { handleIncomingConnection(conn); }); currentPeer.on('disconnected', () => { logMessage("PeerJS disconnected. Reconnecting...", 'warn'); config.onStatusUpdate("Server disconnected. Reconnecting...", 'warn'); try { if (currentPeer && !currentPeer.destroyed) { currentPeer.reconnect(); } } catch (e) { logMessage(`Reconnect failed: ${e.message}`, 'error'); config.onError('reconnect', e); } }); currentPeer.on('close', () => { logMessage("PeerJS connection closed.", 'error'); config.onError('close', 'Peer instance closed'); resetState(); }); currentPeer.on('error', (err) => { logMessage(`PeerJS Error: ${err.type} - ${err.message}`, 'error'); config.onError(err.type, err); if (err.type === 'unavailable-id' && isAttemptingHostId && err.message?.includes(targetHostId)) { initializeAsClient(); } else if (err.type === 'peer-unavailable') { const unavailablePeerId = err.message?.match(/Could not connect to peer\s(.*?)$/)?.[1]; if (unavailablePeerId) { logMessage(`Peer ${unavailablePeerId.slice(-6)} unavailable.`, 'warn'); removeConnection(unavailablePeerId); if (unavailablePeerId === hostPeerId && !isHost && !config.forceClientOnly) { logMessage("Host unavailable. Assuming host role.", 'warn'); becomeHost(); } } } else if (['network', 'server-error', 'socket-error', 'socket-closed'].includes(err.type)) { logMessage(`Critical PeerJS error (${err.type}).`, 'error'); } }); }
+        function handleIncomingConnection(conn) { const remotePeerId = conn.peer; if (!remotePeerId) { try { conn.close(); } catch(e) {} return; } const existingConnData = connections.get(remotePeerId); const isPendingOutgoing = pendingConnections.has(remotePeerId); let keepIncoming = false; let closeExisting = false; let abandonOutgoing = false; if (existingConnData && existingConnData !== 'connecting' && existingConnData !== 'connecting-incoming') { if (localPeerId < remotePeerId) { rejectConnection(conn, 'Duplicate (tie-breaker)'); return; } else { closeExisting = true; keepIncoming = true; } } else if (isPendingOutgoing) { if (localPeerId < remotePeerId) { rejectConnection(conn, 'Duplicate attempt (tie-breaker)'); return; } else { abandonOutgoing = true; keepIncoming = true; } } else { keepIncoming = true; } if (keepIncoming) { if (connections.size >= config.maxConnections && !closeExisting) { rejectConnection(conn, 'Room full'); return; } if (closeExisting && existingConnData && existingConnData !== 'connecting' && existingConnData !== 'connecting-incoming') { try { existingConnData.close(); } catch (e) {} connections.delete(remotePeerId); } if (abandonOutgoing) { pendingConnections.delete(remotePeerId); if (connections.get(remotePeerId) === 'connecting') { connections.delete(remotePeerId); } } connections.set(remotePeerId, 'connecting-incoming'); conn.on('open', () => { logMessage(`Incoming connection opened with ${remotePeerId.slice(-6)}`); if (connections.size > config.maxConnections && connections.get(remotePeerId) !== conn) { try { conn.close(); } catch(e) {} if (connections.get(remotePeerId) === 'connecting-incoming') connections.delete(remotePeerId); return; } if (connections.get(remotePeerId) === 'connecting-incoming') { setupConnection(conn); } else { try { conn.close(); } catch(e) {} if (connections.get(remotePeerId) === 'connecting-incoming') connections.delete(remotePeerId); } }); conn.on('error', (err) => { removeConnection(remotePeerId); }); conn.on('close', () => { removeConnection(remotePeerId); }); } }
+        function rejectConnection(conn, reason = 'Connection rejected') { conn.on('open', () => { try { conn.send({ type: 'system', payload: { type: 'rejected', message: reason } }); } catch (e) { } setTimeout(() => { try { conn.close(); } catch (e) { } }, 50); }); conn.on('error', (err) => { }); conn.on('close', () => { }); }
+        function setupConnection(conn) { const remotePeerId = conn.peer; if (!remotePeerId) return; connections.set(remotePeerId, conn); pendingConnections.delete(remotePeerId); logMessage(`Connection setup with ${remotePeerId.slice(-6)}. Total: ${connections.size}`, 'info'); config.onPeerJoined(remotePeerId, conn); if (!isHost && remotePeerId === hostPeerId) { config.onConnectedToHost(hostPeerId); if (hostCheckTimeout) { clearTimeout(hostCheckTimeout); hostCheckTimeout = null; } } if (isHost) { sendInitialSync(conn); _broadcast({ payload: { type: 'system', subType: 'peer_joined', peerId: remotePeerId } }, conn); } conn.off('data'); conn.off('close'); conn.off('error'); conn.on('data', (data) => { handleReceivedData(data, conn); }); conn.on('close', () => { logMessage(`Connection closed with ${remotePeerId.slice(-6)}`, 'warn'); removeConnection(remotePeerId); if (localPeerId) { _broadcast({ payload: { type: 'system', subType: 'peer_left', peerId: remotePeerId } }); } }); conn.on('error', (err) => { logMessage(`Connection error with ${remotePeerId.slice(-6)}: ${err.type}`, 'error'); config.onError('connection', err); removeConnection(remotePeerId); if (localPeerId) { _broadcast({ payload: { type: 'system', subType: 'peer_left', peerId: remotePeerId } }); } }); }
+        function connectToPeer(targetPeerId) { if (!targetPeerId || targetPeerId === localPeerId || !peer || peer.destroyed) return; if (connections.has(targetPeerId) && connections.get(targetPeerId) !== 'connecting') return; if (connections.size >= config.maxConnections) return; logMessage(`Attempting outgoing connection to ${targetPeerId.slice(-6)}...`, 'info'); config.onStatusUpdate(`Connecting ${targetPeerId.slice(-6)}...`, 'info'); pendingConnections.add(targetPeerId); connections.set(targetPeerId, 'connecting'); try { const conn = peer.connect(targetPeerId, { reliable: true }); conn.on('open', () => { logMessage(`Outgoing connection opened with ${targetPeerId.slice(-6)}.`); if (connections.get(targetPeerId) === 'connecting') { setupConnection(conn); } else { try { conn.close(); } catch (e) {} pendingConnections.delete(targetPeerId); } }); conn.on('error', (err) => { logMessage(`Failed to connect to ${targetPeerId.slice(-6)}: ${err.type}`, 'error'); config.onError('connect_error', err); if (connections.get(targetPeerId) === 'connecting') connections.delete(targetPeerId); pendingConnections.delete(targetPeerId); if (targetPeerId === targetHostId && !isHost && !config.forceClientOnly && !connections.has(targetHostId)) { logMessage("Failed host connection. Assuming host role.", 'warn'); becomeHost(); } }); conn.on('close', () => { logMessage(`Outgoing attempt to ${targetPeerId.slice(-6)} closed before open.`, 'warn'); if (connections.get(targetPeerId) === 'connecting') connections.delete(targetPeerId); pendingConnections.delete(targetPeerId); if (targetPeerId === targetHostId && !isHost && !config.forceClientOnly && !connections.has(targetHostId)) { logMessage("Host attempt closed. Assuming host role.", 'warn'); becomeHost(); } }); } catch (e) { logMessage(`Error initiating connection to ${targetPeerId.slice(-6)}: ${e.message}`, 'error'); config.onError('connect_init', e); if (connections.get(targetPeerId) === 'connecting') connections.delete(targetPeerId); pendingConnections.delete(targetPeerId); } }
+        function removeConnection(peerIdToRemove) { if (!peerIdToRemove) return; pendingConnections.delete(peerIdToRemove); const conn = connections.get(peerIdToRemove); if (conn) { connections.delete(peerIdToRemove); logMessage(`Removed connection ${peerIdToRemove.slice(-6)}. Total: ${connections.size}`, 'info'); config.onPeerLeft(peerIdToRemove); if (conn !== 'connecting' && conn !== 'connecting-incoming' && typeof conn === 'object' && conn.open) { try { conn.close(); } catch (e) { } } if (peerIdToRemove === hostPeerId && !isHost) { logMessage("Lost connection to host!", 'warn'); config.onError('host_disconnect', 'Lost connection to host'); hostPeerId = null; if (!config.forceClientOnly) { logMessage("Attempting to reconnect/assume host role.", 'warn'); connectToPeer(targetHostId); if (hostCheckTimeout) clearTimeout(hostCheckTimeout); hostCheckTimeout = setTimeout(() => { if (!connections.has(targetHostId) && !isHost) { logMessage("Host reconnect timed out. Assuming host role.", 'warn'); becomeHost(); } }, config.hostConnectionTimeoutMs); } else { logMessage("Host disconnected. Waiting.", 'warn'); config.onStatusUpdate("Host disconnected. Waiting...", 'warn'); } } } }
+        function sendInitialSync(conn) { if (!isHost || !conn || !conn.open) return; const remotePeerId = conn.peer; logMessage(`Sending initial sync data to ${remotePeerId.slice(-6)}`, 'info'); const appSyncData = config.getInitialSyncData(); const syncDataPayload = { ...appSyncData, peers: [localPeerId, ...Array.from(connections.keys())].filter(id => id && id !== remotePeerId && connections.get(id) !== 'connecting' && connections.get(id) !== 'connecting-incoming') }; const syncMessage = { type: 'initialSync', payload: syncDataPayload }; try { conn.send(syncMessage); } catch (e) { logMessage(`Error sending initial sync to ${remotePeerId.slice(-6)}: ${e.message}`, 'error'); removeConnection(remotePeerId); } }
+        function handleReceivedData(data, sourceConn) { let payload, msgId, senderId, ttl, msgType, originalSenderId; const sourcePeerId = sourceConn?.peer; if (!sourcePeerId) return; try { if (data && data.type === 'initialSync' && data.payload) { payload = data.payload; senderId = sourcePeerId; logMessage(`Received initial sync from host ${senderId.slice(-6)}`, 'info'); if (!initialSyncComplete) { initialSyncComplete = true; isHost = false; hostPeerId = senderId; config.onInitialSync(payload); config.onConnectedToHost(hostPeerId); payload.peers?.forEach(pid => { if (pid && pid !== localPeerId && !connections.has(pid) && !pendingConnections.has(pid)) { connectToPeer(pid); } }); if (hostCheckTimeout) { clearTimeout(hostCheckTimeout); hostCheckTimeout = null; } } return; } if (data && data.type === 'system' && data.payload) { payload = data.payload; senderId = sourcePeerId; switch(payload.type) { case 'rejected': logMessage(`Connection rejected by ${senderId.slice(-6)}: ${payload.message}`, 'warn'); config.onError('rejected', { peer: senderId, message: payload.message }); removeConnection(senderId); break; } return; } if (data && data.payload && data.messageId && data.originalSenderId && data.ttl !== undefined) { msgId = data.messageId; originalSenderId = data.originalSenderId; payload = data.payload; ttl = data.ttl; if (seenMessageIds.has(msgId) || originalSenderId === localPeerId) return; seenMessageIds.add(msgId); if (seenMessageIds.size > MAX_SEEN_MESSAGES) { const oldestIds = Array.from(seenMessageIds).slice(0, Math.floor(MAX_SEEN_MESSAGES / 2)); oldestIds.forEach(id => seenMessageIds.delete(id)); } if (payload.type === 'system' && payload.subType) { switch(payload.subType) { case 'peer_joined': if (payload.peerId && payload.peerId !== localPeerId && !connections.has(payload.peerId) && !pendingConnections.has(payload.peerId)) { connectToPeer(payload.peerId); } break; case 'peer_left': if (payload.peerId && payload.peerId !== localPeerId && connections.has(payload.peerId)) { removeConnection(payload.peerId); } break; } } else { config.onDataReceived(originalSenderId, payload); } if (ttl > 0 && connections.size > 1) { _broadcast(data, sourceConn, ttl - 1); } } else if (data && !data.messageId && typeof data === 'object') { config.onDataReceived(sourcePeerId, data); } } catch (e) { logMessage(`Error processing data from ${sourcePeerId.slice(-6)}: ${e.message}`, 'error'); } }
+        function _broadcast(messageData, receivedFromConn = null, currentTtl = undefined) { if (!localPeerId || connections.size === 0) return; let dataToSend = messageData; if (currentTtl === undefined) { if (!messageData.payload) { logMessage("Cannot broadcast empty payload.", 'warn'); return; } dataToSend = { payload: messageData.payload, messageId: generateUniqueId(), originalSenderId: localPeerId, ttl: config.messageTTL, }; seenMessageIds.add(dataToSend.messageId); } else { dataToSend.ttl = currentTtl; } connections.forEach((conn, peerId) => { if (receivedFromConn && conn === receivedFromConn) return; if (conn && conn !== 'connecting' && conn !== 'connecting-incoming' && conn.open) { try { conn.send(dataToSend); } catch (e) { logMessage(`Error broadcasting to ${peerId.slice(-6)}: ${e.message}`, 'error'); removeConnection(peerId); } } }); }
+        function becomeHost() { if (isHost) return; isHost = true; hostPeerId = localPeerId; initialSyncComplete = true; if (hostCheckTimeout) clearTimeout(hostCheckTimeout); hostCheckTimeout = null; logMessage("Assumed host role.", 'info'); config.onBecameHost(); config.onStatusUpdate(`Hosting as ${localPeerId.slice(-6)}`, 'info'); }
+        function disconnect() { logMessage("Disconnecting from network...", 'info'); if (peer && !peer.destroyed) { try { peer.destroy(); } catch (e) { } } resetState(); }
+        function resetState() { logMessage("Resetting MPLib state.", 'warn'); peer = null; localPeerId = null; isHost = false; hostPeerId = null; isAttemptingHostId = false; initialSyncComplete = false; connections.clear(); pendingConnections.clear(); seenMessageIds.clear(); if (hostCheckTimeout) clearTimeout(hostCheckTimeout); hostCheckTimeout = null; config.onStatusUpdate("Disconnected.", 'info'); }
+        const publicApi = { initialize, disconnect, broadcast: (payload) => { if (!payload) return; if (typeof payload === 'object' && payload.type === 'system') return; _broadcast({ payload }); }, sendDirect: (targetPeerId, payload) => { if (!targetPeerId || !payload) return; const conn = connections.get(targetPeerId); if (conn && conn !== 'connecting' && conn !== 'connecting-incoming' && conn.open) { try { conn.send(payload); } catch (e) { removeConnection(targetPeerId); } } }, getConnections: () => new Map(connections), getLocalPeerId: () => localPeerId, isHost: () => isHost, getHostPeerId: () => hostPeerId, get peerInstance() { return peer; }, };
+        Object.defineProperty(publicApi, 'localPeerId', { get: () => localPeerId, enumerable: true }); Object.defineProperty(publicApi, 'connections', { get: () => connections, enumerable: true }); Object.defineProperty(publicApi, 'hostPeerId', { get: () => hostPeerId, enumerable: true }); Object.defineProperty(publicApi, 'isHost', { get: () => isHost, enumerable: true });
+        return publicApi;
+    })();
+</script>
+
+<script type="module">
+    // --- Constants ---
+    const DEFAULT_HOST_ID = 'music-machine-lobby-v1'; // Unique ID for this app's lobby
+    const NOTE_DURATION = 0.4; // Increased duration slightly
+    const NOTE_OFF_DELAY = 0.08; // Slightly longer release
+
+    // --- DOM Elements ---
+    const statusDisplay = document.getElementById('status');
+    const peerIdDisplay = document.getElementById('peer-id-display');
+    const peerListContainer = document.getElementById('peer-list');
+    const pianoKeys = document.querySelectorAll('.piano .key');
+    const thereminArea = document.getElementById('theremin-area');
+    const thereminIndicator = document.getElementById('theremin-indicator');
+
+    // --- Web Audio Setup ---
+    let audioCtx = null;
+    let masterGain = null;
+    const activeVoices = {}; // Track active oscillators/notes { note: { osc, gain } }
+    let thereminOsc = null;
+    let thereminGain = null;
+    let userInteracted = false; // Flag to track if user has interacted
+
+    // Frequency map
+    const noteFrequencies = {
+        'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63,
+        'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00,
+        'A#4': 466.16, 'B4': 493.88, 'C5': 523.25, 'C#5': 554.37, 'D5': 587.33,
+        'D#5': 622.25, 'E5': 659.25
+    };
+
+    // --- Initialization ---
+    // Create AudioContext immediately but don't resume
+    function initializeAudio() {
+        if (!audioCtx) {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                masterGain.connect(audioCtx.destination);
+                console.log("AudioContext created.");
+                // DO NOT RESUME HERE
+            } catch (e) {
+                console.error("Web Audio API not supported.", e);
+                statusDisplay.textContent = "Web Audio API not supported!";
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Call this function on the *first* user interaction
+    function ensureAudioContextRunning() {
+        if (!userInteracted) return; // Don't resume if no interaction yet
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => {
+                console.log("AudioContext resumed successfully after user gesture.");
+            }).catch(err => {
+                console.error("Error resuming audio context:", err);
+                statusDisplay.textContent = "Error starting audio.";
+            });
+        }
+    }
+
+    // Call this function on any user interaction that should enable audio
+    function handleUserGesture() {
+        if (!userInteracted) {
+            userInteracted = true;
+            console.log("User gesture detected.");
+            initializeAudio(); // Ensure context is created if not already
+            ensureAudioContextRunning(); // Try resuming the context
+        }
+    }
+
+
+    // --- Sound Generation (Mostly Unchanged, but calls ensureAudioContextRunning) ---
+    function playNote(note, instrument = 'piano', volume = 0.5, sourcePeerId = null) {
+        ensureAudioContextRunning(); // Try to resume if suspended
+        if (!audioCtx || audioCtx.state !== 'running' || !noteFrequencies[note]) {
+            if(audioCtx && audioCtx.state !== 'running') console.warn("AudioContext not running, cannot play note.");
+            return;
+        }
+
+        const freq = noteFrequencies[note];
+        const now = audioCtx.currentTime;
+
+        // Stop existing voice for this note if it's still playing
+        if (activeVoices[note]) {
+            try {
+                const existingVoice = activeVoices[note];
+                // Quick fade out before stopping
+                existingVoice.gain.gain.cancelScheduledValues(now);
+                existingVoice.gain.gain.setValueAtTime(existingVoice.gain.gain.value, now); // Start fade from current value
+                existingVoice.gain.gain.linearRampToValueAtTime(0.001, now + NOTE_OFF_DELAY);
+                existingVoice.osc.stop(now + NOTE_OFF_DELAY + 0.01);
+            } catch(e) { console.warn("Error stopping existing voice:", e); }
+            delete activeVoices[note];
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(volume, now + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(volume * 0.7, now + 0.1);
+        gainNode.gain.setTargetAtTime(0.0001, now + NOTE_DURATION - NOTE_OFF_DELAY, 0.02); // Adjusted release timing
+
+        osc.connect(gainNode);
+        gainNode.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + NOTE_DURATION + 0.1); // Adjusted stop time
+
+        activeVoices[note] = { osc, gain: gainNode };
+
+        const keyElement = document.querySelector(`.key[data-note="${note}"]`);
+        if (keyElement) {
+            keyElement.classList.add('playing');
+            setTimeout(() => { keyElement.classList.remove('playing'); }, NOTE_DURATION * 1000);
+        }
+
+        setTimeout(() => {
+            if (activeVoices[note] && activeVoices[note].osc === osc) { delete activeVoices[note]; }
+        }, (NOTE_DURATION + 0.15) * 1000);
+    }
+
+    function noteOff(note) {
+        ensureAudioContextRunning();
+        if (!audioCtx || audioCtx.state !== 'running' || !activeVoices[note]) return;
+
+        const voice = activeVoices[note];
+        const now = audioCtx.currentTime;
+
+        voice.gain.gain.cancelScheduledValues(now);
+        voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
+        voice.gain.gain.exponentialRampToValueAtTime(0.0001, now + NOTE_OFF_DELAY);
+        voice.osc.stop(now + NOTE_OFF_DELAY + 0.05);
+
+        const keyElement = document.querySelector(`.key[data-note="${note}"]`);
+        if (keyElement) { keyElement.classList.remove('playing'); }
+
+        delete activeVoices[note];
+    }
+
+    function startTheremin(initialFreq, initialVol) {
+        ensureAudioContextRunning();
+        if (!audioCtx || audioCtx.state !== 'running') return;
+
+        if (thereminOsc) { try { thereminGain.gain.cancelScheduledValues(audioCtx.currentTime); thereminGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05); thereminOsc.stop(audioCtx.currentTime + 0.06); } catch (e) {} }
+
+        thereminOsc = audioCtx.createOscillator();
+        thereminGain = audioCtx.createGain();
+        thereminOsc.type = 'sine';
+        thereminOsc.frequency.setValueAtTime(initialFreq, audioCtx.currentTime);
+        thereminGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        thereminGain.gain.linearRampToValueAtTime(initialVol, audioCtx.currentTime + 0.02);
+
+        thereminOsc.connect(thereminGain);
+        thereminGain.connect(masterGain);
+        thereminOsc.start(audioCtx.currentTime);
+
+        thereminIndicator.style.display = 'block';
+    }
+
+    function updateTheremin(freq, vol) {
+        if (!audioCtx || audioCtx.state !== 'running' || !thereminOsc || !thereminGain) return;
+        const now = audioCtx.currentTime;
+        thereminOsc.frequency.setTargetAtTime(freq, now, 0.01);
+        thereminGain.gain.setTargetAtTime(vol, now, 0.015);
+
+        const areaRect = thereminArea.getBoundingClientRect();
+        const minFreq = 100, maxFreq = 1500, minVol = 0, maxVol = 0.5;
+        const xRatio = (freq - minFreq) / (maxFreq - minFreq);
+        const yRatio = (vol - minVol) / (maxVol - minVol);
+        thereminIndicator.style.left = `${Math.max(0, Math.min(100, xRatio * 100))}%`;
+        thereminIndicator.style.top = `${Math.max(0, Math.min(100, (1 - yRatio) * 100))}%`;
+        thereminIndicator.style.transform = 'translate(-50%, -50%)';
+    }
+
+    function stopTheremin() {
+        if (!audioCtx || !thereminOsc || !thereminGain) return;
+        // Don't check audioCtx.state here, allow stopping even if suspended
+        const now = audioCtx.currentTime;
+        try {
+            thereminGain.gain.cancelScheduledValues(now);
+            thereminGain.gain.setValueAtTime(thereminGain.gain.value, now); // Avoid error if already 0
+            thereminGain.gain.linearRampToValueAtTime(0, now + 0.1);
+            thereminOsc.stop(now + 0.11);
+        } catch (e) {
+            console.warn("Error stopping theremin (might already be stopped):", e);
+        } finally {
+            thereminOsc = null;
+            thereminGain = null;
+            thereminIndicator.style.display = 'none';
+        }
+    }
+
+    // --- Multiplayer Setup & Handlers (Unchanged) ---
+    function initializeMultiplayer() {
+        // No changes needed here, MPLib is self-contained
+        MPLib.initialize({
+            targetHostId: DEFAULT_HOST_ID,
+            debugLevel: 1,
+            onStatusUpdate: (msg, type) => {
+                console.log(`MP Status [${type}]: ${msg}`);
+                if (type !== 'debug') { statusDisplay.textContent = msg; }
+            },
+            onError: (type, err) => {
+                console.error(`MP Error (${type}):`, err);
+                statusDisplay.textContent = `Error: ${err?.message || type}`;
+            },
+            onPeerJoined: (peerId, conn) => {
+                console.log(`Peer joined: ${peerId.slice(-6)}`);
+                updatePeerListUI();
+            },
+            onPeerLeft: (peerId) => {
+                console.log(`Peer left: ${peerId.slice(-6)}`);
+                updatePeerListUI();
+            },
+            onDataReceived: (senderId, data) => {
+                // Handle incoming musical notes
+                if (data && data.type === 'play_note' && data.payload) {
+                    console.log(`Received note ${data.payload.note} from ${senderId.slice(-6)}`);
+                    playNote(data.payload.note, data.payload.instrument || 'piano', data.payload.volume, senderId);
+                }
+                else if (data && data.type === 'note_off' && data.payload) {
+                    console.log(`Received note off ${data.payload.note} from ${senderId.slice(-6)}`);
+                    noteOff(data.payload.note);
+                }
+                else if (data && data.type === 'theremin_start' && data.payload) {
+                    console.log(`Received theremin start from ${senderId.slice(-6)}`);
+                    startTheremin(data.payload.freq, data.payload.vol);
+                }
+                else if (data && data.type === 'theremin_update' && data.payload) {
+                    updateTheremin(data.payload.freq, data.payload.vol);
+                }
+                else if (data && data.type === 'theremin_stop') {
+                    console.log(`Received theremin stop from ${senderId.slice(-6)}`);
+                    stopTheremin();
+                }
+            },
+            onConnectedToHost: (hostId) => {
+                console.log(`Connected to host: ${hostId.slice(-6)}`);
+                peerIdDisplay.innerHTML = `Your ID: <code>${MPLib.getLocalPeerId()}</code> (Client)`;
+                updatePeerListUI();
+            },
+            onBecameHost: () => {
+                console.log("Became the host!");
+                peerIdDisplay.innerHTML = `Your ID: <code>${MPLib.getLocalPeerId()}</code> (Host)`;
+                updatePeerListUI();
+            },
+            getInitialSyncData: () => ({ message: "Welcome!" }),
+            onInitialSync: (syncData) => { console.log("Received initial sync:", syncData); }
+        });
+    }
+
+    function updatePeerListUI() {
+        // No changes needed here
+        if (!peerListContainer || !MPLib) return;
+        peerListContainer.innerHTML = '';
+        const localId = MPLib.getLocalPeerId ? MPLib.getLocalPeerId() : null;
+        const hostId = MPLib.getHostPeerId ? MPLib.getHostPeerId() : null;
+        const connections = MPLib.getConnections ? MPLib.getConnections() : new Map();
+        if (localId) { peerListContainer.appendChild(createPeerIcon(localId, 'You', true, MPLib.isHost())); }
+        connections.forEach((conn, peerId) => { if (peerId !== localId && conn && typeof conn === 'object' && conn.open) { peerListContainer.appendChild(createPeerIcon(peerId, peerId.slice(-6), false, peerId === hostId)); } });
+    }
+
+    function createPeerIcon(peerId, labelText, isSelf, isHost) {
+        // No changes needed here
+        const icon = document.createElement('div');
+        icon.className = 'peer-icon';
+        icon.title = `${labelText} (${peerId})${isHost ? ' [Host]' : ''}`;
+        if (isSelf) icon.classList.add('self');
+        if (isHost) icon.classList.add('host');
+        icon.textContent = labelText.slice(-4).toUpperCase();
+        return icon;
+    }
+
+
+    // --- Event Listeners (Ensure handleUserGesture is called) ---
+    pianoKeys.forEach(key => {
+        const note = key.dataset.note;
+        if (note) {
+            let isMouseDown = false;
+            const play = () => {
+                handleUserGesture(); // Ensure context is running
+                if (!isMouseDown) return;
+                // initializeAudio(); // Already called in handleUserGesture if needed
+                // ensureAudioContextRunning(); // Called inside playNote now
+                console.log(`Play note: ${note}`);
+                playNote(note); // Play locally
+                if (MPLib && MPLib.getLocalPeerId()) {
+                    MPLib.broadcast({ type: 'play_note', payload: { note: note, instrument: 'piano' } });
+                }
+                key.classList.add('playing');
+            };
+
+            const stop = (broadcast = true) => {
+                handleUserGesture(); // Ensure context is running for noteOff too
+                if (!isMouseDown) return;
+                isMouseDown = false;
+                console.log(`Stop note: ${note}`);
+                noteOff(note); // Stop locally
+                if (broadcast && MPLib && MPLib.getLocalPeerId()) {
+                    MPLib.broadcast({ type: 'note_off', payload: { note: note } });
+                }
+                key.classList.remove('playing');
+            };
+
+            // Mouse events
+            key.addEventListener('mousedown', (e) => {
+                handleUserGesture(); // Add gesture handling
+                e.preventDefault();
+                isMouseDown = true;
+                play();
+            });
+            key.addEventListener('mouseup', () => { handleUserGesture(); stop(); });
+            key.addEventListener('mouseleave', () => { handleUserGesture(); stop(); });
+            key.addEventListener('mouseover', (e) => {
+                handleUserGesture(); // Add gesture handling
+                if (e.buttons === 1) {
+                    isMouseDown = true;
+                    play();
+                }
+            });
+
+
+            // Touch events
+            key.addEventListener('touchstart', (e) => {
+                handleUserGesture(); // Add gesture handling
+                e.preventDefault();
+                isMouseDown = true;
+                play();
+            }, { passive: false });
+
+            key.addEventListener('touchend', (e) => {
+                handleUserGesture(); // Add gesture handling
+                e.preventDefault();
+                stop();
+            });
+            key.addEventListener('touchcancel', (e) => {
+                handleUserGesture(); // Add gesture handling
+                e.preventDefault();
+                stop();
+            });
+        }
+    });
+
+    // Theremin Interaction (Ensure handleUserGesture is called)
+    let isThereminActive = false;
+
+    function handleThereminMove(event) {
+        handleUserGesture(); // Ensure context is running
+        if (!isThereminActive || !audioCtx || audioCtx.state !== 'running') return; // Check if running
+        event.preventDefault();
+
+        const rect = thereminArea.getBoundingClientRect();
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+        const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+        const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
+
+        const freqRange = 1400, baseFreq = 100, maxVol = 0.5;
+        const frequency = baseFreq + (x / rect.width) * freqRange;
+        const volume = maxVol * (1 - (y / rect.height));
+
+        updateTheremin(frequency, volume);
+
+        if (MPLib && MPLib.getLocalPeerId()) {
+            MPLib.broadcast({ type: 'theremin_update', payload: { freq: frequency, vol: volume } });
+        }
+    }
+
+    function startThereminInteraction(event) {
+        handleUserGesture(); // Ensure context is running
+        event.preventDefault();
+        // initializeAudio(); // Called in handleUserGesture if needed
+        // ensureAudioContextRunning(); // Called inside startTheremin now
+        isThereminActive = true;
+
+        const rect = thereminArea.getBoundingClientRect();
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+        const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+        const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
+
+        const freqRange = 1400, baseFreq = 100, maxVol = 0.5;
+        const initialFreq = baseFreq + (x / rect.width) * freqRange;
+        const initialVol = maxVol * (1 - (y / rect.height));
+
+        startTheremin(initialFreq, initialVol);
+        thereminIndicator.style.left = `${(x / rect.width) * 100}%`;
+        thereminIndicator.style.top = `${(y / rect.height) * 100}%`;
+        thereminIndicator.style.transform = 'translate(-50%, -50%)';
+
+        window.addEventListener('mousemove', handleThereminMove);
+        window.addEventListener('touchmove', handleThereminMove, { passive: false });
+        window.addEventListener('mouseup', stopThereminInteraction);
+        window.addEventListener('touchend', stopThereminInteraction);
+
+        if (MPLib && MPLib.getLocalPeerId()) {
+            MPLib.broadcast({ type: 'theremin_start', payload: { freq: initialFreq, vol: initialVol } });
+        }
+    }
+
+    function stopThereminInteraction(event) {
+        handleUserGesture(); // May be needed if context suspended
+        if (!isThereminActive) return;
+        isThereminActive = false;
+
+        stopTheremin();
+
+        window.removeEventListener('mousemove', handleThereminMove);
+        window.removeEventListener('touchmove', handleThereminMove);
+        window.removeEventListener('mouseup', stopThereminInteraction);
+        window.removeEventListener('touchend', stopThereminInteraction);
+
+        if (MPLib && MPLib.getLocalPeerId()) {
+            MPLib.broadcast({ type: 'theremin_stop' });
+        }
+    }
+
+
+    thereminArea.addEventListener('mousedown', startThereminInteraction);
+    thereminArea.addEventListener('touchstart', startThereminInteraction, { passive: false });
+
+
+    // --- Start ---
+    // Initialize audio context creation immediately on load
+    initializeAudio();
+    // Initialize multiplayer immediately on load
+    initializeMultiplayer();
+    // Note: AudioContext will remain suspended until the first mousedown/touchstart
+
+</script>
+
+</body>
+</html>
