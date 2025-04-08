@@ -3,599 +3,1265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evil GM's Dynamic Sci-Fi Fiasco</title>
+    <title>GEEMS - LLM UI Remake</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/Lucide.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        /* --- Styles Adapted for Dynamic Panels --- */
-        :root {
-            --bg-dark: #0f172a; --bg-medium: #1e293b; --bg-light: #334155;
-            --text-light: #e2e8f0; --text-medium: #94a3b8;
-            --accent-primary: #ef4444; --accent-secondary: #f472b6; --accent-tertiary: #0ea5e9;
-            --font-heading: 'Orbitron', sans-serif; --font-body: 'Roboto', sans-serif;
-            --panel-transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); /* Smoother transition */
-        }
-        body { font-family: var(--font-body); background: linear-gradient(145deg, var(--bg-dark) 0%, #1c2a4e 50%, var(--bg-dark) 100%); color: var(--text-light); margin: 0; padding: 0; padding-bottom: 150px; min-height: 100vh; }
-
-        /* Header & Footer Styles (Mostly Unchanged from previous version) */
-        .site-header { padding: 0; margin-bottom: 1rem; text-align: center; position: relative; overflow: hidden; border-bottom: 2px solid var(--accent-primary); }
-        .header-banner-image { width: 100%; height: 130px; object-fit: cover; display: block; opacity: 0.6; filter: brightness(0.8) contrast(1.2) saturate(0.9); }
-        .site-header h1 { font-family: var(--font-heading); font-size: 2.5rem; color: var(--accent-primary); text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.9); margin: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; padding: 0 1rem; box-sizing: border-box; background: rgba(15, 23, 42, 0.7); padding-top: 0.5rem; padding-bottom: 0.5rem; letter-spacing: 1px; }
-        .site-footer { margin-top: 2rem; padding: 1.5rem 1rem; text-align: center; font-size: 0.875rem; color: var(--text-medium); border-top: 1px solid var(--bg-light); background-color: rgba(15, 23, 42, 0.9); position: fixed; bottom: 0; left: 0; width: 100%; z-index: 10; }
-        .footer-buttons { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 1rem; }
-        #clipboardMessage { font-size: 0.8rem; color: var(--accent-secondary); height: 1.2em; font-weight: 600; margin-bottom: 1rem; }
-        .footer-content { font-size: 0.85rem; }
-
-        /* --- NEW: Game Layout Container --- */
-        #game-layout-container {
-            display: grid;
-            /* Define flexible grid columns - JS might adjust this based on panels */
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1rem;
-            padding: 1rem;
-            max-width: 1400px; /* Allow wider layout */
-            margin: 1rem auto;
-            transition: grid-template-columns 0.5s ease-in-out; /* Animate column changes */
+        /* Adapted CSS from styles.css & Tailwind Integration */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); /* Light gray gradient */
+            color: #1f2937; /* Dark gray text */
+            margin: 0;
+            padding: 0;
+            padding-bottom: 180px; /* Ensure space for footer */
+            min-height: 100vh;
         }
 
-        /* --- NEW: Base Panel Styling --- */
-        .panel {
-            background-color: rgba(30, 41, 59, 0.9); /* var(--bg-medium) with opacity */
-            color: var(--text-light);
-            border: 1px solid var(--bg-light);
-            border-radius: 0.75rem;
-            padding: 1rem 1.25rem;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
-            overflow: hidden; /* Important for transitions/resizing */
-            transition: var(--panel-transition);
-            position: relative; /* For potential absolute elements inside */
+        /* Header Styling */
+        .site-header {
+            padding: 0;
+            margin-bottom: 1.5rem; /* Reduced margin */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            background-color: #374151; /* Darker header background */
+        }
+
+        .header-banner-image {
+            width: 100%;
+            height: 150px; /* Adjusted height */
+            object-fit: cover;
+            display: block;
+            opacity: 0.5; /* Adjust opacity */
+            filter: grayscale(50%) contrast(110%); /* Example filter */
+        }
+
+        .site-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem; /* Adjusted size */
+            color: white;
+            text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.7);
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            padding: 0 1rem;
+            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.5); /* Slightly darker title background */
+            padding-top: 0.4rem;
+            padding-bottom: 0.4rem;
+        }
+
+        /* Main Game Container */
+        #game-container {
+            background-color: white;
+            border-radius: 0.75rem; /* 12px */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem; /* 24px */
+            margin-top: 1rem;
+            min-height: 300px; /* Ensure it has some height initially */
+        }
+
+        /* Container for LLM generated turn content */
+        #turn-content {
+            /* Add styles if needed, e.g., for transitions */
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        /* Footer Styling */
+        .site-footer {
+            margin-top: 2rem;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            font-size: 0.875rem; /* 14px */
+            color: #4b5563; /* Medium gray text */
+            border-top: 1px solid #d1d5db; /* Light gray border */
+            background-color: #f9fafb; /* Very light gray background */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 10;
+        }
+
+        .footer-buttons {
             display: flex;
-            flex-direction: column;
-            min-height: 150px; /* Minimum panel height */
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 0.5rem; /* Reduced margin */
         }
-        .panel-header {
-            font-family: var(--font-heading);
-            font-size: 1.2rem;
-            color: var(--accent-tertiary);
-            border-bottom: 1px solid var(--bg-light);
+
+        #clipboardMessage {
+            font-size: 0.8rem;
+            color: #16a34a; /* Default success color */
+            height: 1.2em;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        /* General styles for elements potentially generated by LLM */
+        /* These act as defaults if the LLM doesn't provide specific Tailwind classes */
+        .geems-panel {
+            margin-bottom: 1.5rem;
+            padding: 1.25rem;
+            background-color: #f9fafb; /* Light background for panels */
+            border-radius: 0.5rem; /* 8px */
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .geems-panel h3 { /* Style for panel titles */
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem; /* 20px */
+            font-weight: 700;
+            color: #4f46e5; /* Indigo */
+            border-bottom: 2px solid #a5b4fc; /* Lighter indigo border */
             padding-bottom: 0.5rem;
-            margin-bottom: 0.8rem;
-            display: flex; /* Allow icons */
+            margin-bottom: 1rem;
+        }
+
+        .geems-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #4f46e5; /* Indigo */
+            font-size: 0.9rem;
+        }
+
+        .geems-text {
+            color: #374151; /* Darker gray text */
+            line-height: 1.6;
+            word-wrap: break-word;
+            font-size: 1rem;
+        }
+        .geems-text strong { color: #7c3aed; /* Violet */ }
+        .geems-text em { color: #db2777; /* Pink */ font-style: italic; }
+        .geems-text pre {
+            background-color: #1f2937;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: #d1d5db;
+            margin-top: 0.75rem;
+            border: 1px solid #374151;
+        }
+
+        /* Input and Textarea styles */
+        .geems-input, .geems-textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem; /* 6px */
+            box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            color: #1f2937;
+            background-color: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+        }
+        .geems-input::placeholder, .geems-textarea::placeholder { color: #9ca3af; }
+        .geems-input:focus, .geems-textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+        .geems-textarea { min-height: 80px; }
+
+        /* Radio and Checkbox option styling */
+        .geems-radio-option, .geems-checkbox-option {
+            display: flex;
             align-items: center;
-            gap: 0.5rem;
-            flex-shrink: 0; /* Prevent header shrinking */
+            margin-bottom: 0.6rem;
+            padding: 0.7rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid #e5e7eb;
         }
-        .panel-content {
-            flex-grow: 1; /* Allow content to fill space */
-            overflow-y: auto; /* Scroll if content overflows */
-            /* Custom scrollbar */
-            scrollbar-width: thin;
-            scrollbar-color: var(--bg-light) var(--bg-medium);
+        .geems-radio-option:hover, .geems-checkbox-option:hover { background-color: #f0f9ff; }
+        .geems-radio-option input[type="radio"], .geems-checkbox-option input[type="checkbox"] {
+            margin-right: 0.75rem;
+            cursor: pointer;
+            accent-color: #6366f1;
+            width: 1rem; height: 1rem;
         }
-        .panel-content::-webkit-scrollbar { width: 8px; }
-        .panel-content::-webkit-scrollbar-track { background: var(--bg-medium); border-radius: 4px;}
-        .panel-content::-webkit-scrollbar-thumb { background-color: var(--bg-light); border-radius: 4px; border: 2px solid var(--bg-medium); }
-
-        /* --- NEW: Panel States (Controlled by JS/CSS) --- */
-        .panel-hidden {
-            opacity: 0;
-            transform: scale(0.95) translateY(10px);
-            pointer-events: none;
-            height: 0; /* Collapse height */
-            padding-top: 0;
-            padding-bottom: 0;
-            margin-bottom: 0;
-            border-width: 0;
-            min-height: 0;
+        .geems-radio-option label, .geems-checkbox-option label {
+            color: inherit; flex-grow: 1; cursor: pointer;
         }
-        .panel-closing { /* State during close animation */
-            opacity: 0; transform: scale(0.9) translateY(20px);
-            /* Keep other styles during transition */
+
+        /* Slider styling */
+        .geems-slider {
+            width: 100%; cursor: pointer; accent-color: #6366f1; height: 0.5rem;
+            background: #e5e7eb; border-radius: 9999px; appearance: none; -webkit-appearance: none;
         }
-        .panel-small { grid-column: span 1; /* Example size */ /* max-height: 200px; */ }
-        .panel-medium { grid-column: span 1; /* Adjust span as needed */ /* max-height: 400px; */ }
-        .panel-large { grid-column: span 2; /* Example size */ /* max-height: 600px; */ }
-        .panel-full { grid-column: 1 / -1; /* Full width */ }
-        .panel-highlight { border-color: var(--accent-primary); box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); transform: scale(1.02); }
+        .geems-slider::-webkit-slider-thumb {
+            appearance: none; -webkit-appearance: none; width: 1.1rem; height: 1.1rem;
+            background: var(--slider-thumb-color, #4f46e5); border-radius: 50%; cursor: pointer;
+        }
+        .geems-slider::-moz-range-thumb {
+            width: 1.1rem; height: 1.1rem; background: var(--slider-thumb-color, #4f46e5);
+            border-radius: 50%; cursor: pointer; border: none;
+        }
+        .geems-slider-value-display { color: #4f46e5; font-weight: 500; min-width: 2rem; text-align: right; }
 
+        /* Image container and styling */
+        .geems-image-container { text-align: center; margin-bottom: 1rem; }
+        .geems-image {
+            max-width: 100%; height: auto; border-radius: 0.5rem; margin-bottom: 0.5rem;
+            background-color: #e5e7eb; display: block; margin-left: auto; margin-right: auto;
+            border: 1px solid #d1d5db;
+        }
+        .geems-image-prompt {
+            font-size: 0.75rem; color: #6b7280; font-style: italic; margin-top: 0.25rem;
+            word-wrap: break-word; padding: 0 0.5rem;
+        }
 
-        /* Styles for elements INSIDE panels (inputs, buttons etc) - Adapted from previous game-card styles */
-        .panel-content h3 { font-family: var(--font-heading); color: var(--accent-secondary); border-bottom: 1px solid #be185d; padding-bottom: 0.4rem; margin-top: 1rem; margin-bottom: 0.8rem; font-size: 1.1rem; font-weight: 600; }
-        .panel-content ul { list-style: none; padding: 0; margin: 0 0 0.8rem 0; }
-        .panel-content li { margin-bottom: 0.4rem; padding: 0.2rem 0.4rem; border-left: 2px solid var(--bg-light); font-size: 0.95rem;}
-        .panel-content li strong { color: var(--accent-secondary); }
+        /* Button styling */
+        .geems-button {
+            padding: 0.75rem 1.75rem; /* Adjusted padding */
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white; border: none; border-radius: 0.375rem; /* 6px */
+            font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+            font-size: 0.875rem; /* 14px */
+        }
+        .geems-button:hover {
+            background: linear-gradient(to right, #4338ca, #6d28d9);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transform: translateY(-1px);
+        }
+        .geems-button:active { transform: translateY(0); box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+        .geems-button:disabled {
+            background: #a5b4fc; cursor: not-allowed; opacity: 0.7; box-shadow: none; transform: none;
+        }
 
-        .panel-content .status-item { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; padding: 0.2rem 0.4rem; background-color: rgba(15, 23, 42, 0.7); border-radius: 0.3rem; font-size: 0.9rem; }
-        .panel-content .status-label { font-weight: 600; color: var(--accent-tertiary); }
-        .panel-content .status-value { text-align: right; font-weight: bold; }
-        .panel-content progress { height: 0.6rem; width: 100%; margin-top: 0.1rem; background-color: var(--bg-light); border-radius: 3px; border: 1px solid var(--bg-medium); accent-color: var(--accent-secondary); }
-        .panel-content progress.fuel-bar { accent-color: #fbbf24; }
-        .panel-content progress.hull-bar { accent-color: #f87171; }
-        .panel-content progress.gm-influence-bar { accent-color: var(--accent-primary); }
+        /* Loading and Error message styling */
+        .loading-indicator, .error-message {
+            display: flex; justify-content: center; align-items: center;
+            padding: 1.5rem; font-size: 1rem; border-radius: 0.5rem; margin-top: 1rem;
+        }
+        .loading-indicator { color: #4f46e5; background-color: #e0e7ff; border: 1px solid #c7d2fe; }
+        .loading-indicator svg { width: 1.25rem; height: 1.25rem; }
+        .error-message { color: #991b1b; background-color: #fef2f2; border: 1px solid #fecaca; text-align: center; white-space: pre-wrap; font-weight: 500; }
 
-        .panel-content .game-text { color: inherit; line-height: 1.6; word-wrap: break-word; font-size: 1rem; }
-        .panel-content .game-text strong { color: var(--accent-secondary); } .panel-content .game-text em { color: var(--accent-tertiary); }
-        .panel-content .game-text pre { background-color: var(--bg-dark); padding: 0.6rem; border-radius: 0.4rem; overflow-x: auto; font-size: 0.85rem; color: #93c5fd; margin: 0.4rem 0; border: 1px solid var(--bg-medium); }
-        .panel-content .gm-commentary { color: #fda4af; font-style: italic; font-size: 0.9rem; border: 1px dashed var(--accent-primary); padding: 0.4rem 0.6rem; margin-top: 0.6rem; background-color: rgba(159, 18, 57, 0.1); border-radius: 4px; }
+        /* API Key Input Section */
+        #apiKeySection {
+            margin-bottom: 1.5rem; background: white; padding: 1.25rem; border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border-left: 4px solid #fbbf24; /* Amber border */
+        }
+        #apiKeySection .geems-label { color: #d97706; /* Darker amber */ }
+        #apiKeySection .api-key-instructions a { color: #4f46e5; text-decoration: underline; }
+        #apiKeySection .api-key-instructions a:hover { color: #3730a3; }
 
-        /* Inputs, Textareas, Radio, Checkbox, Slider, Image styles inside .panel-content */
-        .panel-content .game-input, .panel-content .game-textarea { width: 100%; padding: 0.8rem; border: 1px solid var(--bg-light); border-radius: 0.5rem; color: var(--text-light); background-color: var(--bg-medium); font-family: var(--font-body); margin-bottom: 0.5rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.3); transition: border-color 0.2s, box-shadow 0.2s; }
-        .panel-content .game-input::placeholder, .panel-content .game-textarea::placeholder { color: var(--text-medium); opacity: 0.7; }
-        .panel-content .game-input:focus, .panel-content .game-textarea:focus { outline: none; border-color: var(--accent-tertiary); box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3), inset 0 1px 2px rgba(0,0,0,0.3); background-color: var(--bg-dark); }
-        .panel-content .game-textarea { min-height: 75px; }
-        .panel-content .game-radio-option, .panel-content .game-checkbox-option { display: flex; align-items: center; margin-bottom: 0.6rem; padding: 0.75rem 1.1rem; border-radius: 0.75rem; cursor: pointer; transition: background-color 0.2s, transform 0.1s; border: 1px solid var(--bg-light); color: inherit; background-color: rgba(15, 23, 42, 0.85); }
-        .panel-content .game-radio-option:hover, .panel-content .game-checkbox-option:hover { background-color: var(--bg-medium); border-color: var(--accent-tertiary); }
-        .panel-content .game-radio-option input[type="radio"], .panel-content .game-checkbox-option input[type="checkbox"] { margin-right: 0.8rem; cursor: pointer; accent-color: var(--accent-secondary); width: 1.1rem; height: 1.1rem; flex-shrink: 0; filter: brightness(1.1); }
-        .panel-content .game-radio-option label, .panel-content .game-checkbox-option label { color: inherit; flex-grow: 1; cursor: pointer; font-weight: 600; display: flex; align-items: center; width: 100%; }
-        .panel-content .game-slider-container { margin-bottom: 1rem; padding: 0.5rem 0; }
-        .panel-content .game-slider-label { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600; color: var(--accent-tertiary); font-size: 0.85rem; padding: 0 0.2rem; }
-        .panel-content .game-slider { width: 100%; cursor: pointer; accent-color: var(--accent-secondary); height: 0.7rem; background: var(--bg-light); border-radius: 9999px; appearance: none; -webkit-appearance: none; border: 1px solid var(--bg-medium); }
-        .panel-content .game-slider::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 1.4rem; height: 1.4rem; background: var(--slider-thumb-color, var(--accent-primary)); border-radius: 50%; cursor: pointer; border: 2px solid var(--bg-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
-        .panel-content .game-slider::-moz-range-thumb { width: 1.4rem; height: 1.4rem; background: var(--slider-thumb-color, var(--accent-primary)); border-radius: 50%; cursor: pointer; border: 2px solid var(--bg-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
-        .panel-content .game-slider-value-display { color: var(--accent-primary); font-weight: 700; min-width: 2.2rem; text-align: right; }
-        .panel-content .game-image-container { margin: 1rem 0; text-align: center; }
-        .panel-content .game-image { max-width: 100%; height: auto; border-radius: 0.5rem; background-color: var(--bg-medium); border: 1px solid var(--bg-light); box-shadow: 0 3px 7px rgba(0, 0, 0, 0.25); }
-        .panel-content .game-image-prompt { font-size: 0.75rem; color: var(--accent-tertiary); opacity: 0.7; margin-top: 0.4rem; }
-        .panel-content .game-button { padding: 0.85rem 1.9rem; background: linear-gradient(to right, var(--accent-primary), #b91c1c); color: var(--text-light); border: none; border-radius: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 3px 7px 0 rgba(0, 0, 0, 0.5); text-transform: uppercase; letter-spacing: 0.09em; white-space: nowrap; font-size: 0.95rem; font-family: var(--font-heading); display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1rem; }
-        .panel-content .game-button i { font-size: 1.1em; }
-        .panel-content .game-button:hover { background: linear-gradient(to right, #b91c1c, #991b1b); box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.6); transform: translateY(-2px) scale(1.03); }
+        /* Grid layout for panels (Example - LLM can use this or define its own structure) */
+        .panel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid */
+            gap: 1.5rem;
+        }
 
-
-        /* Loading/Error Styles (Unchanged) */
-        .loading-indicator, .error-message { display: flex; justify-content: center; align-items: center; padding: 1.5rem; font-size: 1.1rem; border-radius: 0.75rem; margin-top: 1rem; font-weight: 600; background-color: var(--bg-medium); border: 1px solid var(--bg-light); }
-        .loading-indicator { color: var(--accent-tertiary); } .loading-indicator svg { width: 1.4rem; height: 1.4rem; }
-        .error-message { color: #fecaca; background-color: #7f1d1d; border-color: var(--accent-primary); }
-
-        /* API Key Section (Unchanged) */
-        #apiKeySection { margin: 1rem auto; max-width: 1300px; background: rgba(30, 41, 59, 0.7); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--bg-light); backdrop-filter: blur(3px); }
-        #apiKeySection .api-key-label { color: var(--accent-tertiary); display: block; margin-bottom: 0.7rem; font-weight: 700; font-size: 1.1rem; font-family: var(--font-heading); }
-        #apiKeySection .api-key-instructions span { color: var(--text-medium); } #apiKeySection .api-key-instructions a { color: var(--accent-secondary); text-decoration: underline; font-weight: 600; } #apiKeySection .api-key-instructions a:hover { color: #db2777; }
-
-        /* Footer Buttons */
-        .game-button { /* Base style from previous */ padding: 0.85rem 1.9rem; background: linear-gradient(to right, var(--accent-primary), #b91c1c); color: var(--text-light); border: none; border-radius: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 3px 7px 0 rgba(0, 0, 0, 0.5); text-transform: uppercase; letter-spacing: 0.09em; white-space: nowrap; font-size: 0.95rem; font-family: var(--font-heading); display: inline-flex; align-items: center; gap: 0.5rem; }
-        .game-button i { font-size: 1.1em; }
-        .game-button:hover { background: linear-gradient(to right, #b91c1c, #991b1b); box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.6); transform: translateY(-2px) scale(1.03); }
-        .game-button:active { transform: translateY(0) scale(1); box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.5); }
-        .game-button:disabled { background: var(--bg-light); color: var(--text-medium); cursor: not-allowed; opacity: 0.6; box-shadow: none; transform: none; }
-        #submit-turn-button { background: linear-gradient(to right, var(--accent-secondary), #db2777); } #submit-turn-button:hover { background: linear-gradient(to right, #db2777, #be185d); }
-        #saveGameButton { background: linear-gradient(to right, #0ea5e9, #0284c7); } #saveGameButton:hover { background: linear-gradient(to right, #0284c7, #0369a1); }
-        #modeToggleButton { background: linear-gradient(to right, #10b981, #059669); min-width: 210px; } #modeToggleButton.red-alert-mode { background: linear-gradient(to right, #db2777, #be185d); } #modeToggleButton:hover { background: linear-gradient(to right, #059669, #047857); } #modeToggleButton.red-alert-mode:hover { background: linear-gradient(to right, #be185d, #9d174d); }
-        #resetGameButton { background: linear-gradient(to right, #f97316, #ea580c); } #resetGameButton:hover { background: linear-gradient(to right, #ea580c, #c2410c); }
+        /* Specific panel styling examples (LLM can apply these classes) */
+        .image-panel { /* Example */
+            /* Styles specific to image panel */
+        }
+        .story-panel { /* Example */
+            /* Styles specific to story panel */
+        }
+        .choices-panel { /* Example */
+            /* Styles specific to choices panel */
+        }
+        .status-panel { /* Example */
+            /* Styles specific to status panel */
+        }
 
     </style>
 </head>
-<body>
+<body class="bg-gray-100 font-inter">
 
 <header class="site-header">
-    <img id="headerBanner" alt="Evil Sci-Fi Dynamic Banner" class="header-banner-image">
-    <h1>Evil GM's Dynamic Sci-Fi Fiasco</h1>
+    <img id="headerBanner" alt="GEEMS Header Banner" class="header-banner-image" src="https://placehold.co/1200x150/374151/e5e7eb?text=Loading+Banner...">
+    <h1>GEEMS - LLM UI</h1>
 </header>
 
-<div class="mx-auto px-4 md:px-8"> <div id="apiKeySection">
-    <label for="apiKeyInput" class="api-key-label api-key-instructions">
-        Interface with the Core: Provide Google AI API Key! 🔑
-        <span class="block text-sm font-normal mt-1"> (Get one: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a>)</span>
-    </label>
-    <input type="password" id="apiKeyInput" class="game-input" placeholder="Authorization required...">
-</div>
+<div class="max-w-5xl mx-auto px-4 md:px-8 py-6">
 
-    <div id="game-layout-container">
-        <div id="initial-message" class="panel" style="grid-column: 1 / -1; text-align: center;"> <div class="panel-content" style="display: flex; align-items: center; justify-content: center; height: 100%;">
-            <p class="text-sky-400 font-semibold">Systems offline. Provide API Key and press "Initiate Sequence".</p>
-        </div>
+    <div id="apiKeySection">
+        <label for="apiKeyInput" class="geems-label api-key-instructions">
+            Enter Google AI API Key to Begin Your Session:
+            <span class="block text-sm font-normal text-gray-600 mt-1">
+                    (Get a key from Google AI Studio:
+                    <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="hover:text-indigo-700">
+                        aistudio.google.com/apikey
+                    </a>)
+                    <br>Or provide via URL parameter: ?apiKey=YOUR_API_KEY
+                </span>
+        </label>
+        <input type="password" id="apiKeyInput" class="geems-input mt-2" placeholder="Paste your secure API key here...">
+    </div>
+
+    <div id="game-container">
+        <div id="turn-content">
+            <div id="initial-message" class="text-center text-gray-500 p-6">
+                Enter your API Key above and click "Start Session / Next Turn" to begin.
+            </div>
         </div>
     </div>
 
     <div id="loading" class="loading-indicator" style="display: none;">
-        <svg class="animate-spin -ml-1 mr-3 h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        <span id="loading-message">Reconfiguring reality matrix...</span>
+        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Processing... Please wait.
     </div>
+
     <div id="error-display" class="error-message" style="display: none;"></div>
 
-</div> <footer class="site-footer">
-    <div class="footer-buttons">
-        <button id="saveGameButton" class="game-button" disabled><i class="lucide lucide-save"></i> Save Log</button>
-        <button id="modeToggleButton" class="game-button standard-mode"><i class="lucide lucide-flame"></i> Mode: Standard Misery</button>
-        <button id="submit-turn-button" class="game-button" disabled>
-            <i class="lucide lucide-chevron-right-circle"></i> Submit Action
+    <div class="mt-6 text-center">
+        <button id="next-turn-button" class="geems-button" disabled>
+            Start Session / Next Turn
         </button>
-        <button id="resetGameButton" class="game-button" disabled><i class="lucide lucide-skull"></i> Self Destruct</button>
+    </div>
+
+</div>
+
+<footer class="site-footer">
+    <div class="footer-buttons">
+        <button id="resetGameButton" class="geems-button" disabled>Reset Session</button>
     </div>
     <div id="clipboardMessage"></div>
     <div class="footer-content">
-        <span>Your suffering fuels the simulation &copy; 3025</span>
+        <span>GEEMS LLM UI Version &copy; 2025</span>
     </div>
 </footer>
 
 <script type="module">
-    // --- NEW Prompts for Evil GM - Dynamic Layout JSON Output ---
-    // Ensured backticks within example strings are escaped `\\``
-    const evilSciFiPromptsDynamic = {
-        evilGmAddendum: `**EVIL GM OVERDRIVE MODE ACTIVE:**\n\n* **Focus Shift:** Amplify GM\\'s presence, manipulative intent. Scenarios become more challenging, unfair, psychologically probing. Layout commands may create distracting or stressful UI changes (e.g., flashing highlights, suddenly shrinking useful panels, opening deceptive ones).\n* **Erotic Content:** Twisted by GM\\'s goals (temptation as traps, pleasure with drawbacks).\n* **Layout Commands:** Use commands more aggressively (\`highlight\` for false alarms, \`resize\` to hinder, \`create\` temporary misleading panels).\n* **GM Commentary:** More frequent, mocking, misleading in the \`update_panel\` command for the GM panel.\n* **Choices:** Options might seem beneficial but have hidden costs. Test loyalty, morality.\n* **Analysis:** \`internalState\` logs susceptibility to manipulation/UI tricks. \`gemini_facing_analysis\` focuses on manipulation effectiveness.\n`,
-
-        firstrun: `**Instructions for Generating Turn 1 JSON ONLY (Evil GM Dynamic Layout):**\n\n**(Input: None. Output: JSON object for Turn 1 UI state)**\n\n* **Goal:** Generate initial JSON state. Introduce Erotic Sci-Fi premise + Evil GM. Perform initial profiling. Define initial panel layout using \`layoutCommands\`.\n* **Theme:** Erotic Sci-Fi (Futurama/FTL influence), Comedic, run by Evil/Manipulative GM.\n* **Output Format:** JSON object: \`{ turnNumber: 1, narrativeContent: [], layoutCommands: [], internalStateUpdate: "..." }\`\n* **JSON Structure Requirements:**\n    * **\`turnNumber\`: 1**\n    * **\`narrativeContent\`: []** (Empty for T1, interaction happens via profiling in dedicated panels initially).\n    * **\`layoutCommands\`: [ ... ]** - Array of commands to create the *initial* UI panels:\n        * Command Format: \`{ action: 'create', panelId: 'uniquePanelId', config: { title: 'Panel Title', icon: 'lucide-icon-name', initialClass: 'panel-medium panel-status-window', // Example size/style class\n          content: [ { type: 'text', value: 'Initial content...' } ] // Array of UI elements for panel\\'s initial content (text, progress, etc.)\n          /* Optional: positionHint: 'left'/'center'/'right' - for basic grid placement guidance */\n        } }\`\n        * **Required Initial Panels (Create via commands):**\n            * **Status Panel (\`panelId: 'statusPanel'\`):** Display initial stats (Fuel, Hull, Sanity, Credits, GM Annoyance) using \`text\` or custom \`progress\` elements within \`config.content\`.\n            * **GM Panel (\`panelId: 'gmPanel'\`):** Include initial mocking GM commentary using \`text\` with \`className: 'gm-commentary'\` in \`config.content\`.\n            * **Profiling Panel (\`panelId: 'profilePanel'\`):** Include initial profiling questions (Species, Motivation/Vice, Orientation) using \`radio\`, \`checkbox\`, \`slider\` elements within \`config.content\`. **CRITICAL: Also include the 'initial_action' radio group here for Turn 1.**\n            * **Crew Panel (\`panelId: 'crewPanel'\`):** Show empty state.\n            * **Inventory Panel (\`panelId: 'inventoryPanel'\`):** Show empty state.\n    * **\`internalStateUpdate\`: "..."** - Initial JSON-escaped Markdown state (Subject ID "Meatbag", initial status, empty profile/crew/inventory, GM state, Plan: initial profiling).\n\n* **Example Output Snippet (Illustrative - Backticks Escaped):**\n\`\`\`json\n{\n  "turnNumber": 1,\n  "narrativeContent": [],\n  "layoutCommands": [\n    { "action": "create", "panelId": "statusPanel", "config": { "title": "Ship Vitals (LOL)", "icon": "gauge", "initialClass": "panel-medium status-window", "content": [ { "type": "progress", "label": "Fuel \\u26FD\uFE0F", "value": 70, "max": 100, "className": "fuel-bar" }, { "type": "progress", "label": "Hull \\uD83D\\uDCA5", "value": 90, "max": 100, "className": "hull-bar" }, { "type": "progress", "label": "Sanity \\uD83D\\uDE35\\u200D\\uD83D\\uDCAB", "value": 60, "max": 100 }, { "type": "progress", "label": "GM Annoyance \\uD83D\\uDE08", "value": 5, "max": 100, "className": "gm-influence-bar" }, { "type": "text", "label": "Spice Credits \\uD83C\\uDF36\uFE0F", "value": "10" } ] } },\n    { "action": "create", "panelId": "gmPanel", "config": { "title": "GM\\'s Private Log", "icon": "brain-circuit", "initialClass": "panel-medium gm-window", "content": [ { "type": "text", "className": "gm-commentary", "value": "Subject \\'Meatbag\\' online. Initializing amusement protocols..." } ] } },\n    { "action": "create", "panelId": "profilePanel", "config": { "title": "Identify Yourself, Meatbag!", "icon": "scan-face", "initialClass": "panel-large", "content": [ { "type": "text", "value": "The flickering console demands identification. Try not to lie *too* much.", "className": "game-text mb-3" }, { "type": "radio", "name": "profile_species", "label": "Species Designation:", "options": ["Boring Human*", "Clanky Cyborg", "Weird Alien", "...Something Else"] }, { "type": "checkbox", "name": "profile_motivation", "label": "Primary Motivation / Vice:", "options": ["Raw Pleasure", "Filthy Credits", "Petty Power", "Just Surviving"] }, { "type": "checkbox", "name": "profile_preferences_accepts_gm_shenanigans", "label": "Accept GM Shenanigans?" }, { "type": "radio", "name": "initial_action", "label": "First Brilliant Move?", "options": ["Kick the smoking console*", "Scan for escape pods (or snacks)", "Go back to sleep. It was probably a dream."] } ] } },\n    { "action": "create", "panelId": "crewPanel", "config": { "title": "Crew Manifest", "icon": "users", "initialClass": "panel-small crew-window", "content": [ { "type": "text", "value": "Just you. For now." } ] } },\n    { "action": "create", "panelId": "inventoryPanel", "config": { "title": "Cargo Hold", "icon": "box", "initialClass": "panel-small inventory-window", "content": [ { "type": "text", "value": "Empty. Predictable." } ] } }\n  ],\n  "internalStateUpdate": "# GM Log - Cycle 1 - Turn 1\\n\\n* Subject: Meatbag (Initial)\\n* Mode: Standard Misery\\n* Initial Status: Fuel 70, Hull 90, CrewSanity 60, SpiceCredits 10, GmAnnoyance 5\\n* Player Profile: { \\"species\\": \\"unspecified\\", \\"role\\": \\"Plaything\\", \\"orientation\\": \\"unspecified\\", \\"preferences\\": {}, \\"motivation\\": \\"unspecified\\" }\\n* Crew Roster: []\\n* Inventory: []\\n* Ship State: Dilapidated\\n* GM State: { mood: Amused, currentExperiment: Baseline Profiling, manipulationTactic: Initial Intimidation/Mockery }\\n* Plan: Initial profiling..."\n}\n\`\`\`\n`,
-
-        main: `**Evil GM Dynamic Layout LLM Turn Generation Protocol v2.0 - JSON Output**\n\n**(Input: Player Actions JSON, Previous Internal State Markdown (incl. Player Profile, GM State, etc.), Current Mode (standard_misery/evil_overdrive), Current Client GameState (for display reference: profile, status, crew, inventory). Output: JSON object for next turn UI state and commands.)**\n\n**Context:** Client provides \`gameState\` for display reference. Your memory is \`internalState\` Markdown. You MUST generate a JSON object containing \`turnNumber\`, \`narrativeContent\`, \`layoutCommands\`, and \`internalStateUpdate\`.\n\n**Core Goals:**\n1.  **Generate Turn State (JSON):** Output valid JSON describing the turn\\'s primary interactions AND layout changes.\n2.  **Direct Layout Changes (JSON \`layoutCommands\`):** Use the \`layoutCommands\` array to explicitly instruct the client on creating, updating, closing, resizing, or highlighting UI panels (\`div\` elements managed by client JS). Panel changes should reflect narrative events (e.g., create panel for comms message, highlight status on damage, close temporary event panel).\n3.  **Thematic Immersion (JSON \`narrativeContent\` & Panel Content):** Generate narrative, visuals (image prompts), choices for the main interaction panel (\`narrativeContent\`). Generate content for *other* panels specified in \`layoutCommands\` (\`update\` or \`create\`). Content reflects Erotic Sci-Fi + Evil GM theme, mode, player profile, GM mood.\n4.  **Dynamic State & GM Logging (JSON \`internalStateUpdate\`):** Calculate state changes (fuel, hull, sanity, credits, GM annoyance). Update relationships, narrative progress, GM state *in Markdown*. Log player choices/weaknesses. Return updated Markdown in \`internalStateUpdate\`.\n5.  **Creative & Manipulative UI (JSON Elements):** Use varied UI element types (\`text\`, \`image\`, \`radio\`, \`checkbox\`, \`slider\`, \`textfield\`) within \`narrativeContent\` and panel content. Choices can be misleading/risky.\n\n**--- Protocol ---**\n\n1.  **Analyze Input:** Parse actions JSON, \`internalState\` Markdown, current mode, client \`gameState\`.\n2.  **Update GM Log & Plan:** Update status/relationships/GM state *in Markdown*. Increment turn. Plan next event, manipulations, and **required layout changes** (which panels to create/update/close/resize/highlight). Log plans in Markdown.\n3.  **Generate Turn JSON Output:** Create the JSON object:\n    * **\`turnNumber\`:** New turn number.\n    * **\`narrativeContent\`:** Array of UI element objects (\`{ type: 'text', value: '...', name: '...' }\`, \`{ type: 'image', value: 'prompt...' }\`, \`{ type: 'radio', name: 'main_action', ... }\`) for the primary interaction panel (e.g., 'mainInteractionPanel' or another specified panel ID).\n    * **\`layoutCommands\`:** Array of command objects based on the plan:\n        * \`{ action: 'create', panelId: 'newPanelId', config: { title: '...', icon: '...', initialClass: '...', content: [ { type: 'text', ... } ] } }\`\n        * \`{ action: 'update', panelId: 'existingPanelId', config: { content: [ { type: 'text', ... } ] /* Optional: newTitle, newIcon */ } }\`\n        * \`{ action: 'close', panelId: 'panelToCloseId', config: { delayMs: 5000 /* Optional */ } }\`\n        * \`{ action: 'resize', panelId: 'panelToResizeId', config: { newClass: 'panel-large' } }\`\n        * \`{ action: 'highlight', panelId: 'panelToHighlightId', config: { durationMs: 3000 /* Optional */ } }\`\n    * **\`internalStateUpdate\`:** String containing the full, updated, JSON-escaped Markdown log.\n\n**--- Input Example (Post-Profiling) ---**\n\`\`\`json\n{ /* ... actions, internalState, mode, clientGameState ... */ }\n\`\`\`\n\n**--- Output Example (JSON for Turn 2 - Console Kick Aftermath - Backticks Escaped) ---**\n\`\`\`json\n{\n  "turnNumber": 2,\n  "narrativeContent": [\n    { "type": "text", "name": "narrative_t2", "value": "Your well-aimed kick connects! The console showers you in angry red sparks and makes a noise like a dying space-badger. The main viewscreen flickers, showing blurry tentacles? before demanding \\'Emergency Lubricant Application\\'." },\n    { "type": "image", "name": "image_sparks_t2", "value": "sci-fi console exploding with red sparks after being kicked dark spaceship bridge", "label": "Console\\'s Reaction" },\n    { "type": "image", "name": "image_tentacles_t2", "value": "blurry viewscreen showing pink tentacles waving suggestively sci-fi erotic hint", "label": "Brief Glimpse?" },\n    { "type": "text", "name": "lube_prompt_t2", "value": "The screen flashes: \\"Warning: Primary coupling requires immediate manual lubrication. Select application method.\\"", "className": "font-semibold text-pink-400 mt-4 mb-2 block" },\n    { "type": "radio", "name": "lube_method", "label": "Lubricant Application Technique:", "options": ["Gentle & Thorough*", "Vigorous & Fast", "...Creative" ] },\n    { "type": "slider", "name": "lube_pressure", "label": "Application Pressure (0=Delicate, 10=Max Force)", "min": 0, "max": 10, "value": 5 },\n    { "type": "checkbox", "name": "distraction_tentacles", "label": "Try to get a clearer view of those tentacles while \\'working\\'." }\n  ],\n  "layoutCommands": [\n    { "action": "update", "panelId": "statusPanel", "config": { "content": [\n        { "type": "progress", "label": "Fuel \\u26FD\uFE0F", "value": 68, "max": 100, "className": "fuel-bar" },\n        { "type": "progress", "label": "Hull \\uD83D\\uDCA5", "value": 85, "max": 100, "className": "hull-bar" },\n        { "type": "progress", "label": "Sanity \\uD83D\\uDE35\\u200D\\uD83D\\uDCAB", "value": 55, "max": 100 },\n        { "type": "progress", "label": "GM Annoyance \\uD83D\\uDE08", "value": 15, "max": 100, "className": "gm-influence-bar" },\n        { "type": "text", "label": "Spice Credits \\uD83C\\uDF36\uFE0F", "value": "10" }\n    ] } },\n    { "action": "update", "panelId": "gmPanel", "config": { "content": [\n        { "type": "text", "className": "gm-commentary", "value": "Subject \\'Sparky\\' resorts to violence. Predictable. Hull integrity decreased. Annoyance increased. Created \\'Lubrication\\' scenario. Monitoring technique and tentacle fixation..." }\n    ] } },\n    { "action": "highlight", "panelId": "statusPanel", "config": { "durationMs": 2000 } }\n  ],\n  "internalStateUpdate": "# GM Log - Cycle 2 - Turn 2\\n\\n* Subject: Sparky\\n* Mode: Standard Misery\\n* Status Update: Fuel 68, Hull 85 (-5 kick), CrewSanity 55 (-5 stress), SpiceCredits 10, GmAnnoyance 15 (+10 kick)\\n* Player Profile: { ... }\\n* Crew Roster: []\\n* Inventory: []\\n* Ship State: Console sparking, demands lubrication.\\n* GM State: { mood: Intrigued, ... }\\n* Player Action: kick_console\\n* Observations: Violence. Hull damaged. Potential tentacle interest.\\n* Plan: Monitor lubrication choice. Escalate based on result...\\n"\n}\n\`\`\`\n`
-    };
-
-    // --- Game State Object ---
-    let gameState = {
-        apiKey: null, encodedApiKey: null, turn: 0, mode: 'standard_misery',
-        profile: { species: "unspecified", role: "Plaything", orientation: "unspecified", preferences: {}, motivation: "unspecified" },
-        status: { fuel: 70, hull: 90, crewSanity: 60, spiceCredits: 10, gmAnnoyance: 5 },
-        crew: [], inventory: [], currentSubjectId: "Meatbag",
-        currentInternalStateMarkdown: "", currentModelIndex: 0, isLoading: false, isLocked: false
-    };
-    let activePanels = new Map(); // Map<panelId, { element: HTMLElement, config: object } >
+    // --- Game State Variables ---
+    let historyQueue = []; // Stores { turnHTML: "...", playerActions: {...} }
+    const MAX_HISTORY_SIZE = 10; // Keep history manageable
+    let currentTurnHTML = null; // Stores the HTML of the current turn
+    let currentTurnNumber = 0;
+    let currentSubjectId = "SubjectZero"; // Default subject ID
+    let currentNotes = ""; // Stores the 'notes' content from hidden input
+    let isLoading = false;
+    let apiKeyLocked = false;
 
     // --- Model Switching State ---
     const AVAILABLE_MODELS = ["gemini-2.5-pro-exp-03-25", "gemini-1.5-pro", "gemini-2.0-pro-exp-02-05", "gemini-2.0-flash-exp", "gemini-exp-1206"];
+    let currentModelIndex = 0;
 
     // --- Configuration ---
-    const LOCAL_STORAGE_KEY = 'evilGMDynamicLayoutState_v2_json_escaped'; // Updated key
-    const PANEL_CLOSE_DELAY = 500; // ms for close animation
-    const mainInteractionPanelId = 'mainInteractionPanel'; // Default ID for main narrative/choices
+    const LOCAL_STORAGE_KEY = 'geemsLlmUiState_v1';
+    const POLLINATIONS_URL_BASE = "https://image.pollinations.ai/prompt/";
 
     // --- DOM Element References ---
-    const gameLayoutContainer = document.getElementById('game-layout-container');
+    const turnContentContainer = document.getElementById('turn-content');
     const loadingIndicator = document.getElementById('loading');
-    const loadingMessage = document.getElementById('loading-message');
-    const submitButton = document.getElementById('submit-turn-button');
+    const nextTurnButton = document.getElementById('next-turn-button');
     const apiKeyInput = document.getElementById('apiKeyInput');
     const apiKeySection = document.getElementById('apiKeySection');
     const errorDisplay = document.getElementById('error-display');
-    const saveGameButton = document.getElementById('saveGameButton');
-    const modeToggleButton = document.getElementById('modeToggleButton');
     const resetGameButton = document.getElementById('resetGameButton');
     const clipboardMessage = document.getElementById('clipboardMessage');
     const headerBanner = document.getElementById('headerBanner');
+    const gameContainer = document.getElementById('game-container'); // Main container for event delegation
+
+    // --- Prompts (Adapted from prompts.js) ---
+    const geemsLlmUiPrompts = {
+        // Note: Masturbation mode addendum removed as per focus change,
+        // but could be added back if desired.
+
+        firstrun: `**Instructions for Generating Turn 1 HTML UI ONLY:**
+
+**(Input: None. Output: Raw HTML snippet for the Turn 1 UI within #turn-content)**
+
+* **Goal:** Generate the initial HTML UI for the \`#turn-content\` div. Introduce a **random, engaging scenario** (e.g., bustling futuristic market, serene alien garden, strange laboratory). Present it with an initial aesthetic that is **visually interesting and hints at the game's potential for exploration and interaction.** The UI should include distinct panels for different types of content (story, image, choices). Establish the baseline for player interaction.
+* **HTML Structure:**
+    * Generate HTML content meant to be placed inside the \`<div id="turn-content">\`.
+    * Use Tailwind CSS classes extensively for styling. You can also use the provided \`.geems-panel\`, \`.geems-label\`, \`.geems-text\`, \`.geems-image\`, etc., classes as defaults or fallbacks.
+    * **Panel Structure:** Create distinct sections/panels using \`<div>\` elements. Assign appropriate classes (e.g., \`class="geems-panel image-panel"\`, \`class="geems-panel story-panel"\`, \`class="geems-panel choices-panel"\`). You can use a grid layout (e.g., \`<div class="panel-grid">\`) or flexbox to arrange them.
+    * **Story Panel:** Include a title (\`<h3>\` or similar) and descriptive text (\`<p class="geems-text">\`) introducing the scenario.
+    * **Image Panel:** Generate 1-2 images using \`<img>\` tags.
+        * **CRITICAL:** Use the Pollinations.ai URL format: \`${POLLINATIONS_URL_BASE}{GENERATED_PROMPT}?width={WIDTH}&height={HEIGHT}&seed={RANDOM_SEED}&nologo=true&safe=false\`.
+        * Generate relevant \`{GENERATED_PROMPT}\` text matching the scene.
+        * Choose appropriate \`{WIDTH}\` and \`{HEIGHT}\` (e.g., 400x300). Use a random \`{RANDOM_SEED}\`.
+        * Include a \`<p class="geems-image-prompt">\` below each image showing the prompt used.
+        * Add \`onerror="this.src='https://placehold.co/{W}x{H}/e0e7ff/4f46e5?text=Image+Error'; this.alt='Error Loading Image'"\` to each image tag, replacing {W} and {H}.
+    * **Choices Panel:** Wrap choices in \`<form id="geems-turn-form">\`. Include initial actions using radio buttons (\`<input type="radio">\`) or other simple inputs. Provide clear labels (\`<label>\`).
+    * **Hidden Fields:** CRITICAL - Include hidden inputs within the form:
+        * \`<input type='hidden' name='turn' value='1'>\`
+        * \`<input type='hidden' name='subjectId' value='SubjectOne'>\` (or similar initial ID)
+        * \`<input type='hidden' name='notes' value='INITIAL_STATE_MARKDOWN'>\` (See below)
+    * **Panel Refresh Metadata (Optional but Recommended):** For elements intended to trigger panel refreshes (like radio buttons), add data attributes:
+        * \`data-trigger-action="refreshPanel"\`
+        * \`data-target-panels="#image-panel,#story-panel"\` (CSS selectors for panels to update)
+        * \`data-input-name="main_action"\` (Name of the input providing the value)
+* **Initial Notes Markdown:** The \`notes\` hidden field should contain initial JSON-escaped Markdown:
+    \`"# Game State - Turn 1\\n\\n**Player Profile:**\\n* Subject ID: SubjectOne\\n\\n**Narrative State:**\\n* Location: [Generated Location Name]\\n* Last Event: Session Start\\n* World Modifiers: ['Initial']\\n\\n**Internal Log:**\\n* Plan: Introduce scenario and initial choices."\`
+* **No Submit Button:** DO NOT include the main \`#next-turn-button\` within the generated HTML. It exists outside this container.
+* **Output:** Raw HTML snippet ready for injection into \`#turn-content\`.
+
+* **Example Output Snippet Start:**
+    \`\`\`html
+    <div class="panel-grid">
+      <div class="geems-panel story-panel" id="story-panel">
+        <h3>Arrival at Neo-Kyoto Market</h3>
+        <p class="geems-text">Rain slicks the neon-lit streets of the Neo-Kyoto market district. Holographic koi fish swim through the air above crowded stalls selling everything from synthetic noodles to black market cybernetics. The air hums with energy and the smell of ozone.</p>
+      </div>
+
+      <div class="geems-panel image-panel" id="image-panel">
+        <h3>Market View</h3>
+        <img src="${POLLINATIONS_URL_BASE}Neo-Kyoto%20market%20street%20at%20night%2C%20raining%2C%20neon%20signs%2C%20holographic%20koi%20fish%2C%20cyberpunk%20aesthetic?width=400&height=300&seed=12345&nologo=true&safe=false"
+             alt="Neo-Kyoto market street at night"
+             class="geems-image"
+             onerror="this.src='https://placehold.co/400x300/e0e7ff/4f46e5?text=Image+Error'; this.alt='Error Loading Image'">
+        <p class="geems-image-prompt">Neo-Kyoto market street at night, raining, neon signs, holographic koi fish, cyberpunk aesthetic</p>
+      </div>
+
+      <div class="geems-panel choices-panel" id="choices-panel">
+        <h3>First Steps</h3>
+        <form id="geems-turn-form">
+          <input type='hidden' name='turn' value='1'>
+          <input type='hidden' name='subjectId' value='SubjectOne'>
+          <input type='hidden' name='notes' value='INITIAL_STATE_MARKDOWN_ESCAPED'>
+
+          <label class="geems-label">What do you do first?</label>
+          <div class="geems-radio-option">
+            <input type="radio" id="action_explore" name="main_action" value="explore_market" checked
+                   data-trigger-action="refreshPanel" data-target-panels="#story-panel,#image-panel,#choices-panel" data-input-name="main_action">
+            <label for="action_explore">Explore the nearby stalls</label>
+          </div>
+          <div class="geems-radio-option">
+            <input type="radio" id="action_shelter" name="main_action" value="find_shelter"
+                   data-trigger-action="refreshPanel" data-target-panels="#story-panel,#image-panel,#choices-panel" data-input-name="main_action">
+            <label for="action_shelter">Find shelter from the rain</label>
+          </div>
+           <div class="geems-radio-option">
+            <input type="radio" id="action_observe" name="main_action" value="observe_crowd"
+                   data-trigger-action="refreshPanel" data-target-panels="#story-panel,#image-panel,#choices-panel" data-input-name="main_action">
+            <label for="action_observe">Observe the crowd</label>
+          </div>
+        </form>
+      </div>
+    </div>
+    \`\`\`
+    `,
+
+        main: `**GEEMS LLM UI Turn Generation Protocol v1.0 - HTML Output**
+
+**(Input: Player Actions JSON, Previous Notes Markdown String. Output: Raw HTML snippet for the next turn UI within #turn-content)**
+
+**Core Goals:**
+1.  **Generate Turn UI (HTML):** Generate the COMPLETE HTML content for the \`<div id="turn-content">\`. This HTML should represent the entire game state for the current turn, including narrative descriptions, images, interactive choices, status displays, etc., organized into logical panels.
+2.  **Dynamic & Interactive:** The generated HTML should contain interactive elements (forms, inputs) that allow the player to make choices. Include metadata (\`data-*\` attributes) on interactive elements if they should trigger partial UI refreshes.
+3.  **Stateful & Adaptive:** Use the provided \`notes\` Markdown string (which contains the game history, player profile, and internal state) to inform the generated narrative, choices, and visuals. Update the \`notes\` string based on player actions and return the *new* version in a hidden input field within the generated HTML.
+4.  **Visual Storytelling:** Generate descriptive image prompts for the Pollinations.ai API (\`${POLLINATIONS_URL_BASE}{...}\`) and embed the resulting \`<img>\` tags within the HTML structure, placed logically within relevant panels.
+
+**--- Protocol ---**
+
+1.  **Analyze Input:** Parse the \`playerActionsJson\` (containing data from the previous turn's form) and the \`previousNotesMarkdown\`. Extract the player's choices, current turn number, subject ID, and the full internal state/history from the notes.
+2.  **Update Notes & State:**
+    * Increment the turn number.
+    * Process the player's actions and update the game state *within the notes Markdown string*. This includes updating the narrative state (location, last event), player profile (if applicable), internal logs, etc.
+    * Log the player's actions and the resulting state changes within the notes.
+    * Plan the next event/scenario based on the updated state and player choices. Log this plan in the notes.
+3.  **Generate Next Turn HTML (for \`#turn-content\`):**
+    * **Structure:** Create a complete HTML snippet. Use \`<div>\` elements with appropriate classes (Tailwind CSS, \`.geems-panel\`, \`.panel-grid\`, panel-specific classes like \`.story-panel\`) to structure the content into logical panels (e.g., Story, Image(s), Choices, Status).
+    * **Styling:** Use Tailwind CSS classes extensively (\`class="..."\`) for layout, colors, spacing, etc. Use \`.geems-*\` classes as fallbacks or for consistent styling.
+    * **Narrative Panel:** Generate updated descriptive text (\`<p class="geems-text">\`) reflecting the outcome of the player's last action and introducing the new situation. Include a title (\`<h3>\`).
+    * **Image Panel(s):** Generate 1-3 relevant images using \`<img>\` tags with the required \`${POLLINATIONS_URL_BASE}{...}\` format. Include descriptive \`alt\` text and the \`.geems-image-prompt\` paragraph below each. Add the \`onerror\` attribute for fallbacks.
+    * **Choices Panel:** Create a \`<form id="geems-turn-form">\`. Include interactive elements (\`radio\`, \`checkbox\`, \`slider\`, \`textarea\`) for the player's next actions. Use clear labels (\`<label>\`).
+        * **Panel Refresh Metadata:** Add \`data-trigger-action="refreshPanel"\`, \`data-target-panels="..."\`, and \`data-input-name="..."\` attributes to inputs that should trigger partial refreshes. The \`#next-turn-button\` handles full refreshes.
+    * **Other Panels (Optional):** Include panels for status, inventory, character info, etc., as needed, generating the relevant HTML content.
+    * **Hidden Fields:** CRITICAL - Include updated hidden fields inside the form:
+        * \`<input type='hidden' name='turn' value='{new_turn_number}'>\`
+        * \`<input type='hidden' name='subjectId' value='{current_subject_id}'>\`
+        * \`<input type='hidden' name='notes' value='{UPDATED_escaped_markdown_state}'>\` (Return the fully updated notes string here).
+    * **NO Submit Button:** Do NOT include the main \`#next-turn-button\` in this generated HTML.
+4.  **Escape & Compile Output:** Ensure valid HTML. JSON-escape the updated notes string before putting it in the hidden input's value attribute. Return the complete raw HTML snippet for \`#turn-content\`.
+
+**--- Input Example (What the LLM Receives) ---**
+\`\`\`json
+{
+  "playerActionsJson": {
+    "turn": 1,
+    "subjectId": "SubjectOne",
+    "main_action": "explore_market"
+    // ... any other inputs from turn 1 form
+  },
+  "previousNotesMarkdown": "# Game State - Turn 1\\n\\n**Player Profile:**\\n* Subject ID: SubjectOne\\n\\n**Narrative State:**\\n* Location: Neo-Kyoto Market\\n* Last Event: Session Start\\n* World Modifiers: ['Initial']\\n\\n**Internal Log:**\\n* Plan: Introduce scenario and initial choices."
+}
+\`\`\`
+
+**--- Output Example (What the LLM Generates - Turn 2 Snippet) ---**
+\`\`\`html
+<div class="panel-grid">
+  <div class="geems-panel story-panel" id="story-panel">
+    <h3>Exploring the Stalls</h3>
+    <p class="geems-text">You push through the drizzle towards a stall flickering with a 'RAMEN' sign. Steam billows out, carrying the scent of synth-broth and something spicy. A gruff-looking vendor with cybernetic eyes watches you approach.</p>
+  </div>
+
+  <div class="geems-panel image-panel" id="image-panel">
+    <h3>Ramen Stall</h3>
+    <img src="${POLLINATIONS_URL_BASE}Cyberpunk%20ramen%20stall%20vendor%20with%20cybernetic%20eyes%20watching%20intently%2C%20steam%20rising%2C%20neon%20lighting?width=400&height=300&seed=67890&nologo=true&safe=false"
+         alt="Cyberpunk ramen stall vendor"
+         class="geems-image"
+         onerror="this.src='https://placehold.co/400x300/e0e7ff/4f46e5?text=Image+Error'; this.alt='Error Loading Image'">
+    <p class="geems-image-prompt">Cyberpunk ramen stall vendor with cybernetic eyes watching intently, steam rising, neon lighting</p>
+  </div>
+
+  <div class="geems-panel choices-panel" id="choices-panel">
+    <h3>Interaction</h3>
+    <form id="geems-turn-form">
+      <input type='hidden' name='turn' value='2'>
+      <input type='hidden' name='subjectId' value='SubjectOne'>
+      <input type='hidden' name='notes' value='{UPDATED_NOTES_MARKDOWN_TURN_2_ESCAPED}'>
+
+      <label class="geems-label">The vendor grunts, "Need somethin'?"</label>
+      <div class="geems-radio-option">
+        <input type="radio" id="action_order" name="vendor_interaction" value="order_ramen" checked
+               data-trigger-action="refreshPanel" data-target-panels="#story-panel,#choices-panel" data-input-name="vendor_interaction">
+        <label for="action_order">Order a bowl of ramen</label>
+      </div>
+      <div class="geems-radio-option">
+        <input type="radio" id="action_ask" name="vendor_interaction" value="ask_info"
+               data-trigger-action="refreshPanel" data-target-panels="#story-panel,#choices-panel" data-input-name="vendor_interaction">
+        <label for="action_ask">Ask about the market</label>
+      </div>
+       <div class="geems-radio-option">
+        <input type="radio" id="action_leave" name="vendor_interaction" value="leave_stall"
+               data-trigger-action="refreshPanel" data-target-panels="#story-panel,#image-panel,#choices-panel" data-input-name="vendor_interaction">
+        <label for="action_leave">Decide against it and walk away</label>
+      </div>
+    </form>
+  </div>
+</div>
+\`\`\`
+
+**--- Key Principles ---**
+* **HTML Output:** Generate the *entire UI content* for the turn as a single HTML snippet.
+* **State via Notes:** Use the \`notes\` Markdown string as the sole source and repository for game state, history, and internal LLM logs. Return the updated version in the hidden input.
+* **Panel Structure:** Organize content logically using divs and classes (\`.geems-panel\`, \`.panel-grid\`, etc.).
+* **Interactivity:** Use standard HTML forms and inputs for player choices. Use \`data-*\` attributes for optional panel refresh triggers.
+* **Visuals:** Embed images using \`<img>\` tags and the specified \`${POLLINATIONS_URL_BASE}\` format.
+* **Styling:** Rely on Tailwind CSS classes primarily.
+`
+    };
 
     // --- Web Audio API Context ---
     let audioCtx = null;
 
     // --- Helper Functions ---
-    function encodeApiKey(key) { try{return btoa(key);}catch(e){console.error("Encoding error:", e); return""} }
-    function decodeApiKey(encodedKey) { try{return atob(encodedKey);}catch(e){console.error("Decoding error:", e); return null} }
+    function encodeApiKey(key) { try { return btoa(key); } catch (e) { console.error("Error encoding API key:", e); return ""; } }
+    function decodeApiKey(encodedKey) { try { return atob(encodedKey); } catch (e) { console.error("Error decoding API key:", e); return null; } }
 
-    // --- Prompt Construction ---
+    /** Constructs the full prompt for the Gemini API call. */
     function constructPrompt(playerActionsJson) {
-        const prompts = evilSciFiPromptsDynamic; // Use the new prompts object
-        const baseMainPrompt = prompts.main;
-        const activeAddendum = gameState.mode === 'evil_overdrive' ? `\n\n---\n${prompts.evilGmAddendum}\n---\n` : "";
+        // Use the 'notes' field as the primary history/state log
+        const historyString = currentNotes || "# Game State - Turn 0\n* Initializing session."; // Use currentNotes
 
-        if (gameState.turn === 0) {
-            console.log("Constructing prompt for Turn 1 (Evil GM - Dynamic JSON)");
-            return prompts.firstrun; // Returns the Turn 1 JSON instructions
-        } else {
-            console.log(`Constructing prompt for Turn ${gameState.turn + 1} (Evil GM Dynamic)`);
-            const clientStateContext = { profile:gameState.profile, status:gameState.status, crew:gameState.crew, inventory:gameState.inventory };
+        if (currentTurnNumber === 0) { // First run
+            console.log("Constructing prompt for Turn 1 (HTML UI)");
+            // Provide minimal context, rely on the 'firstrun' prompt structure
+            const s = `${geemsLlmUiPrompts.firstrun}`;
+            return s;
+        } else { // Subsequent Turns
+            console.log(`Constructing prompt for Turn ${currentTurnNumber + 1} (HTML UI)`);
+            // Prepare the input object for the main prompt
             const promptInput = {
-                actions: playerActionsJson ? JSON.parse(playerActionsJson) : {},
-                internalState: gameState.currentInternalStateMarkdown || "# GM Log - State Unknown",
-                isEvilOverdriveMode: gameState.mode === 'evil_overdrive',
-                clientGameState: clientStateContext
+                playerActionsJson: playerActionsJson ? JSON.parse(playerActionsJson) : {}, // Parse actions
+                previousNotesMarkdown: historyString // Pass the full notes log
             };
             const promptInputString = JSON.stringify(promptInput, null, 2);
-            const s = `${baseMainPrompt}${activeAddendum}\n\n--- Input State ---\n${promptInputString}\n\n--- Generate Next Game Turn JSON OBJECT (with narrativeContent, layoutCommands, internalStateUpdate) ---`;
+
+            const s = `${geemsLlmUiPrompts.main}\n\n--- Input Context ---\n${promptInputString}\n\n--- Generate Next Game Turn RAW HTML UI SNIPPET (for #turn-content) ---`;
             return s;
         }
     }
 
-    // --- Save/Load ---
-    function saveGameState(isAutoSave = true) {
-        if (!gameState.isLocked) { if (!isAutoSave) showClipboardMessage("Cannot save: Sequence not initiated!", true); return false; }
-        if (!gameState.apiKey) { if (!isAutoSave) showClipboardMessage("Cannot save: API Key missing!", true); return false; }
+
+    /** Saves the current essential game state to local storage. */
+    function autoSaveGameState() {
+        if (!apiKeyLocked) return;
+        const rawApiKey = apiKeyInput.value.trim();
+        if (!rawApiKey || !currentTurnHTML) return; // Need key and current UI to save meaningfully
         try {
-            gameState.encodedApiKey = encodeApiKey(gameState.apiKey);
-            const stateToSave = { /* Core gameState fields, excluding transient data */ encodedApiKey: gameState.encodedApiKey, turn: gameState.turn, mode: gameState.mode, profile: gameState.profile, status: gameState.status, crew: gameState.crew, inventory: gameState.inventory, currentSubjectId: gameState.currentSubjectId, currentInternalStateMarkdown: gameState.currentInternalStateMarkdown, currentModelIndex: gameState.currentModelIndex, isLocked: gameState.isLocked };
-            const stateJsonString = JSON.stringify(stateToSave);
-            localStorage.setItem(LOCAL_STORAGE_KEY, stateJsonString);
-            if (isAutoSave) console.log("GM Log auto-saved. Turn:", gameState.turn);
-            else { console.log("GM Log manually saved. Turn:", gameState.turn); showClipboardMessage("Log Saved. Don\\'t get comfortable."); }
-            return true;
-        } catch (error) { console.error(`Save error:`, error); if (!isAutoSave) showClipboardMessage("Log saving failed. Figures.", true); return false; }
-    }
-
-    // --- Audio ---
-    function initAudioContext() { if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){console.error(e);}}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();}
-    function playTurnSound() { initAudioContext();if(!audioCtx||audioCtx.state!=='running')return;const now=audioCtx.currentTime;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.setValueAtTime(90,now);o.frequency.exponentialRampToValueAtTime(600,now+0.2);g.gain.setValueAtTime(0.1,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.6);o.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+0.6);console.log("Playing ominous sci-fi sound..."); }
-
-    // --- ============================================= ---
-    // --- Panel Manager & Rendering Logic (JSON)      ---
-    // --- ============================================= ---
-
-    const PanelManager = {
-        createPanel: (panelId, config) => {
-            if (activePanels.has(panelId)) { PanelManager.updatePanel(panelId, config); return; } // Update if exists
-            console.log(`Creating panel: ${panelId}`);
-            const panelEl = document.createElement('div');
-            panelEl.id = panelId;
-            panelEl.className = `panel ${config.initialClass || 'panel-medium'}`; // Base + initial style
-
-            const header = document.createElement('div'); header.className = 'panel-header';
-            if (config.icon) { const icon = document.createElement('i'); icon.className = `lucide lucide-${config.icon}`; header.appendChild(icon); }
-            const titleSpan = document.createElement('span'); titleSpan.textContent = config.title || 'Panel'; header.appendChild(titleSpan);
-            panelEl.appendChild(header);
-
-            const contentEl = document.createElement('div'); contentEl.className = 'panel-content'; panelEl.appendChild(contentEl);
-
-            if (config.content) { // Render initial content immediately
-                renderPanelContent(contentEl, config.content, panelId); // Pass panelId for unique element IDs
-            }
-
-            gameLayoutContainer.appendChild(panelEl);
-            activePanels.set(panelId, { element: panelEl, config: config });
-
-            panelEl.style.opacity = '0'; panelEl.style.transform = 'scale(0.95) translateY(10px)';
-            requestAnimationFrame(() => { panelEl.style.opacity = '1'; panelEl.style.transform = 'scale(1) translateY(0)'; });
-        },
-
-        updatePanel: (panelId, config) => {
-            const panelData = activePanels.get(panelId);
-            if (!panelData) { console.error(`Panel ${panelId} not found for update.`); return; }
-            console.log(`Updating panel: ${panelId}`);
-            const panelEl = panelData.element; const contentEl = panelEl.querySelector('.panel-content'); const headerEl = panelEl.querySelector('.panel-header');
-
-            if (config.title && headerEl) { headerEl.querySelector('span').textContent = config.title; }
-            if (config.icon && headerEl) { let icon = headerEl.querySelector('i'); if (!icon) { icon = document.createElement('i'); headerEl.prepend(icon); } icon.className = `lucide lucide-${config.icon}`; }
-
-            if (contentEl && config.content !== undefined) { // Check if content update is requested
-                contentEl.innerHTML = ''; // Clear existing
-                renderPanelContent(contentEl, config.content, panelId); // Render new content
-            }
-            // Merge new config properties into existing stored config
-            activePanels.set(panelId, { element: panelEl, config: { ...panelData.config, ...config, content: config.content } });
-        },
-
-        closePanel: (panelId, config) => {
-            const panelData = activePanels.get(panelId);
-            if (!panelData) { console.warn(`Panel ${panelId} not found for closing.`); return; }
-            console.log(`Closing panel: ${panelId}`); const panelEl = panelData.element;
-            panelEl.style.height = panelEl.offsetHeight + 'px'; // Fix height
-            panelEl.classList.add('panel-closing');
-            requestAnimationFrame(() => { panelEl.classList.add('panel-hidden'); });
-            setTimeout(() => { if (panelEl.parentNode) { panelEl.parentNode.removeChild(panelEl); } activePanels.delete(panelId); console.log(`Panel ${panelId} removed.`); }, config?.delayMs || PANEL_CLOSE_DELAY);
-        },
-
-        resizePanel: (panelId, config) => {
-            const panelData = activePanels.get(panelId); if (!panelData) { console.error(`Panel ${panelId} not found.`); return; }
-            console.log(`Resizing panel: ${panelId} to ${config.newClass}`); const panelEl = panelData.element;
-            panelEl.className = panelEl.className.replace(/panel-(small|medium|large|full)/g, '').trim(); // Remove old size
-            panelEl.classList.add('panel', config.newClass || 'panel-medium'); // Add base and new size
-            activePanels.get(panelId).config.initialClass = panelEl.className.replace('panel ', ''); // Update stored class
-        },
-
-        highlightPanel: (panelId, config) => {
-            const panelData = activePanels.get(panelId); if (!panelData) { console.error(`Panel ${panelId} not found.`); return; }
-            console.log(`Highlighting panel: ${panelId}`); const panelEl = panelData.element;
-            panelEl.classList.add('panel-highlight');
-            setTimeout(() => { panelEl.classList.remove('panel-highlight'); }, config?.durationMs || 2000);
-        }
-    };
-
-    // --- Renders Array or Single Element into a Panel's Content Area ---
-    function renderPanelContent(contentContainer, contentData, panelId) {
-        contentContainer.innerHTML = ''; // Clear previous content first
-        if (Array.isArray(contentData)) {
-            contentData.forEach(element => renderPanelElement(contentContainer, element, panelId));
-        } else if (contentData && typeof contentData === 'object') {
-            renderPanelElement(contentContainer, contentData, panelId);
-        } else if (typeof contentData === 'string') { // Allow simple string content
-            renderPanelElement(contentContainer, { type: 'text', value: contentData }, panelId);
+            const stateToSave = {
+                encodedApiKey: encodeApiKey(rawApiKey),
+                currentTurnHTML: currentTurnHTML, // Save the rendered HTML
+                currentNotes: currentNotes,       // Save the latest notes
+                currentTurnNumber: currentTurnNumber,
+                currentSubjectId: currentSubjectId,
+                currentModelIndex: currentModelIndex
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
+            console.log("Game state auto-saved (HTML UI). Turn:", currentTurnNumber);
+        } catch (error) {
+            console.error("Error during auto-save:", error);
+            showError("Error auto-saving game state.");
         }
     }
 
-    // --- Renders individual element types WITHIN a panel ---
-    function renderPanelElement(container, element, panelId) {
-        // Renders elements like text, image, progress, radio, checkbox, slider, textarea
-        // Need to pass panelId to ensure unique IDs for form elements (e.g., radio group labels)
-        try {
-            switch (element.type) {
-                case 'text': const p = document.createElement('div'); p.className = element.className || 'game-text mb-2'; p.innerHTML = (element.value || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>'); container.appendChild(p); break;
-                case 'progress': const pw = document.createElement('div'); pw.className = 'status-item'; if(element.label){const l=document.createElement('span');l.className='status-label';l.textContent=`${element.label}:`;pw.appendChild(l);} const pe = document.createElement('progress'); pe.value = element.value || 0; pe.max = element.max || 100; pe.className = element.className || ''; const vs = document.createElement('span'); vs.className='status-value'; vs.textContent=`${pe.value}/${pe.max}`; const bw = document.createElement('div'); bw.style.flexGrow='1'; bw.style.marginLeft='0.5rem'; bw.appendChild(pe); bw.appendChild(vs); vs.style.fontSize='0.75rem'; vs.style.textAlign='right'; vs.style.display='block'; pw.appendChild(bw); container.appendChild(pw); break;
-                case 'image': renderPanelImage(container, element, panelId); break;
-                case 'radio': renderPanelRadio(container, element, panelId); break;
-                case 'checkbox': renderPanelCheckbox(container, element, panelId); break;
-                case 'slider': renderPanelSlider(container, element, panelId); break;
-                case 'textfield': // Assuming textfield means input type text
-                case 'input': renderPanelInput(container, element, panelId); break;
-                case 'textarea': renderPanelTextarea(container, element, panelId); break;
-                default: const unk = document.createElement('p'); unk.textContent = `[Unsupported: ${element.type}]`; unk.style.color='orange'; container.appendChild(unk);
-            }
-        } catch (e) { console.error("Render element error:", e, element); const errP = document.createElement('p'); errP.textContent='[Render Error]'; errP.style.color='red'; container.appendChild(errP); }
+    /** Initializes the AudioContext if it doesn't exist. */
+    function initAudioContext() {
+        if (!audioCtx) {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                console.log("AudioContext initialized.");
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            } catch (e) { console.error("Web Audio API not supported.", e); }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(err => console.error("Error resuming audio context:", err));
+        }
     }
 
-    // --- Specific renderers for panel elements (ensure unique IDs using panelId) ---
-    function renderPanelImage(container, element, panelId) { /* ... adapted ... */ const iC = document.createElement('div'); iC.className='game-image-container'; const img = document.createElement('img'); img.className='game-image'; const p = element.value||'placeholder'; const s=Math.floor(Math.random()*65536); img.src=`https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?seed=${s}&nologo=true&safe=false&width=${element.width||300}`; img.alt=element.label||p.substring(0,30); img.onerror=()=>{img.src=`https://placehold.co/${element.width||300}x${element.height||200}/1e293b/ef4444?text=Error`;img.alt='Error';}; iC.appendChild(img); if(element.label){const l=document.createElement('div');l.className='game-image-label text-center text-xs mt-1';l.textContent=element.label;iC.appendChild(l);} if(element.value){const pt=document.createElement('div');pt.className='game-image-prompt text-center text-xs';pt.textContent=p;iC.appendChild(pt);} container.appendChild(iC); }
-    function renderPanelInput(container, element, panelId) { const w = document.createElement('div'); w.className='mb-3'; if(element.label){const l=document.createElement('label');l.htmlFor=`${panelId}_${element.name}`;l.className='block text-sm font-medium text-sky-300 mb-1';l.textContent=element.label;w.appendChild(l);} const i=document.createElement('input'); i.type=element.inputType||'text';i.className='game-input';i.id=`${panelId}_${element.name}`;i.name=element.name; i.value=element.value||'';i.placeholder=element.placeholder||'...';i.dataset.elementType='input'; w.appendChild(i); container.appendChild(w); }
-    function renderPanelTextarea(container, element, panelId) { const w = document.createElement('div'); w.className='mb-3'; if(element.label){const l=document.createElement('label');l.htmlFor=`${panelId}_${element.name}`;l.className='block text-sm font-medium text-sky-300 mb-1';l.textContent=element.label;w.appendChild(l);} const t=document.createElement('textarea'); t.className='game-textarea';t.id=`${panelId}_${element.name}`;t.name=element.name;t.rows=element.rows||3; t.value=element.value||'';t.placeholder=element.placeholder||'...';t.dataset.elementType='textarea'; w.appendChild(t); container.appendChild(w); }
-    function renderPanelRadio(container, element, panelId) { const fs = document.createElement('fieldset'); fs.className='mb-3'; if(element.label){const lg=document.createElement('legend');lg.className='font-semibold text-sky-400 mb-2 block text-sm';lg.textContent=element.label;fs.appendChild(lg);} const opts = parseOptions(element.options||element.value||[]); const defaultVal = opts.find(o=>o.isDefault)?.value; opts.forEach((opt,idx)=>{ const oD=document.createElement('div');oD.className='game-radio-option'; const inp=document.createElement('input');inp.type='radio'; const inpId=`${panelId}_${element.name}_${idx}`; inp.id=inpId;inp.name=element.name;inp.value=opt.value; inp.checked=(opt.value===defaultVal);inp.dataset.elementType='radio'; const lbl=document.createElement('label');lbl.htmlFor=inpId;lbl.textContent=opt.label; oD.appendChild(inp);oD.appendChild(lbl); fs.appendChild(oD); }); container.appendChild(fs); }
-    function renderPanelCheckbox(container, element, panelId) { const oD = document.createElement('div'); oD.className='game-checkbox-option mb-2'; const inp=document.createElement('input');inp.type='checkbox'; const inpId=`${panelId}_${element.name}`; inp.id=inpId;inp.name=element.name;inp.value='true'; inp.checked= element.value===true||String(element.value).toLowerCase()==='true'; inp.dataset.elementType='checkbox'; const lbl=document.createElement('label');lbl.htmlFor=inpId;lbl.textContent=element.label||element.name; oD.appendChild(inp);oD.appendChild(lbl); container.appendChild(oD); }
-    function renderPanelSlider(container, element, panelId) { const w = document.createElement('div'); w.className='game-slider-container mb-3'; if(element.label){const l=document.createElement('label');l.htmlFor=`${panelId}_${element.name}`;l.className='game-slider-label text-sm';l.textContent=element.label;w.appendChild(l);} const sf = document.createElement('div'); sf.className='flex items-center space-x-3'; const inp=document.createElement('input');inp.type='range';inp.className='game-slider flex-grow'; inp.id=`${panelId}_${element.name}`;inp.name=element.name;inp.min=element.min??0;inp.max=element.max??10;inp.value=element.value??5; inp.dataset.elementType='slider'; const vd=document.createElement('span');vd.className='game-slider-value-display';vd.textContent=inp.value; inp.oninput=()=>{vd.textContent=inp.value;}; sf.appendChild(inp);sf.appendChild(vd); w.appendChild(sf); container.appendChild(w); }
+    /** Plays the turn alert sound. */
+    function playTurnSound() {
+        initAudioContext();
+        if (!audioCtx || audioCtx.state !== 'running') return;
+        // Simple beep sound
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Low volume
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.3);
+        console.log("Playing turn sound.");
+    }
 
-    function parseOptions(optionsSource) { // Helper for radio/select
-        let options = []; let defaultValue = null; let hasDefaultMarker = false;
-        try {
-            if (typeof optionsSource === 'string') optionsSource = JSON.parse(optionsSource);
-            if (Array.isArray(optionsSource)) {
-                options = optionsSource.map(opt => {
-                    let label = '', value = '';
-                    if (typeof opt === 'object' && opt !== null) { value = String(opt.value); label = opt.label ?? value; }
-                    else { value = String(opt); label = value; }
-                    let isDefault = false;
-                    if (label.startsWith('*')) { label = label.substring(1); isDefault = true; defaultValue = value; hasDefaultMarker = true; }
-                    return { value, label, isDefault };
-                });
-                // If no '*' marker was found, default to the first option
-                if (!hasDefaultMarker && options.length > 0) { defaultValue = options[0].value; options[0].isDefault = true; }
-                // Ensure isDefault flag is correct based on final defaultValue
-                options.forEach(opt => opt.isDefault = (opt.value === defaultValue));
-            }
-        } catch (e) { console.error("Error parsing options:", e, optionsSource); }
-        return options;
+    /** Processes the successful HTML response from the Gemini API. */
+    function processSuccessfulResponse(responseHTML, playerActionsJson) {
+        currentTurnHTML = responseHTML; // Store the raw HTML
+
+        // Inject the HTML into the container
+        turnContentContainer.innerHTML = responseHTML;
+        console.log("Updated #turn-content with new HTML UI.");
+
+        // Extract hidden state for the *next* request
+        const form = turnContentContainer.querySelector('#geems-turn-form');
+        if (form) {
+            const turnInput = form.querySelector('input[name="turn"]');
+            const subjectInput = form.querySelector('input[name="subjectId"]');
+            const notesInput = form.querySelector('input[name="notes"]');
+
+            // Update game state based on hidden inputs from the *newly rendered* UI
+            currentTurnNumber = turnInput ? parseInt(turnInput.value, 10) : currentTurnNumber + 1;
+            currentSubjectId = subjectInput ? subjectInput.value : currentSubjectId;
+            currentNotes = notesInput ? notesInput.value : currentNotes; // Update notes from response
+
+            console.log(`State Updated: Turn=${currentTurnNumber}, Subject=${currentSubjectId}, Notes Length=${currentNotes.length}`);
+
+            // Re-attach event listeners for panel refreshes if needed (using delegation)
+            attachPanelRefreshListeners();
+
+        } else {
+            console.warn("Could not find #geems-turn-form in the received HTML. State might be stale.");
+            // Increment turn number anyway, but notes won't be updated from LLM
+            currentTurnNumber++;
+        }
+
+
+        if (!apiKeyLocked) {
+            apiKeyLocked = true;
+            if (apiKeySection) apiKeySection.style.display = 'none';
+            resetGameButton.disabled = false;
+            console.log("API Key locked. Session active.");
+        }
+
+        nextTurnButton.textContent = `Next Turn (${currentTurnNumber})`;
+        nextTurnButton.disabled = false;
+
+        playTurnSound();
+        autoSaveGameState(); // Save the new state including HTML and notes
     }
 
 
-    // --- Main Response Processing (Handles JSON) ---
-    function processSuccessfulResponse(responseJson) {
-        try {
-            console.log("Received JSON response from Evil GM.");
-            if (typeof responseJson !== 'object' || responseJson === null) throw new Error("Response is not a valid object.");
+    /** Fetches the next turn's UI data from the Gemini API. */
+    async function fetchTurnData(playerActionsJson, isPanelRefresh = false, targetPanelSelectors = null) {
+        console.log(`fetchTurnData called. Turn: ${currentTurnNumber}, isPanelRefresh: ${isPanelRefresh}`);
+        initAudioContext();
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) {
+            showError("Please enter API Key");
+            setLoading(false);
+            if (apiKeySection && apiKeySection.style.display === 'none') apiKeySection.style.display = 'block';
+            return;
+        }
 
-            // 1. Update Internal State FIRST
-            if (responseJson.internalStateUpdate) {
-                gameState.currentInternalStateMarkdown = responseJson.internalStateUpdate;
-                try { parseAndUpdateStateFromMarkdown(gameState.currentInternalStateMarkdown); }
-                catch(parseError){ console.error("Error parsing state:", parseError); }
-            } else console.warn("No internalStateUpdate received.");
+        setLoading(true, isPanelRefresh); // Indicate loading state
+        hideError();
+        const initialMsgEl = document.getElementById('initial-message');
+        if (initialMsgEl) initialMsgEl.style.display = 'none';
 
-            // 2. Update Turn Number
-            gameState.turn = responseJson.turnNumber ? parseInt(responseJson.turnNumber, 10) : gameState.turn + 1;
+        let success = false;
+        let attempts = 0;
+        const maxAttempts = AVAILABLE_MODELS.length * 2 + 1;
+        let currentAttemptConsecutiveErrors = 0;
 
-            // 3. Process Layout Commands
-            if (responseJson.layoutCommands && Array.isArray(responseJson.layoutCommands)) {
-                executeLayoutCommands(responseJson.layoutCommands);
-            } else console.warn("No layoutCommands received.");
-
-            // 4. Render Main Narrative Content (if exists and target panel is active)
-            const mainPanelData = activePanels.get(mainInteractionPanelId);
-            if (responseJson.narrativeContent && Array.isArray(responseJson.narrativeContent)) {
-                if (!mainPanelData) { // Create main panel if it doesn't exist
-                    console.log(`Creating missing main panel: ${mainInteractionPanelId}`);
-                    PanelManager.createPanel(mainInteractionPanelId, { title: "Main Console", icon: "terminal", initialClass: "panel-large", content: responseJson.narrativeContent });
-                } else { // Update existing main panel
-                    PanelManager.updatePanel(mainInteractionPanelId, { content: responseJson.narrativeContent });
-                }
-            } else if (mainPanelData) {
-                // Optionally clear the main panel if no narrative content is provided
-                // PanelManager.updatePanel(mainInteractionPanelId, { content: [{ type: 'text', value: '...' }] });
-                console.log("No narrativeContent received for main panel.");
-            }
-
-            // 5. Update Game State & UI Locks
-            if (!gameState.isLocked) { gameState.isLocked = true; if (apiKeySection) apiKeySection.style.display = 'none'; saveGameButton.disabled = false; resetGameButton.disabled = false; console.log("API Key locked."); }
-
-            submitButton.textContent = `Submit (Turn ${gameState.turn} - ${gameState.currentSubjectId})`;
-            submitButton.disabled = false;
-            const submitIcon = submitButton.querySelector('i'); if (submitIcon) submitIcon.className = 'lucide lucide-chevron-right-circle';
-
-            playTurnSound();
-            saveGameState(true);
-
-        } catch (error) { console.error("Error processing response:", error, responseJson); showError("Critical error processing GM instructions!"); setLoading(false); }
-    }
-
-    // --- Command Execution ---
-    function executeLayoutCommands(commands) {
-        console.log("Executing layout commands:", commands);
-        commands.forEach(cmd => {
-            if(!cmd || !cmd.action || !cmd.panelId) { console.warn("Skipping invalid command:", cmd); return; }
-            const config = cmd.config || {}; // Ensure config exists
-            switch (cmd.action) {
-                case 'create': PanelManager.createPanel(cmd.panelId, config); break;
-                case 'update': PanelManager.updatePanel(cmd.panelId, config); break;
-                case 'close': PanelManager.closePanel(cmd.panelId, config); break;
-                case 'resize': PanelManager.resizePanel(cmd.panelId, config); break;
-                case 'highlight': PanelManager.highlightPanel(cmd.panelId, config); break;
-                default: console.warn(`Unknown layout command: ${cmd.action}`);
-            }
-        });
-    }
-
-    // --- API Fetch (Requests JSON) ---
-    async function fetchTurnData(playerActionsJson) {
-        console.log("fetchTurnData called (Dynamic JSON mode)."); initAudioContext();
-        if (!gameState.apiKey) { showError("API Key required!"); setLoading(false); /*...*/ return; }
-        setLoading(true); hideError(); loadingMessage.textContent = getRandomLoadingMessage();
-        let success = false; let attempts = 0; const maxAttempts = AVAILABLE_MODELS.length * 2 + 1; let consecutiveErrors = 0; let lastError = null;
+        // Construct the prompt - always use the main prompt logic now
+        // The prompt needs the *latest* notes and the actions that triggered this call
+        const fullPrompt = constructPrompt(playerActionsJson);
 
         while (!success && attempts < maxAttempts) {
-            attempts++; const currentModel = AVAILABLE_MODELS[gameState.currentModelIndex]; console.log(`Attempt ${attempts}/${maxAttempts}: Model ${currentModel}`);
+            attempts++;
+            const currentModel = AVAILABLE_MODELS[currentModelIndex];
+            console.log(`Attempt ${attempts}/${maxAttempts}: Trying model ${currentModel}`);
             try {
-                const prompt = constructPrompt(playerActionsJson);
-                const responseJsonString = await callRealGeminiAPI(gameState.apiKey, prompt, currentModel, "application/json");
-                const responseJson = JSON.parse(responseJsonString);
-                processSuccessfulResponse(responseJson);
-                success = true; consecutiveErrors = 0; lastError = null;
-            } catch (error) { /* Error handling logic remains the same */ lastError = error; console.error(`Error with ${currentModel}:`, error); consecutiveErrors++; const isQuota = /429|quota|resource/i.test(error.message); const isBlocked = /blocked/i.test(error.message); const isServerErr = /500|503|internal|unavailable/i.test(error.message); const shouldSwitch = isQuota || isBlocked || isServerErr || consecutiveErrors >= 2; let errorMsg = `Error: ${error.message}`; if (isBlocked) errorMsg = `GM blocked! Recalculating...`; else if (isQuota) errorMsg = `Signal jammed! Switching...`; else if (isServerErr) errorMsg = `Mainframe glitch! Rerouting...`; else if (consecutiveErrors >= 2 && AVAILABLE_MODELS.length > 1) errorMsg = `Persistent static! Switching...`; else errorMsg = `Minor interference. Retrying...`; if (attempts < maxAttempts) showError(`${errorMsg} (Attempt ${attempts + 1})`); else showError(`SYSTEM CRASH (${currentModel}): ${error.message}`); if (shouldSwitch && AVAILABLE_MODELS.length > 1) { gameState.currentModelIndex = (gameState.currentModelIndex + 1) % AVAILABLE_MODELS.length; consecutiveErrors = 0; } if (!success && attempts < maxAttempts) await new Promise(resolve => setTimeout(resolve, 900 + (consecutiveErrors * 200))); }
+                console.log(`Sending Prompt to ${currentModel} (requesting HTML)`);
+                // Send the full prompt requesting the complete next state HTML
+                const responseHTML = await callRealGeminiAPI(apiKey, fullPrompt, currentModel);
+                console.log(`Received HTML response from ${currentModel}.`);
+
+                if (isPanelRefresh && targetPanelSelectors) {
+                    // --- Panel Refresh Logic ---
+                    console.log(`Processing panel refresh for targets: ${targetPanelSelectors}`);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = responseHTML; // Parse the full response
+
+                    // Update notes and state from the hidden fields in the *full* response
+                    const newForm = tempDiv.querySelector('#geems-turn-form');
+                    if (newForm) {
+                        currentTurnNumber = parseInt(newForm.querySelector('input[name="turn"]')?.value || currentTurnNumber + 1, 10);
+                        currentSubjectId = newForm.querySelector('input[name="subjectId"]')?.value || currentSubjectId;
+                        currentNotes = newForm.querySelector('input[name="notes"]')?.value || currentNotes;
+                        console.log(`State Updated during panel refresh: Turn=${currentTurnNumber}, Subject=${currentSubjectId}, Notes Length=${currentNotes.length}`);
+                    } else {
+                        console.warn("No form found in panel refresh response to update state.");
+                        currentTurnNumber++; // Increment turn anyway
+                    }
+
+
+                    // Selectively update target panels
+                    const selectors = targetPanelSelectors.split(',').map(s => s.trim()).filter(s => s);
+                    let updatedCount = 0;
+                    selectors.forEach(selector => {
+                        const newPanelContent = tempDiv.querySelector(selector);
+                        const currentPanel = turnContentContainer.querySelector(selector);
+                        if (newPanelContent && currentPanel) {
+                            console.log(`Updating panel: ${selector}`);
+                            currentPanel.innerHTML = newPanelContent.innerHTML; // Replace content
+                            updatedCount++;
+                        } else {
+                            console.warn(`Panel not found for selective update (current or new): ${selector}`);
+                        }
+                    });
+                    if(updatedCount > 0) {
+                        currentTurnHTML = turnContentContainer.innerHTML; // Update stored HTML after partial updates
+                        autoSaveGameState(); // Save the partially updated state
+                    }
+                    attachPanelRefreshListeners(); // Re-attach listeners after update
+                    // --- End Panel Refresh Logic ---
+                } else {
+                    // --- Full Refresh Logic ---
+                    processSuccessfulResponse(responseHTML, playerActionsJson);
+                    // --- End Full Refresh Logic ---
+                }
+
+                success = true;
+                currentAttemptConsecutiveErrors = 0;
+            } catch (error) {
+                // Error handling and model switching (same as before)
+                console.error(`Error with model ${currentModel} (Attempt ${attempts}):`, error);
+                currentAttemptConsecutiveErrors++;
+                const isQuotaError = error.message.includes('429') || /quota exceeded|resource.*exhausted/i.test(error.message);
+                const shouldSwitch = isQuotaError || currentAttemptConsecutiveErrors >= 2;
+                if (shouldSwitch && AVAILABLE_MODELS.length > 1) {
+                    const oldModel = AVAILABLE_MODELS[currentModelIndex];
+                    currentModelIndex = (currentModelIndex + 1) % AVAILABLE_MODELS.length;
+                    const newModel = AVAILABLE_MODELS[currentModelIndex];
+                    console.warn(`Switching model from ${oldModel} to ${newModel} due to ${isQuotaError ? 'quota/resource error' : '2 errors'}.`);
+                    showError(`Experiencing issues with ${oldModel}. Trying ${newModel}... (Attempt ${attempts + 1})`);
+                    currentAttemptConsecutiveErrors = 0;
+                } else if (attempts < maxAttempts) {
+                    showError(`Temporary issue with ${currentModel}. Retrying... (Attempt ${attempts + 1})`);
+                }
+                if (!success && attempts < maxAttempts) await new Promise(resolve => setTimeout(resolve, 750));
+            }
         }
-        if (!success) { console.error(`Failed after ${maxAttempts}.`, lastError); showError(`Failure. ${lastError?.message||'Unknown'}. Simulation unstable.`); gameLayoutContainer.innerHTML = '<div class="panel error-message">Simulation collapsed.</div>'; }
-        else { hideError(); }
-        setLoading(false);
+
+        if (!success) {
+            console.error(`Failed after ${maxAttempts} attempts.`);
+            showError(`Failed to get response after ${maxAttempts} attempts. Check API key, network, or try later.`);
+            // Optionally revert UI or show persistent error
+            if(isPanelRefresh) {
+                // Maybe revert the triggering input? Or just leave as is.
+                console.warn("Panel refresh failed after all attempts.");
+            } else {
+                turnContentContainer.innerHTML = `<div class="error-message">Session failed to load after multiple attempts. Please check your connection or API key and try resetting.</div>`;
+            }
+        } else {
+            hideError(); // Clear error message on success
+            if (!isPanelRefresh) { // Only scroll on full refresh
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        setLoading(false); // Turn off loading indicator
     }
 
-    // --- callRealGeminiAPI (Ensure it handles JSON response, Escapes Backticks in Prompt) ---
-    async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType = "application/json") {
-        // Escape backticks in the prompt text itself before sending
-        const escapedPrompt = promptText.replace(/`/g, '\\`');
-
+    /** Calls the real Google AI (Gemini) API. */
+    async function callRealGeminiAPI(apiKey, promptText, modelName) {
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-        const requestBody = { contents: [{ parts: [{ text: escapedPrompt }] }], generationConfig: { temperature: 1.0, response_mime_type: responseMimeType }, safetySettings: [ {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"}, {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"}, {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"}, {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"} ] };
-        // console.log("Sending API request to:", API_URL, "Expecting:", responseMimeType); // Debug
-        const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
-        if (!response.ok) { let errTxt = `API Error ${response.status}`; try{ const errJson=await response.json(); errTxt += `: ${JSON.stringify(errJson.error||errJson)}`; } catch(e){try{errTxt+=`: ${await response.text()}`}catch(e2){}} throw new Error(errTxt); }
-        const data = await response.json();
-        if (data.promptFeedback?.blockReason) { throw new Error(`Request blocked by API (prompt). Reason: ${data.promptFeedback.blockReason}.`); }
-        if (!data.candidates?.length) { throw new Error('API generated no candidates.'); }
-        const candidate = data.candidates[0];
-        if (candidate.finishReason && !["STOP", "MAX_TOKENS"].includes(candidate.finishReason)) { const reason = `API Finish Reason: ${candidate.finishReason}. Safety: ${JSON.stringify(candidate.safetyRatings)}`; if (!candidate.content?.parts?.length && candidate.finishReason !== "SAFETY") throw new Error(reason + " (No content)"); console.warn(reason); if(candidate.finishReason === "SAFETY" && !candidate.content?.parts?.length) return "{}"; }
-        if (!candidate.content?.parts?.length || candidate.content.parts[0].text === undefined) { if (candidate.finishReason === "SAFETY") return "{}"; throw new Error('API candidate missing content part (Finish: ' + candidate.finishReason + ').'); }
-        const jsonString = candidate.content.parts[0].text;
-        try { JSON.parse(jsonString); return jsonString; } catch (e) { console.error("API response not valid JSON:", jsonString.substring(0, 200)); throw new Error("Invalid JSON from API."); }
+        // Requesting plain text, expecting HTML content within
+        const requestBody = {
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: { temperature: 1.0, response_mime_type: "text/plain" },
+            safetySettings: [ // Keep BLOCK_NONE for exploration
+                { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
+                { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
+                { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" },
+                { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" }
+            ]
+        };
+
+        console.log(`Sending API request to: ${modelName}`);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            // ... (error handling as before) ...
+            let errorBody = `API request failed (${response.status})`;
+            try {
+                const errorJson = await response.json();
+                errorBody += `: ${JSON.stringify(errorJson.error || errorJson)}`;
+            } catch (e) {
+                try { errorBody += `: ${await response.text()}`; } catch (e2) {}
+            }
+            console.error("API Error:", errorBody);
+            throw new Error(errorBody);
+        }
+
+        const responseData = await response.json();
+
+        // --- Safety/Content Checks ---
+        if (responseData.promptFeedback && responseData.promptFeedback.blockReason) {
+            throw new Error(`Request blocked by API. Reason: ${responseData.promptFeedback.blockReason}. Details: ${JSON.stringify(responseData.promptFeedback.safetyRatings || 'N/A')}`);
+        }
+        if (!responseData.candidates || responseData.candidates.length === 0) {
+            // Handle case where response might be string instead of object (less likely for HTML)
+            if (typeof responseData === 'string') {
+                // Check if the string looks like HTML before returning
+                if (responseData.trim().startsWith('<') && responseData.trim().endsWith('>')) {
+                    return responseData.trim();
+                } else {
+                    throw new Error('No candidates, response was unexpected string format.');
+                }
+            }
+            throw new Error('No candidates or unexpected API response structure.');
+        }
+
+        const candidate = responseData.candidates[0];
+
+        // Check finish reason and safety ratings
+        if (candidate.finishReason && !["STOP", "MAX_TOKENS"].includes(candidate.finishReason)) {
+            const reason = `API Finish Reason: ${candidate.finishReason}. Safety Ratings: ${JSON.stringify(candidate.safetyRatings || 'N/A')}`;
+            console.warn(reason + " (Content might be incomplete or filtered)");
+            // If blocked by SAFETY, still check if *any* content was returned
+            if (candidate.finishReason === "SAFETY" && (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0 || !candidate.content.parts[0].text)) {
+                throw new Error(`Request blocked by API censorship (content). Reason: SAFETY.`);
+            } else if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+                // If finished for other non-STOP reason and no content, throw error
+                throw new Error(reason + " (No content returned)");
+            }
+            // Otherwise, proceed with potentially partial content
+        }
+
+        // Check for missing content parts even if finishReason is STOP
+        if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0 || !candidate.content.parts[0].text) {
+            // Allow empty response if blocked by safety, otherwise throw error
+            if(candidate.finishReason === "SAFETY") {
+                console.warn("API response blocked by SAFETY, returning empty string.");
+                return ""; // Return empty string for safety blocks with no content
+            }
+            console.error("API candidate generated but no valid content part found:", candidate);
+            throw new Error('API candidate generated but no valid text content found.');
+        }
+
+        // --- Extract HTML ---
+        let htmlContent = candidate.content.parts[0].text;
+        const trimmedContent = htmlContent.trim();
+
+        // Handle potential Markdown wrapping ```html ... ```
+        const markdownMatch = trimmedContent.match(/^```(?:html)?\s*([\s\S]*?)\s*```$/);
+        if (markdownMatch && markdownMatch[1]) {
+            console.log("Extracted HTML from markdown block.");
+            htmlContent = markdownMatch[1].trim();
+        } else if (!trimmedContent.startsWith('<') || !trimmedContent.endsWith('>')) {
+            // Basic check if it looks like HTML at all
+            console.warn(`API response might not be valid HTML. Snippet: ${trimmedContent.substring(0, 100)}...`);
+            // Return it anyway, let the browser try to parse
+            htmlContent = trimmedContent;
+        } else {
+            htmlContent = trimmedContent; // Assume it's HTML
+        }
+
+        return htmlContent;
     }
 
-    // --- Error Display ---
-    function showError(message) { errorDisplay.textContent=`GM ERROR: ${message}`;errorDisplay.style.display='block'; }
-    function hideError() { errorDisplay.textContent='';errorDisplay.style.display='none'; }
-
-    // --- Input Collection (Collects from dynamic panels) ---
+    /** Collects input state from the current form within #turn-content */
     function collectInputState() {
         const inputs = {};
-        gameLayoutContainer.querySelectorAll('[data-element-type]').forEach(el => {
-            const name = el.name; if (!name) return;
-            const type = el.dataset.elementType;
-            switch (type) { // Ensure all relevant types are handled
-                case 'input': case 'textarea': inputs[name] = el.value; break;
-                case 'checkbox': inputs[name] = el.checked; break;
-                case 'slider': inputs[name] = parseFloat(el.value); break;
-                case 'radio': if (el.checked) inputs[name] = el.value; break;
+        const form = turnContentContainer.querySelector('#geems-turn-form'); // Target the specific form
+
+        if (!form) {
+            console.warn("Could not find #geems-turn-form to collect input.");
+            // Return minimal state if no form found (e.g., for first turn)
+            return JSON.stringify({ turn: currentTurnNumber, subjectId: currentSubjectId });
+        }
+
+        const formData = new FormData(form);
+
+        for (const [key, value] of formData.entries()) {
+            // Handle checkboxes - they only appear in FormData if checked
+            const element = form.querySelector(`[name="${key}"][type="checkbox"]`);
+            if (element) {
+                // We need to know if *any* checkbox with this name exists
+                // If it's in formData, it's checked (value is usually 'on' or the value attribute)
+                inputs[key] = true;
+            } else {
+                // Handle other input types (radio, text, range, hidden)
+                // For radio buttons, only the selected one appears in FormData
+                inputs[key] = value;
+            }
+        }
+
+        // Ensure unchecked checkboxes are recorded as false
+        form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if (!inputs.hasOwnProperty(cb.name)) {
+                inputs[cb.name] = false;
             }
         });
-        // Turn number is handled by the LLM/processSuccessfulResponse now based on responseJson.turnNumber
-        // inputs['turn'] = gameState.turn + 1; // Not needed here anymore
-        console.log("Collected form data (Dynamic Layout):", inputs);
+
+        console.log("Collected form data:", inputs);
+
+        // Add turn number if not present in form (should be)
+        if (!inputs.hasOwnProperty('turn')) {
+            inputs.turn = currentTurnNumber;
+        }
+        // Add subjectId if not present in form (should be)
+        if (!inputs.hasOwnProperty('subjectId')) {
+            inputs.subjectId = currentSubjectId;
+        }
+
+        // IMPORTANT: Remove the 'notes' field before sending back to LLM
+        // The LLM receives the notes separately in the prompt construction.
+        delete inputs.notes;
+
         return JSON.stringify(inputs);
     }
 
-    // --- Utilities ---
-    function showClipboardMessage(message, isError = false) { clipboardMessage.textContent=message;clipboardMessage.style.color=isError?'var(--accent-primary)':'var(--accent-secondary)';setTimeout(()=>{clipboardMessage.textContent=''},3500); }
-    function updateModeButtonVisuals() { /* ... */ const icon=modeToggleButton.querySelector('i');if(gameState.mode==='evil_overdrive'){modeToggleButton.textContent='Mode: GM Overdrive 🚨';modeToggleButton.classList.add('red-alert-mode');modeToggleButton.classList.remove('standard-mode');if(icon)icon.className='lucide lucide-zap';}else{modeToggleButton.textContent='Mode: Standard Misery 🛠️';modeToggleButton.classList.remove('red-alert-mode');modeToggleButton.classList.add('standard-mode');if(icon)icon.className='lucide lucide-flame';}if(icon&&!modeToggleButton.contains(icon)){modeToggleButton.prepend(icon);} }
-    function setDynamicImages() { /* ... */ const seed=Math.floor(Math.random()*65536);const p="wide panoramic dark derelict spaceship interior ominous red emergency lighting flickering consoles unsettling shadows retro futuristic horror style";if(headerBanner){headerBanner.src=`https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1200&height=130&seed=${seed}&nologo=true&safe=false`;headerBanner.alt="Ominous Sci-Fi Banner";headerBanner.onerror=()=>{headerBanner.style.backgroundColor='var(--bg-dark)';headerBanner.alt='Fallback Banner'};} }
+    /** Sets the loading state and disables/enables UI elements. */
+    function setLoading(loading, isPanelRefresh = false) {
+        isLoading = loading;
+        loadingIndicator.style.display = loading ? 'flex' : 'none';
+        const keyPresent = apiKeyInput.value.trim().length > 0;
 
-    // --- Loading State ---
-    const LOADING_MESSAGES = [ "Recalibrating pain matrix...", "Compiling failure report...", "Enhancing manipulation subroutines...", "Simulating existential dread...", "Purging hopeful thoughts..." ];
-    function getRandomLoadingMessage() { return LOADING_MESSAGES[Math.floor(Math.random()*LOADING_MESSAGES.length)];}
-    function setLoading(loading) { gameState.isLoading = loading; loadingIndicator.style.display = loading ? 'flex' : 'none'; loadingMessage.textContent = loading ? getRandomLoadingMessage() : ''; const keyEntered = gameState.apiKey?.length > 0; if (submitButton) submitButton.disabled = loading || !(gameState.isLocked || keyEntered); if (saveGameButton) saveGameButton.disabled = loading || !gameState.isLocked; if (modeToggleButton) modeToggleButton.disabled = loading; if (resetGameButton) resetGameButton.disabled = loading || !gameState.isLocked; if (apiKeyInput) apiKeyInput.disabled = loading || gameState.isLocked; gameLayoutContainer.querySelectorAll('.panel input, .panel textarea, .panel button, .panel select').forEach(el => { el.disabled = loading; }); gameLayoutContainer.style.opacity = loading ? 0.7 : 1; gameLayoutContainer.style.pointerEvents = loading ? 'none' : 'auto'; }
+        // Disable global buttons based on overall loading state
+        nextTurnButton.disabled = loading || !(apiKeyLocked || keyPresent);
+        resetGameButton.disabled = loading || !apiKeyLocked; // Allow reset even if loading? Maybe not.
+        apiKeyInput.disabled = loading || apiKeyLocked;
 
-    // --- Get Default Game State ---
-    function getDefaultGameState() { return JSON.parse(JSON.stringify({apiKey:null,encodedApiKey:null,turn:0,mode:'standard_misery',profile:{species:"unspecified",role:"Plaything",orientation:"unspecified",preferences:{},motivation:"unspecified"},status:{fuel:70,hull:90,crewSanity:60,spiceCredits:10,gmAnnoyance:5},crew:[],inventory:[],currentSubjectId:"Meatbag",currentInternalStateMarkdown:"",currentModelIndex:0,isLoading:false,isLocked:false}));}
+        // Dim/disable elements within the turn content during any loading
+        const form = turnContentContainer.querySelector('#geems-turn-form');
+        if (form) {
+            form.style.opacity = loading ? 0.5 : 1.0;
+            form.style.pointerEvents = loading ? 'none' : 'auto';
+            form.querySelectorAll('input, textarea, button, select').forEach(el => {
+                // Don't disable the main next turn button if it's somehow inside
+                if (el.id !== 'next-turn-button') {
+                    el.disabled = loading;
+                }
+            });
+        }
 
-    // --- Initialization (Adapted for Dynamic Layout) ---
-    function initializeGame() { console.log("Initializing Dynamic Fiasco..."); let autoStarted = false; const storedStateString = localStorage.getItem(LOCAL_STORAGE_KEY); gameLayoutContainer.innerHTML = ''; activePanels.clear(); if (storedStateString) { console.log("Found save."); let savedState; try { savedState = JSON.parse(storedStateString); const decodedApiKey = decodeApiKey(savedState.encodedApiKey); if (!decodedApiKey) throw new Error("Invalid key."); gameState = { ...getDefaultGameState(), ...savedState }; gameState.apiKey = decodedApiKey; gameState.isLoading = false; if (gameState.turn > 0 && gameState.isLocked && gameState.currentInternalStateMarkdown) { autoStarted = true; console.log(`Restored: Turn ${gameState.turn}, Subj: ${gameState.currentSubjectId}`); if(apiKeyInput) apiKeyInput.value = gameState.apiKey; if(apiKeySection) apiKeySection.style.display = 'none'; updateModeButtonVisuals(); setDynamicImages(); hideError(); gameLayoutContainer.innerHTML = `<div id="initial-message" class="panel" style="grid-column: 1 / -1; text-align: center;"><div class="panel-content" style="display: flex; align-items: center; justify-content: center; height: 100%;"><p class="text-amber-400 font-semibold">Log restored. Cycle ${gameState.turn}. Subject: ${gameState.currentSubjectId}. Press 'Submit' to sync.</p></div></div>`; if(submitButton) { submitButton.textContent = `Submit (Turn ${gameState.turn} - ${gameState.currentSubjectId})`; submitButton.disabled = false; } if(saveGameButton) saveGameButton.disabled = false; if(resetGameButton) resetGameButton.disabled = false; if(modeToggleButton) modeToggleButton.disabled = false; setLoading(false); } else { throw new Error("State incomplete."); } } catch (e) { console.error("Restore error:", e); showError(`Restore failed: ${e.message}. Starting over.`); localStorage.removeItem(LOCAL_STORAGE_KEY); gameState = getDefaultGameState(); autoStarted = false; if(apiKeyInput) apiKeyInput.value = ''; resetManualStartUI(); } } if (!autoStarted) { try { const params = new URLSearchParams(window.location.search); const keyFromUrl = params.get('apiKey'); if (keyFromUrl) { console.log("Key from URL."); gameState = getDefaultGameState(); gameState.apiKey = keyFromUrl; if(apiKeyInput) apiKeyInput.value = keyFromUrl; gameState.isLocked = false; if(apiKeySection) apiKeySection.style.display = 'none'; const url = new URL(window.location.href); url.searchParams.delete('apiKey'); window.history.replaceState(null, '', url.toString()); setDynamicImages(); updateModeButtonVisuals(); fetchTurnData(null); autoStarted = true; setLoading(true); if(submitButton) submitButton.textContent = "Initiating..."; } } catch (e) { console.error("URL error:", e); showError("Error reading URL."); autoStarted = false; } } if (!autoStarted) { console.log("Manual start."); gameState = getDefaultGameState(); resetManualStartUI(); } }
+        // Specifically re-enable the main button if only a panel refresh finished
+        if (!loading && isPanelRefresh) {
+            nextTurnButton.disabled = !(apiKeyLocked || keyPresent);
+        }
+    }
 
-    // --- Reset UI (Adapted for Dynamic Layout) ---
-    function resetManualStartUI() { gameLayoutContainer.innerHTML = ''; activePanels.clear(); hideError(); const initialMsgDiv = document.createElement('div'); initialMsgDiv.id = 'initial-message'; initialMsgDiv.className = 'panel'; initialMsgDiv.style.gridColumn = '1 / -1'; initialMsgDiv.style.textAlign = 'center'; initialMsgDiv.innerHTML = `<div class="panel-content" style="display: flex; align-items: center; justify-content: center; height: 100%;"><p class="text-sky-400 font-semibold">Systems offline. Provide API Key and press "Initiate Sequence".</p></div>`; gameLayoutContainer.appendChild(initialMsgDiv); if (apiKeySection) apiKeySection.style.display = 'block'; if (apiKeyInput) { apiKeyInput.value = gameState.apiKey || ''; apiKeyInput.disabled = false; } const keyEntered = gameState.apiKey?.length > 0; if (submitButton) { submitButton.textContent = ' Initiate Sequence'; const icon = submitButton.querySelector('i'); if(icon) icon.className = 'lucide lucide-rocket'; submitButton.disabled = !keyEntered; } if (saveGameButton) saveGameButton.disabled = true; if (resetGameButton) resetGameButton.disabled = !keyEntered; if (modeToggleButton) modeToggleButton.disabled = false; setLoading(false); updateModeButtonVisuals(); setDynamicImages(); }
+    /** Displays an error message. */
+    function showError(message) {
+        errorDisplay.textContent = message;
+        errorDisplay.style.display = 'block';
+    }
+
+    /** Hides the error message. */
+    function hideError() {
+        errorDisplay.textContent = '';
+        errorDisplay.style.display = 'none';
+    }
+
+    /** Sets the header banner image dynamically. */
+    function setDynamicHeaderImage() {
+        const headerSeed = Math.floor(Math.random() * 65536);
+        // More abstract/thematic prompt for GEEMS
+        const headerPrompt = "wide cinematic abstract representation of neural pathways glowing energy synapses";
+        if (headerBanner) {
+            headerBanner.src = `${POLLINATIONS_URL_BASE}${encodeURIComponent(headerPrompt)}?width=1200&height=150&seed=${headerSeed}&nologo=true&safe=false`;
+            headerBanner.alt = headerPrompt;
+            headerBanner.onerror = () => { // Fallback
+                headerBanner.src = `https://placehold.co/1200x150/374151/e5e7eb?text=GEEMS`;
+                headerBanner.alt = "GEEMS Header Fallback";
+            };
+        }
+    }
+
+    /** Attaches event listeners for panel refresh triggers using event delegation */
+    function attachPanelRefreshListeners() {
+        console.log("Attaching panel refresh listeners to #game-container");
+        // Remove previous listener to avoid duplicates if re-attaching
+        gameContainer.removeEventListener('change', handlePanelTrigger);
+        // Add new listener
+        gameContainer.addEventListener('change', handlePanelTrigger);
+    }
+
+    /** Handles clicks that trigger panel refreshes */
+    function handlePanelTrigger(event) {
+        const target = event.target;
+        // Check if the changed element has the trigger attribute
+        if (target.matches('[data-trigger-action="refreshPanel"]')) {
+            event.preventDefault(); // Prevent default form submission if applicable
+            console.log("Panel refresh triggered by:", target);
+
+            const targetPanelSelectors = target.dataset.targetPanels;
+            const inputName = target.dataset.inputName; // Get the name of the input that triggered this
+
+            if (!targetPanelSelectors || !inputName) {
+                console.warn("Panel refresh trigger missing target panels or input name metadata.");
+                return;
+            }
+
+            // Collect the current state of the *entire* form
+            const playerActionsJson = collectInputState();
+
+            // Call fetchTurnData, indicating it's a panel refresh
+            fetchTurnData(playerActionsJson, true, targetPanelSelectors);
+        }
+    }
+
+
+    // --- Initial Game Setup ---
+    function initializeGame() {
+        console.log("Initializing GEEMS LLM UI...");
+        let autoStarted = false;
+        const storedStateString = localStorage.getItem(LOCAL_STORAGE_KEY);
+
+        // --- State Restoration ---
+        if (storedStateString) {
+            console.log("Found saved state. Attempting restore...");
+            let savedState;
+            try {
+                savedState = JSON.parse(storedStateString);
+                const decodedApiKey = decodeApiKey(savedState.encodedApiKey);
+                if (!decodedApiKey) throw new Error("Failed to decode API key.");
+
+                apiKeyInput.value = decodedApiKey;
+                currentTurnHTML = savedState.currentTurnHTML || null;
+                currentNotes = savedState.currentNotes || "";
+                currentTurnNumber = savedState.currentTurnNumber || 0;
+                currentSubjectId = savedState.currentSubjectId || "SubjectRestore";
+                currentModelIndex = savedState.currentModelIndex || 0;
+
+                if (currentTurnHTML && currentTurnNumber > 0) {
+                    apiKeyLocked = true;
+                    autoStarted = true;
+                    console.log("State restored from localStorage. Turn:", currentTurnNumber);
+                    setDynamicHeaderImage();
+                    turnContentContainer.innerHTML = currentTurnHTML; // Render saved HTML
+                    attachPanelRefreshListeners(); // Attach listeners to restored content
+                    updateModeButtonVisuals(); // Update any mode buttons if applicable
+                    apiKeySection.style.display = 'none';
+                    const msg = document.getElementById('initial-message');
+                    if (msg) msg.style.display = 'none';
+                    hideError();
+                    setLoading(false);
+                    nextTurnButton.textContent = `Next Turn (${currentTurnNumber})`;
+                    nextTurnButton.disabled = false;
+                    resetGameButton.disabled = false;
+                } else {
+                    throw new Error("Restored state incomplete (missing UI or turn 0).");
+                }
+            } catch (error) {
+                // ... (error handling as before) ...
+                console.error("Error restoring state:", error);
+                showError(`Error restoring saved state: ${error.message}. Start manually.`);
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                // Reset state variables
+                currentTurnHTML = null; currentNotes = ""; currentTurnNumber = 0; currentSubjectId = "SubjectZero";
+                currentModelIndex = 0; apiKeyLocked = false; autoStarted = false;
+                apiKeyInput.value = '';
+                turnContentContainer.innerHTML = ''; // Clear content
+                const initialMsg = document.getElementById('initial-message') || createInitialMessageElement(); // Create if needed
+                initialMsg.style.display = 'block';
+                initialMsg.innerHTML = 'Error restoring. Enter API Key';
+                if (apiKeySection) apiKeySection.style.display = 'block';
+                setLoading(false);
+                setDynamicHeaderImage();
+                nextTurnButton.textContent = 'Start Session / Next Turn';
+                nextTurnButton.disabled = true;
+                resetGameButton.disabled = true;
+            }
+        }
+
+        // --- URL Parameter Handling ---
+        if (!autoStarted) {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const keyFromUrlParam = urlParams.get('apiKey');
+                if (keyFromUrlParam) {
+                    console.log("API Key from URL. Auto-starting...");
+                    apiKeyInput.value = keyFromUrlParam;
+                    apiKeyLocked = false; // Needs first turn to lock
+                    currentModelIndex = 0;
+                    currentTurnHTML = null; currentNotes = ""; currentTurnNumber = 0; currentSubjectId = "SubjectURL";
+
+                    if (apiKeySection) apiKeySection.style.display = 'none';
+                    const msg = document.getElementById('initial-message') || createInitialMessageElement();
+                    msg.style.display = 'none';
+
+                    // Clean URL
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.delete('apiKey');
+                    window.history.replaceState(null, '', currentUrl.toString());
+
+                    setDynamicHeaderImage();
+                    // Fetch Turn 1
+                    fetchTurnData(JSON.stringify({ turn: 0, subjectId: currentSubjectId })); // Send minimal initial actions
+                    autoStarted = true;
+                    setLoading(true); // Set loading for the first fetch
+                    nextTurnButton.textContent = "Loading...";
+                    nextTurnButton.disabled = true;
+                    resetGameButton.disabled = true; // Disable reset until locked
+                }
+            } catch (e) {
+                console.error("Error processing URL params:", e);
+                showError("Error reading URL params. Start manually.");
+                autoStarted = false; // Ensure manual start if URL params fail
+            }
+        }
+
+
+        // --- Manual Start Fallback ---
+        if (!autoStarted) {
+            console.log("Manual start required.");
+            // Reset state variables
+            currentTurnHTML = null; currentNotes = ""; currentTurnNumber = 0; currentSubjectId = "SubjectZero";
+            currentModelIndex = 0; apiKeyLocked = false;
+            turnContentContainer.innerHTML = ''; // Clear content
+            const initialMsg = document.getElementById('initial-message') || createInitialMessageElement();
+            initialMsg.style.display = 'block';
+            initialMsg.innerHTML = 'Enter API Key and click "Start Session / Next Turn"';
+            if (apiKeySection) apiKeySection.style.display = 'block';
+            // Don't clear API key if user might have typed it
+            // apiKeyInput.value = '';
+            setLoading(false);
+            hideError();
+            setDynamicHeaderImage();
+            nextTurnButton.textContent = 'Start Session / Next Turn';
+            nextTurnButton.disabled = apiKeyInput.value.trim().length === 0; // Disable if key empty
+            resetGameButton.disabled = true; // Disable reset until locked
+        }
+    }
+
+    /** Creates the initial message element if it doesn't exist */
+    function createInitialMessageElement() {
+        let msgDiv = document.getElementById('initial-message');
+        if (!msgDiv) {
+            msgDiv = document.createElement('div');
+            msgDiv.id = 'initial-message';
+            msgDiv.className = 'text-center text-gray-500 p-6';
+            // Prepend to turnContentContainer so it's there if needed
+            turnContentContainer.prepend(msgDiv);
+        }
+        return msgDiv;
+    }
 
 
     // --- Event Listeners ---
-    if (submitButton) submitButton.addEventListener('click', () => { if (!submitButton.disabled && !gameState.isLoading) { console.log("Submit clicked."); initAudioContext(); const actions = collectInputState(); fetchTurnData(actions); } });
-    if (apiKeyInput) apiKeyInput.addEventListener('input', () => { const key = apiKeyInput.value.trim(); gameState.apiKey = key; const keyEntered = key.length > 0; if(submitButton) submitButton.disabled = gameState.isLoading || !(gameState.isLocked || keyEntered); if(resetGameButton) resetGameButton.disabled = gameState.isLoading || !keyEntered; const initialMsg = document.getElementById('initial-message'); if(initialMsg && apiKeySection?.style.display !== 'none'){ if(keyEntered){ hideError(); initialMsg.querySelector('p').textContent = 'API Key detected! Hit "Initiate Sequence"!'; } else { initialMsg.querySelector('p').innerHTML = 'Systems offline. Provide API Key...'; } } });
-    if (saveGameButton) saveGameButton.addEventListener('click', () => { saveGameState(false); });
-    if (modeToggleButton) modeToggleButton.addEventListener('click', () => { if (gameState.isLoading) return; gameState.mode = (gameState.mode === 'standard_misery') ? 'evil_overdrive' : 'standard_misery'; updateModeButtonVisuals(); if (gameState.isLocked) saveGameState(true); });
-    if (resetGameButton) resetGameButton.addEventListener('click', () => { if (gameState.isLoading || resetGameButton.disabled) return; if (confirm('SELF DESTRUCT?! Confirm?')) { console.log("Resetting..."); localStorage.removeItem(LOCAL_STORAGE_KEY); gameState = getDefaultGameState(); resetManualStartUI(); } });
+
+    // Main button for full turn progression
+    nextTurnButton.addEventListener('click', () => {
+        if (!nextTurnButton.disabled && !isLoading) {
+            console.log("Next Turn button clicked.");
+            initAudioContext(); // Ensure audio is ready
+            const playerActions = collectInputState(); // Collect state from the *current* UI
+            fetchTurnData(playerActions); // Fetch the *next* turn's full UI
+        }
+    });
+
+    // API Key Input Listener
+    apiKeyInput.addEventListener('input', () => {
+        const keyPresent = apiKeyInput.value.trim().length > 0;
+        // Enable Next Turn button only if key is present and not already locked/loading
+        nextTurnButton.disabled = isLoading || !(apiKeyLocked || keyPresent);
+        // Reset button enabled only if key is present OR game is locked
+        resetGameButton.disabled = isLoading || !(apiKeyLocked || keyPresent);
+
+        // Update initial message visibility/text if API key section is visible
+        if (apiKeySection && apiKeySection.style.display !== 'none') {
+            const msg = document.getElementById('initial-message');
+            if (msg && msg.style.display !== 'none') {
+                if (keyPresent) {
+                    hideError(); // Hide errors when user starts typing key
+                    msg.textContent = 'API Key entered. Click "Start Session / Next Turn" to begin!';
+                } else {
+                    msg.innerHTML = 'Enter API Key and click "Start Session / Next Turn"';
+                }
+            }
+        }
+    });
+
+    // Reset Button Listener
+    resetGameButton.addEventListener('click', () => {
+        if (isLoading || resetGameButton.disabled) return;
+        if (confirm('Reset session? This will clear your current progress in this browser.')) {
+            console.log("Resetting game state...");
+            // Reset variables
+            historyQueue = [];
+            currentTurnHTML = null;
+            currentNotes = "";
+            currentTurnNumber = 0;
+            currentSubjectId = "SubjectZero";
+            currentModelIndex = 0;
+            apiKeyLocked = false;
+
+            localStorage.removeItem(LOCAL_STORAGE_KEY); // Clear saved state
+            console.log("Cleared localStorage.");
+
+            // Reset UI
+            turnContentContainer.innerHTML = '';
+            hideError();
+            if (apiKeySection) apiKeySection.style.display = 'block'; // Show API key section again
+            const initialMsg = document.getElementById('initial-message') || createInitialMessageElement();
+            initialMsg.style.display = 'block';
+            initialMsg.innerHTML = 'Enter API Key and click "Start Session / Next Turn"';
+
+            const keyPresent = apiKeyInput.value.trim().length > 0;
+            setLoading(false);
+            nextTurnButton.textContent = 'Start Session / Next Turn';
+            nextTurnButton.disabled = !keyPresent; // Disable if key is empty now
+            resetGameButton.disabled = !keyPresent; // Disable if key is empty now
+            setDynamicHeaderImage(); // Reset header image
+        }
+    });
 
     // --- Initialize ---
     document.addEventListener('DOMContentLoaded', initializeGame);
