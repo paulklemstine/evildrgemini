@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Evolution Zoo v8 - Merged Features</title> <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.0/pixi.min.js"></script>
+    <title>AI Evolution Zoo v9 - Guns & Base Storage</title> <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.0/pixi.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
@@ -16,8 +16,8 @@
 </head>
 <body class="bg-slate-900 text-slate-200 flex flex-col items-center justify-center min-h-screen p-4">
 
-<h1 class="text-2xl md:text-3xl font-bold mb-2 font-game text-emerald-400">AI Evolution Zoo v8 (Merged Features)</h1>
-<p class="mb-3 text-xs md:text-sm text-slate-400">Evolving plants & creatures with hunting, foraging, colonies & spatial grid.</p> <div id="canvas-container" class="mb-3 p-1 bg-slate-800 rounded-lg shadow-xl"></div>
+<h1 class="text-2xl md:text-3xl font-bold mb-2 font-game text-emerald-400">AI Evolution Zoo v9 (Guns & Base Storage)</h1>
+<p class="mb-3 text-xs md:text-sm text-slate-400">Creatures use ranged attacks, forage, and eat from base storage.</p> <div id="canvas-container" class="mb-3 p-1 bg-slate-800 rounded-lg shadow-xl"></div>
 
 <div class="stats-panel grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 text-center w-full max-w-6xl p-3 bg-slate-800 rounded-lg shadow-xl font-game text-[10px] sm:text-xs">
     <div>Population: <span id="populationCount" class="font-bold text-base md:text-lg text-sky-400">0</span></div>
@@ -29,32 +29,36 @@
 
 <script>
     // --- Simulation Settings ---
-    const STARTING_CREATURES = 250; // Keep slightly lower due to complexity
+    const STARTING_CREATURES = 250;
     const NUM_COLONIES = 3;
     const STARTING_PLANTS = 300;
     const PLANT_SPAWN_RATE = 0.1;
     const MAX_PLANTS = 500;
     const MUTATION_RATE = 0.08;
     const MUTATION_AMOUNT = 0.15;
-    const ENERGY_DECAY_RATE = 0.1; // Base creature decay
-    const PLANT_ENERGY_GAIN = 0.3; // Plant growth rate
+    // *** Balancing: Increased Costs due to 10x Food Energy ***
+    const ENERGY_DECAY_RATE = 0.6; // Significantly increased base metabolism
+    const REPRODUCTION_COST = 350; // Significantly increased reproduction cost
+    const PLANT_ENERGY_GAIN = 0.3;
     const PLANT_ENERGY_DECAY = 0.02;
-    const PLANT_REPRO_THRESHOLD = 70; // Plant reproduction threshold
-    const PLANT_REPRO_COST = 35; // Plant reproduction cost
+    const PLANT_REPRO_THRESHOLD = 70;
+    const PLANT_REPRO_COST = 35;
     const PLANT_MAX_AGE = 4000;
-    const ENERGY_FROM_PLANT_BASE = 30;
-    const ENERGY_FROM_CORPSE = 75; // Increased corpse value
-    const ENERGY_FROM_KILL = 100;
-    const ENERGY_STORED_AT_BASE_MULT = 0.5; // Creature gets 50% immediately
-    const REPRODUCTION_ENERGY_THRESHOLD = 180;
-    const REPRODUCTION_COST = 90;
-    const MAX_AGE = 3000; // Creature max age
+    // *** Balancing: 10x Food Energy ***
+    const ENERGY_FROM_PLANT_BASE = 30000; // 10x
+    const ENERGY_FROM_CORPSE = 750; // 10x (was 75)
+    const ENERGY_FROM_KILL = 1000; // 10x (was 100)
+    // *** End Balancing ***
+    const ENERGY_STORED_AT_BASE_MULT = 0.5;
+    const REPRODUCTION_ENERGY_THRESHOLD = 180; // Threshold remains the same relative value
+    const MAX_AGE = 3000;
     const BASE_ATTACK = 5;
     const BASE_DEFENSE = 3;
-    const COLONY_RESOURCE_TARGET_PER_CREATURE = 15; // Lowered target for easier repro
+    const COLONY_RESOURCE_TARGET_PER_CREATURE = 15;
     const EAT_CARRIED_FOOD_THRESHOLD_RATIO = 0.25;
+    const EAT_FROM_BASE_THRESHOLD_RATIO = 0.8; // Eat from base if below 80% energy
     const PLANT_DEFENSE_ENERGY_COST_MULT = 0.05;
-    const PLANT_DEFENSE_GENE_EFFECT_MULT = 3; // Multiplier for plant defense gene effect
+    const PLANT_DEFENSE_GENE_EFFECT_MULT = 3;
     // Swarming & Terrain Settings
     const FLOCKING_RADIUS = 50;
     const TERRAIN_SPEED_PENALTY = 0.6;
@@ -62,6 +66,8 @@
     const FLEE_DISTANCE_MULTIPLIER = 1.2;
     const HUNT_ENERGY_THRESHOLD = 0.7;
     const HUNT_SIZE_ADVANTAGE = 1.2;
+    const RANGED_ATTACK_RANGE_MULT = 0.6; // Range = Perception * this multiplier
+    const RANGED_ATTACK_COST = 2; // Energy cost per shot
     const GRID_CELL_SIZE = 50;
 
 
@@ -107,8 +113,8 @@
     }
 
     // --- Spatial Grid Class ---
-    class SpatialGrid { /* ... same as previous version ... */
-        constructor(worldWidth, worldHeight, cellSize) { this.cellSize = cellSize; this.cols = Math.ceil(worldWidth / cellSize); this.rows = Math.ceil(worldHeight / cellSize); this.grid = Array(this.cols * this.rows).fill(null).map(() => new Set()); this.worldWidth = worldWidth; this.worldHeight = worldHeight; console.log(`Grid created: ${this.cols}x${this.rows} cells`); }
+    class SpatialGrid { /* ... same ... */
+        constructor(worldWidth, worldHeight, cellSize) { this.cellSize = cellSize; this.cols = Math.ceil(worldWidth / cellSize); this.rows = Math.ceil(worldHeight / cellSize); this.grid = Array(this.cols * this.rows).fill(null).map(() => new Set()); this.worldWidth = worldWidth; this.worldHeight = worldHeight; /* console.log(`Grid created: ${this.cols}x${this.rows} cells`); */ }
         _getCellCoords(x, y) { const col = clamp(Math.floor(x / this.cellSize), 0, this.cols - 1); const row = clamp(Math.floor(y / this.cellSize), 0, this.rows - 1); return { col, row }; }
         _getCellIndex(col, row) { return row * this.cols + col; }
         add(obj) { const { col, row } = this._getCellCoords(obj.x, obj.y); const index = this._getCellIndex(col, row); if (index >= 0 && index < this.grid.length) { this.grid[index].add(obj); obj._gridCellIndex = index; } }
@@ -120,7 +126,7 @@
 
     // --- Creature Class ---
     class Creature {
-        constructor(x, y, colonyId, homeBase, genes = null, generation = 1) { /* ... same properties ... */
+        constructor(x, y, colonyId, homeBase, genes = null, generation = 1) { /* ... same ... */
             this.x = x; this.y = y; this.energy = 120; this.age = 0; this.generation = generation; this.isDead = false;
             this.id = `${colonyId}-${Math.random().toString(36).substring(2, 9)}`; this.colonyId = colonyId; this.homeBase = homeBase; this.carryingFood = null;
             if (genes) { this.genes = [...genes]; this.mutate(); }
@@ -128,36 +134,41 @@
             this.updateTraitsFromGenes();
             this.velocityX = random(-1, 1) * this.speed; this.velocityY = random(-1, 1) * this.speed;
             this.targetFood = null; this.targetPrey = null; this.fleeTarget = null; this.aiState = 'seekingFood'; this.currentTerrain = null;
-            // PixiJS Visuals
             this.container = new PIXI.Container(); this.container.x = this.x; this.container.y = this.y;
             this.limbGraphics = new PIXI.Graphics(); this.bodyGraphics = new PIXI.Graphics(); this.headGraphics = new PIXI.Graphics(); this.outlineGraphics = new PIXI.Graphics();
             this.foodSprite = new PIXI.Graphics(); this.foodSprite.visible = false;
-            this.container.addChild(this.limbGraphics, this.bodyGraphics, this.headGraphics, this.outlineGraphics, this.foodSprite);
+            this.gunSprite = new PIXI.Graphics(); // For gun visual
+            this.container.addChild(this.limbGraphics, this.bodyGraphics, this.headGraphics, this.outlineGraphics, this.foodSprite, this.gunSprite); // Add gun sprite
             if (creatureContainer) { creatureContainer.addChild(this.container); } else { console.error("Creature created before creatureContainer initialized!"); }
             this.redrawSprite();
-            // Add to spatial grid
             if (spatialGrid) spatialGrid.add(this); else console.error("Creature created before spatialGrid init!");
         }
 
-        updateTraitsFromGenes() { /* ... same logic including canHunt ... */
+        updateTraitsFromGenes() { /* ... same ... */
             this.speed = this.genes[GENE_SPEED] * 3 + 0.5; this.size = this.genes[GENE_SIZE] * 15 + 5; this.perceptionRadius = this.genes[GENE_PERCEPTION] * 200 + 30;
             this.hexColor = genesToHexColor(this.genes[GENE_R]*255, this.genes[GENE_G]*255, this.genes[GENE_B]*255);
             this.attackPower = BASE_ATTACK * this.genes[GENE_ATTACK]; this.defenseRating = BASE_DEFENSE * this.genes[GENE_DEFENSE];
-            this.metabolismRate = ENERGY_DECAY_RATE + (this.speed * 0.01) + (this.size * 0.01) + (this.attackPower * 0.002) + (this.defenseRating * 0.002);
+            // *** Adjusted Metabolism Rate ***
+            this.metabolismRate = ENERGY_DECAY_RATE // Use the higher base rate
+                + (this.speed * 0.01) // Keep trait costs relatively lower
+                + (this.size * 0.01)
+                + (this.attackPower * 0.002)
+                + (this.defenseRating * 0.002);
             this.numVertices = 3 + Math.floor(this.genes[GENE_SHAPE_COMPLEXITY] * 5); this.numLimbs = Math.floor(this.genes[GENE_LIMB_COUNT] * 4);
             this.limbLen = this.size * clamp(this.genes[GENE_LIMB_LENGTH], 0.1, 1.0); this.headRadius = this.size * clamp(this.genes[GENE_HEAD_SIZE], 0.05, 0.5);
             this.flockRadius = FLOCKING_RADIUS; this.maxForce = 0.1;
             this.canEatPlant = this.genes[GENE_DIET_PLANT] > 0.4;
-            this.canEatCorpse = this.genes[GENE_DIET_CORPSE] > 0.4; // Lowered threshold
-            this.canHunt = this.genes[GENE_DIET_HUNT] > 0.6;
+            this.canEatCorpse = this.genes[GENE_DIET_CORPSE] > 0.3;
+            this.canHunt = this.genes[GENE_DIET_HUNT] > 0.4;
+            this.attackRange = this.perceptionRadius * RANGED_ATTACK_RANGE_MULT; // Calculate attack range
         }
 
-        mutate() { /* ... same logic ... */
+        mutate() { /* ... same ... */
             for (let i = 0; i < CREATURE_GENE_COUNT; i++) { if (Math.random() < MUTATION_RATE) { const change = (Math.random() - 0.5) * MUTATION_AMOUNT; this.genes[i] *= (1 + change);
                 if (i >= GENE_R && i <= GENE_B) { this.genes[i] = clamp(this.genes[i], 0, 1.0); } else if (i === GENE_SEPARATION_WEIGHT) { this.genes[i] = clamp(this.genes[i], 0.1, 2.0); } else if (i === GENE_LIMB_LENGTH) { this.genes[i] = clamp(this.genes[i], 0.1, 1.0); } else if (i === GENE_HEAD_SIZE) { this.genes[i] = clamp(this.genes[i], 0.05, 0.5); } else if (i >= GENE_SPEED && i <= GENE_PERCEPTION) { this.genes[i] = clamp(this.genes[i], 0, 1.0); } else if (i >= GENE_ATTACK && i <= GENE_DEFENSE) { this.genes[i] = clamp(this.genes[i], 0, 1.0); } else if (i >= GENE_SHAPE_COMPLEXITY && i <= GENE_HEAD_SIZE) { this.genes[i] = clamp(this.genes[i], 0, 1.0); } else if (i >= GENE_TERRAIN_PREFERENCE && i <= GENE_TERRAIN_ADAPTATION) { this.genes[i] = clamp(this.genes[i], 0, 1.0); } else if (i >= GENE_COHESION_WEIGHT && i <= GENE_ALIGNMENT_WEIGHT) { this.genes[i] = clamp(this.genes[i], 0, 1.0); } else if (i >= GENE_DIET_PLANT && i <= GENE_DIET_HUNT) { this.genes[i] = clamp(this.genes[i], 0, 1.0); } else { this.genes[i] = clamp(this.genes[i], 0, 1.0); } } } this.updateTraitsFromGenes();
         }
 
-        findTargets() { /* ... same logic using grid ... */
+        findTargets() { /* ... same ... */
             this.targetFood = null; this.targetPrey = null; this.fleeTarget = null;
             let closestFoodDistSq = Infinity; let closestPreyDistSq = Infinity; let closestPredatorDistSq = Infinity;
             const perceptionRadiusSq = this.perceptionRadius * this.perceptionRadius; const fleePerceptionRadiusSq = perceptionRadiusSq * FLEE_DISTANCE_MULTIPLIER * FLEE_DISTANCE_MULTIPLIER;
@@ -165,8 +176,7 @@
             for (const obj of nearbyObjects) { if (obj instanceof Creature && obj.id !== this.id && !obj.isDead) { const sizeDiff = obj.size - this.size; if (sizeDiff > this.size * 0.5 && obj.attackPower > this.defenseRating) { const dx = this.x - obj.x; const dy = this.y - obj.y; const distSq = dx*dx + dy*dy; if (distSq < fleePerceptionRadiusSq && distSq < closestPredatorDistSq) { closestPredatorDistSq = distSq; this.fleeTarget = obj; } } } }
             if (!this.fleeTarget) { if (this.canHunt && this.energy < REPRODUCTION_ENERGY_THRESHOLD * HUNT_ENERGY_THRESHOLD) { for (const obj of nearbyObjects) { if (obj instanceof Creature && obj.id !== this.id && !obj.isDead && obj.colonyId !== this.colonyId) { if (this.size > obj.size * HUNT_SIZE_ADVANTAGE) { const dx = this.x - obj.x; const dy = this.y - obj.y; const distSq = dx*dx + dy*dy; if (distSq < perceptionRadiusSq && distSq < closestPreyDistSq) { closestPreyDistSq = distSq; this.targetPrey = obj; } } } } } if (!this.targetPrey) { for (const obj of nearbyObjects) { if (obj instanceof Food && !obj.isEaten) { const f = obj; const plantDefenseRating = f.genes ? (f.genes[FOOD_GENE_DEFENSE] * PLANT_DEFENSE_GENE_EFFECT_MULT || 0) : 0; const canEat = (f.foodType === 'plant' && this.canEatPlant && this.attackPower >= plantDefenseRating) || (f.foodType === 'corpse' && this.canEatCorpse); if (!canEat) continue; const dx = this.x - f.x; const dy = this.y - f.y; const distSq = dx*dx + dy*dy; if (distSq < perceptionRadiusSq && distSq < closestFoodDistSq) { closestFoodDistSq = distSq; this.targetFood = f; } } } } }
         }
-
-        updateAIState() { /* ... same refined logic ... */
+        updateAIState() { /* ... same ... */
             const isNearBase = distance(this.x, this.y, this.homeBase.x, this.homeBase.y) < BASE_RADIUS * 4; const colony = homeBases.find(b => b.id === this.colonyId); const colonyResources = colony ? colony.resources : 0; const expectedResources = (STARTING_CREATURES / NUM_COLONIES) * COLONY_RESOURCE_TARGET_PER_CREATURE; const colonyHasEnough = colonyResources > expectedResources * 0.5;
             if (this.carryingFood) { if (this.energy > REPRODUCTION_ENERGY_THRESHOLD * 1.5) { const droppedFood = new Food(this.x, this.y, this.carryingFood.size, this.carryingFood.energyValue, this.carryingFood.foodType, this.carryingFood.canEvolve); food.push(droppedFood); this.carryingFood = null; this.foodSprite.visible = false; this.aiState = 'wandering'; this.redrawSprite(); } else { this.aiState = 'returningToBase'; } }
             else if (this.fleeTarget && !this.fleeTarget.isDead) { if (distance(this.x, this.y, this.fleeTarget.x, this.fleeTarget.y) < this.perceptionRadius * FLEE_DISTANCE_MULTIPLIER * 1.1) { this.aiState = 'fleeing'; } else { this.fleeTarget = null; this.aiState = 'wandering'; } }
@@ -174,7 +184,7 @@
             else if (this.targetFood && !this.targetFood.isEaten && this.energy < REPRODUCTION_ENERGY_THRESHOLD * 0.95) { this.aiState = 'seekingFood'; }
             else { if (isNearBase && this.energy > REPRODUCTION_ENERGY_THRESHOLD * 0.9 && colonyHasEnough) { this.aiState = 'wandering'; } else if (this.targetFood && !this.targetFood.isEaten) { this.aiState = 'seekingFood';} else { this.aiState = 'wandering'; } }
         }
-        move() { /* ... same logic ... */
+        move() { /* ... same ... */
             const flockingForce = this.calculateFlockingVector(); let targetForce = { x: 0, y: 0 }; let targetX = null, targetY = null; let baseSpeed = this.speed; let targetWeight = 1.0;
             switch (this.aiState) { case 'returningToBase': targetX = this.homeBase.x; targetY = this.homeBase.y; targetWeight = 1.8; break; case 'fleeing': if (this.fleeTarget && !this.fleeTarget.isDead) { const dx = this.x - this.fleeTarget.x; const dy = this.y - this.fleeTarget.y; targetForce = vecNormalize(dx, dy); baseSpeed *= 1.2; targetWeight = 2.5; } else { this.aiState = 'wandering'; } break; case 'huntingCreature': if (this.targetPrey && !this.targetPrey.isDead) { targetX = this.targetPrey.x; targetY = this.targetPrey.y; targetWeight = 1.5; baseSpeed *= 1.1; } else { this.targetPrey = null; this.aiState = 'wandering'; } break; case 'seekingFood': if (this.targetFood && !this.targetFood.isEaten && food.includes(this.targetFood)) { targetX = this.targetFood.x; targetY = this.targetFood.y; targetWeight = 1.0; } else { this.targetFood = null; this.aiState = 'wandering'; } break; case 'wandering': default: targetForce = vecNormalize(this.velocityX, this.velocityY); baseSpeed *= 0.7; targetWeight = 0.5; if (Math.random() < 0.03) { const angle = random(0, Math.PI * 2); targetForce = {x: Math.cos(angle), y: Math.sin(angle)}; } break; }
             if (targetX !== null && targetY !== null) { const dx = targetX - this.x; const dy = targetY - this.y; targetForce = vecNormalize(dx, dy); }
@@ -191,10 +201,61 @@
             for (const other of neighbors) { if (!(other instanceof Creature) || other.id === this.id || other.isDead || other.colonyId !== this.colonyId) continue; const d = distance(this.x, this.y, other.x, other.y); if (d > 0) { alignment.x += other.velocityX; alignment.y += other.velocityY; cohesion.x += other.x; cohesion.y += other.y; if (d < this.flockRadius / 2) { let diffX = this.x - other.x; let diffY = this.y - other.y; diffX /= (d * d + 0.1); diffY /= (d * d + 0.1); separation.x += diffX; separation.y += diffY; separationCount++; } neighborCount++; } }
             let totalForce = { x: 0, y: 0 }; if (separationCount > 0) { separation.x /= separationCount; separation.y /= separationCount; const sepNorm = vecNormalize(separation.x, separation.y); totalForce.x += sepNorm.x * this.genes[GENE_SEPARATION_WEIGHT]; totalForce.y += sepNorm.y * this.genes[GENE_SEPARATION_WEIGHT]; } if (neighborCount > 0) { alignment.x /= neighborCount; alignment.y /= neighborCount; const alignNorm = vecNormalize(alignment.x, alignment.y); totalForce.x += alignNorm.x * this.genes[GENE_ALIGNMENT_WEIGHT]; totalForce.y += alignNorm.y * this.genes[GENE_ALIGNMENT_WEIGHT]; cohesion.x /= neighborCount; cohesion.y /= neighborCount; const cohesionTarget = { x: cohesion.x - this.x, y: cohesion.y - this.y }; const cohNorm = vecNormalize(cohesionTarget.x, cohesionTarget.y); totalForce.x += cohNorm.x * this.genes[GENE_COHESION_WEIGHT]; totalForce.y += cohNorm.y * this.genes[GENE_COHESION_WEIGHT]; } return vecNormalize(totalForce.x, totalForce.y);
         }
-        eat() { /* ... same ... */
-            if (this.aiState === 'seekingFood' && !this.carryingFood) { for (let i = food.length - 1; i >= 0; i--) { const f = food[i]; if (!f || f.isEaten) continue; const plantDefenseRating = f.genes ? (f.genes[FOOD_GENE_DEFENSE] * PLANT_DEFENSE_GENE_EFFECT_MULT || 0) : 0; const canEat = (f.foodType === 'plant' && this.canEatPlant && this.attackPower >= plantDefenseRating) || (f.foodType === 'corpse' && this.canEatCorpse); if (!canEat) continue; if (distance(this.x, this.y, f.x, f.y) < this.size + f.size) { if (f.foodType === 'plant' && plantDefenseRating > 0) { this.energy -= plantDefenseRating * PLANT_DEFENSE_ENERGY_COST_MULT; } this.carryingFood = f; f.isEaten = true; f.destroySprite(); food.splice(i, 1); this.foodSprite.visible = true; this.redrawSprite(); this.aiState = 'returningToBase'; this.targetFood = null; break; } } }
-            if (this.aiState === 'huntingCreature' && this.canHunt && this.targetPrey && !this.targetPrey.isDead) { const prey = this.targetPrey; if (distance(this.x, this.y, prey.x, prey.y) < this.size + prey.size) { const attackRoll = this.attackPower * random(0.8, 1.2); const defenseRoll = prey.defenseRating * random(0.7, 1.0); const damage = Math.max(0, attackRoll - defenseRoll); if (damage > 0) { prey.energy -= damage; this.energy -= 1; if (prey.energy <= 0) { prey.die(); this.energy += ENERGY_FROM_KILL; this.targetPrey = null; this.aiState = 'wandering'; } } else { this.energy -= 0.5; } } }
+
+        // --- Modified Eat method for Ranged Combat ---
+        eat() {
+            // 1. Attempt to Pick Up Food (Foraging)
+            if (this.aiState === 'seekingFood' && !this.carryingFood) {
+                for (let i = food.length - 1; i >= 0; i--) {
+                    const f = food[i]; if (!f || f.isEaten) continue;
+                    const plantDefenseRating = f.genes ? (f.genes[FOOD_GENE_DEFENSE] * PLANT_DEFENSE_GENE_EFFECT_MULT || 0) : 0;
+                    const canEat = (f.foodType === 'plant' && this.canEatPlant && this.attackPower >= plantDefenseRating) || (f.foodType === 'corpse' && this.canEatCorpse);
+                    if (!canEat) continue;
+                    if (distance(this.x, this.y, f.x, f.y) < this.size + f.size) {
+                        if (f.foodType === 'plant' && plantDefenseRating > 0) { this.energy -= plantDefenseRating * PLANT_DEFENSE_ENERGY_COST_MULT; }
+                        this.carryingFood = f; f.isEaten = true; f.destroySprite(); food.splice(i, 1);
+                        this.foodSprite.visible = true; this.redrawSprite(); this.aiState = 'returningToBase'; this.targetFood = null; break;
+                    }
+                }
+            }
+
+            // 2. Attempt Ranged Attack (Hunting)
+            if (this.aiState === 'huntingCreature' && this.canHunt && this.targetPrey && !this.targetPrey.isDead) {
+                const prey = this.targetPrey;
+                const d = distance(this.x, this.y, prey.x, prey.y);
+                // Check if prey is within attack range
+                if (d < this.attackRange) {
+                    // Simple Hit-Scan Attack
+                    const attackRoll = this.attackPower * random(0.7, 1.3); // Ranged might be less accurate?
+                    const defenseRoll = prey.defenseRating * random(0.8, 1.1);
+                    const damage = Math.max(0, attackRoll - defenseRoll);
+
+                    this.energy -= RANGED_ATTACK_COST; // Cost to fire
+
+                    if (damage > 0) {
+                        prey.energy -= damage;
+                        // Add visual effect for hit? (e.g., flash prey red briefly)
+                        if (prey.container) { // Quick flash effect
+                            prey.container.tint = 0xFF0000;
+                            setTimeout(() => { if(prey.container) prey.container.tint = 0xFFFFFF; }, 50);
+                        }
+
+                        if (prey.energy <= 0) {
+                            prey.die(); // Prey dies -> becomes corpse food
+                            this.energy += ENERGY_FROM_KILL; // Gain energy immediately
+                            this.targetPrey = null; // Find new target
+                            this.aiState = 'wandering'; // Stop hunting this one
+                        }
+                    } else {
+                        // Attack missed or blocked
+                        // Add visual effect for miss? (e.g. small puff near target?)
+                    }
+                } else {
+                    // Prey out of range, keep moving towards it (handled by move method)
+                }
+            }
         }
+
         dropFoodAtBase() { /* ... same ... */
             if (this.aiState === 'returningToBase' && this.carryingFood) { if (distance(this.x, this.y, this.homeBase.x, this.homeBase.y) < BASE_RADIUS + this.size) { const base = homeBases.find(b => b.id === this.colonyId); if (base) { const energyValue = this.carryingFood.energyValue || ENERGY_FROM_PLANT; base.resources += energyValue * ENERGY_STORED_AT_BASE_MULT; this.energy += energyValue * (1 - ENERGY_STORED_AT_BASE_MULT); } this.carryingFood = null; this.foodSprite.visible = false; this.aiState = 'seekingFood'; this.redrawSprite(); } }
         }
@@ -206,10 +267,36 @@
             if (this.isDead) return; this.age++; this.energy -= this.metabolismRate; if (this.energy <= 0 || this.age > MAX_AGE) { this.die(); return; } if (this.carryingFood && this.energy < REPRODUCTION_ENERGY_THRESHOLD * EAT_CARRIED_FOOD_THRESHOLD_RATIO) { const energyValue = this.carryingFood.energyValue || ENERGY_FROM_PLANT; this.energy += energyValue; /* console.log(`Creature ${this.id} emergency ate carried food for ${energyValue.toFixed(1)} energy.`); */ this.carryingFood = null; this.foodSprite.visible = false; this.aiState = 'seekingFood'; this.redrawSprite(); this.updateSprite(); return; } this.dropFoodAtBase(); if (frameCount % 2 === 0) { this.findTargets(); this.updateAIState(); } this.move(); this.eat(); this.reproduce(); this.updateSprite();
         }
         die() { /* ... same ... */
-            this.isDead = true; const corpseEnergy = Math.max(10, Math.min(80, this.size * 2 + this.energy * 0.2)); const corpse = new Food(this.x, this.y, this.size * 0.6, corpseEnergy, 'corpse', false); food.push(corpse); if (this.carryingFood) { const droppedFood = new Food(this.x + random(-5,5), this.y + random(-5,5), this.carryingFood.size, this.carryingFood.energyValue, this.carryingFood.foodType, this.carryingFood.canEvolve); food.push(droppedFood); this.carryingFood = null; } this.destroySprite();
+            this.isDead = true; const corpseEnergy = ENERGY_FROM_CORPSE; const corpse = new Food(this.x, this.y, this.size * 0.6, corpseEnergy, 'corpse', false); food.push(corpse); if (this.carryingFood) { const droppedFood = new Food(this.x + random(-5,5), this.y + random(-5,5), this.carryingFood.size, this.carryingFood.energyValue, this.carryingFood.foodType, this.carryingFood.canEvolve); food.push(droppedFood); this.carryingFood = null; } this.destroySprite();
         }
-        redrawSprite() { /* ... same ... */
-            if (!this.bodyGraphics || this.isDead) { return; } this.bodyGraphics.clear(); this.outlineGraphics.clear(); this.limbGraphics.clear(); this.headGraphics.clear(); this.foodSprite.clear(); const radius = this.size; const energyRatio = clamp(this.energy / REPRODUCTION_ENERGY_THRESHOLD, 0, 1); const directionAngle = Math.atan2(this.velocityY, this.velocityX); const bodyVertices = generatePolygon(0, 0, radius, this.numVertices, 0.15); const limbColor = 0x4a4a4a; const limbThickness = Math.max(1, radius * 0.1); this.limbGraphics.lineStyle(limbThickness, limbColor, 0.8); const limbStep = Math.floor(this.numVertices / (this.numLimbs + 1)); for (let i = 0; i < this.numLimbs; i++) { const vertexIndex = ((i + 1) * limbStep) % this.numVertices; if (vertexIndex * 2 >= bodyVertices.length) continue; const startX = bodyVertices[vertexIndex * 2]; const startY = bodyVertices[vertexIndex * 2 + 1]; const limbAngle = Math.atan2(startY, startX); const endX = startX + Math.cos(limbAngle) * this.limbLen; const endY = startY + Math.sin(limbAngle) * this.limbLen; this.limbGraphics.moveTo(startX, startY).lineTo(endX, endY); } this.bodyGraphics.beginFill(this.hexColor); this.bodyGraphics.drawPolygon(bodyVertices); this.bodyGraphics.endFill(); let frontVertexX = bodyVertices[0]; let frontVertexY = bodyVertices[1]; let minAngleDiff = Math.PI * 2; for(let i=0; i < this.numVertices; ++i) { const vx = bodyVertices[i*2]; const vy = bodyVertices[i*2+1]; const angle = Math.atan2(vy, vx); let diff = Math.abs(angle - directionAngle); if (diff > Math.PI) diff = Math.PI * 2 - diff; if (diff < minAngleDiff) { minAngleDiff = diff; frontVertexX = vx; frontVertexY = vy; } } const headColor = homeBases[this.colonyId]?.color || 0xffffff; this.headGraphics.beginFill(headColor, 0.8); this.headGraphics.lineStyle(1, 0x000000, 0.5); this.headGraphics.drawCircle(frontVertexX, frontVertexY, this.headRadius); this.headGraphics.endFill(); if (this.carryingFood) { this.foodSprite.visible = true; const foodColor = this.carryingFood.foodType === 'plant' ? 0x34D399 : 0xfacc15; this.foodSprite.beginFill(foodColor, 0.9); this.foodSprite.lineStyle(1, 0x000000, 0.3); this.foodSprite.drawCircle(0, 0, radius * 0.4); this.foodSprite.endFill(); } else { this.foodSprite.visible = false; } let outlineColorHex = 0x555555; let outlineAlpha = 0.6; let outlineThickness = 1 + energyRatio * 2; outlineThickness += this.defenseRating * 0.2; if (this.canHunt) { outlineColorHex = 0xDC2626; outlineAlpha = 0.5 + energyRatio * 0.5; } else if (this.canEatCorpse) { outlineColorHex = 0xca8a04; outlineAlpha = 0.5 + energyRatio * 0.5; } else if (this.canEatPlant) { outlineColorHex = 0x059669; outlineAlpha = 0.5 + energyRatio * 0.5; } this.outlineGraphics.lineStyle(outlineThickness, outlineColorHex, outlineAlpha); this.outlineGraphics.drawPolygon(bodyVertices);
+
+        // --- Modified Redraw for Gun ---
+        redrawSprite() {
+            if (!this.bodyGraphics || this.isDead) { return; }
+            this.bodyGraphics.clear(); this.outlineGraphics.clear(); this.limbGraphics.clear(); this.headGraphics.clear(); this.foodSprite.clear(); this.gunSprite.clear(); // Clear gun sprite
+            const radius = this.size; const energyRatio = clamp(this.energy / REPRODUCTION_ENERGY_THRESHOLD, 0, 1);
+            const directionAngle = Math.atan2(this.velocityY, this.velocityX);
+            const bodyVertices = generatePolygon(0, 0, radius, this.numVertices, 0.15);
+            // Draw Limbs
+            const limbColor = 0x4a4a4a; const limbThickness = Math.max(1, radius * 0.1); this.limbGraphics.lineStyle(limbThickness, limbColor, 0.8); const limbStep = Math.floor(this.numVertices / (this.numLimbs + 1)); for (let i = 0; i < this.numLimbs; i++) { const vertexIndex = ((i + 1) * limbStep) % this.numVertices; if (vertexIndex * 2 >= bodyVertices.length) continue; const startX = bodyVertices[vertexIndex * 2]; const startY = bodyVertices[vertexIndex * 2 + 1]; const limbAngle = Math.atan2(startY, startX); const endX = startX + Math.cos(limbAngle) * this.limbLen; const endY = startY + Math.sin(limbAngle) * this.limbLen; this.limbGraphics.moveTo(startX, startY).lineTo(endX, endY); }
+            // Draw Body
+            this.bodyGraphics.beginFill(this.hexColor); this.bodyGraphics.drawPolygon(bodyVertices); this.bodyGraphics.endFill();
+            // Draw Head
+            let frontVertexX = bodyVertices[0]; let frontVertexY = bodyVertices[1]; let minAngleDiff = Math.PI * 2; for(let i=0; i < this.numVertices; ++i) { const vx = bodyVertices[i*2]; const vy = bodyVertices[i*2+1]; const angle = Math.atan2(vy, vx); let diff = Math.abs(angle - directionAngle); if (diff > Math.PI) diff = Math.PI * 2 - diff; if (diff < minAngleDiff) { minAngleDiff = diff; frontVertexX = vx; frontVertexY = vy; } } const headColor = homeBases[this.colonyId]?.color || 0xffffff; this.headGraphics.beginFill(headColor, 0.8); this.headGraphics.lineStyle(1, 0x000000, 0.5); this.headGraphics.drawCircle(frontVertexX, frontVertexY, this.headRadius); this.headGraphics.endFill();
+            // Draw Gun (if hunter)
+            if (this.canHunt) {
+                const gunLength = radius * 0.5;
+                const gunThickness = radius * 0.15;
+                const gunX = frontVertexX + Math.cos(directionAngle) * (this.headRadius * 0.5); // Start near head
+                const gunY = frontVertexY + Math.sin(directionAngle) * (this.headRadius * 0.5);
+                this.gunSprite.lineStyle(gunThickness, 0x555555, 1); // Dark grey gun barrel
+                this.gunSprite.moveTo(gunX, gunY);
+                this.gunSprite.lineTo(gunX + Math.cos(directionAngle) * gunLength, gunY + Math.sin(directionAngle) * gunLength);
+            }
+            // Draw Carried Food
+            if (this.carryingFood) { this.foodSprite.visible = true; const foodColor = this.carryingFood.foodType === 'plant' ? 0x34D399 : 0xfacc15; this.foodSprite.beginFill(foodColor, 0.9); this.foodSprite.lineStyle(1, 0x000000, 0.3); this.foodSprite.drawCircle(0, 0, radius * 0.4); this.foodSprite.endFill(); } else { this.foodSprite.visible = false; }
+            // Draw Outline
+            let outlineColorHex = 0x555555; let outlineAlpha = 0.6; let outlineThickness = 1 + energyRatio * 2; outlineThickness += this.defenseRating * 0.2; if (this.canHunt) { outlineColorHex = 0xDC2626; outlineAlpha = 0.5 + energyRatio * 0.5; } else if (this.canEatCorpse) { outlineColorHex = 0xca8a04; outlineAlpha = 0.5 + energyRatio * 0.5; } else if (this.canEatPlant) { outlineColorHex = 0x059669; outlineAlpha = 0.5 + energyRatio * 0.5; } this.outlineGraphics.lineStyle(outlineThickness, outlineColorHex, outlineAlpha); this.outlineGraphics.drawPolygon(bodyVertices);
         }
         updateSprite() { /* ... same ... */
             if (this.isDead || !this.container) return; this.container.x = this.x; this.container.y = this.y; this.redrawSprite();
@@ -258,7 +345,7 @@
 
     // --- Initialization ---
     function init() { /* ... same ... */
-        console.log("Initializing simulation v8..."); if (!canvasContainer) { console.error("Canvas container not found!"); return; }
+        console.log("Initializing simulation v9..."); if (!canvasContainer) { console.error("Canvas container not found!"); return; }
         try {
             app = new PIXI.Application({ resizeTo: canvasContainer, backgroundColor: 0x1e293b, antialias: true, resolution: window.devicePixelRatio || 1, autoDensity: true, });
             canvasContainer.innerHTML = ''; canvasContainer.appendChild(app.view); console.log(`PixiJS App Initialized (${app.renderer.width}x${app.renderer.height}). Renderer:`, app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas');
@@ -268,7 +355,7 @@
             creatures = []; food = []; frameCount = 0; highestGeneration = 1; homeBases = [];
             const margin = 50; const basePositions = [ { x: margin + BASE_RADIUS, y: margin + BASE_RADIUS }, { x: app.screen.width - margin - BASE_RADIUS, y: margin + BASE_RADIUS }, { x: app.screen.width / 2, y: app.screen.height - margin - BASE_RADIUS }, ];
             for(let i = 0; i < NUM_COLONIES; i++) { const pos = basePositions[i % basePositions.length]; homeBases.push({ id: i, x: pos.x, y: pos.y, resources: 0, color: colonyColors[i % colonyColors.length] }); const baseGfx = new PIXI.Graphics(); baseGfx.lineStyle(2, colonyColors[i % colonyColors.length], 0.8); baseGfx.beginFill(colonyColors[i % colonyColors.length], 0.1); baseGfx.drawCircle(pos.x, pos.y, BASE_RADIUS); baseGfx.endFill(); baseContainer.addChild(baseGfx); } console.log("Home bases defined.");
-            homeBases.forEach(base => { const creaturesPerColony = Math.floor(STARTING_CREATURES / NUM_COLONIES); const baseGenes = new Array(CREATURE_GENE_COUNT).fill(0).map(() => random(0.3, 0.7)); const terrainAtBase = getTerrainAt(base.x, base.y); baseGenes[GENE_TERRAIN_PREFERENCE] = clamp(terrainAtBase.preferenceValue + random(-0.1, 0.1), 0, 1); baseGenes[GENE_TERRAIN_ADAPTATION] = random(0.3, 0.6); baseGenes[GENE_DIET_PLANT] = random(0.6, 0.9); baseGenes[GENE_DIET_CORPSE] = random(0.1, 0.4); baseGenes[GENE_DIET_HUNT] = random(0.1, 0.5); for (let i = 0; i < creaturesPerColony; i++) { const startX = base.x + random(-BASE_RADIUS * 1.5, BASE_RADIUS * 1.5); const startY = base.y + random(-BASE_RADIUS * 1.5, BASE_RADIUS * 1.5); const initialGenes = [...baseGenes]; for(let g=0; g < CREATURE_GENE_COUNT; g++) { if (Math.random() < 0.3) { initialGenes[g] *= (1 + random(-0.1, 0.1)); initialGenes[g] = clamp(initialGenes[g], 0, 1); } } creatures.push(new Creature(clamp(startX, 0, app.screen.width), clamp(startY, 0, app.screen.height), base.id, base, initialGenes, 1)); } }); console.log(`Created ${creatures.length} creatures across ${NUM_COLONIES} colonies.`);
+            homeBases.forEach(base => { const creaturesPerColony = Math.floor(STARTING_CREATURES / NUM_COLONIES); const baseGenes = new Array(CREATURE_GENE_COUNT).fill(0).map(() => random(0.3, 0.7)); const terrainAtBase = getTerrainAt(base.x, base.y); baseGenes[GENE_TERRAIN_PREFERENCE] = clamp(terrainAtBase.preferenceValue + random(-0.1, 0.1), 0, 1); baseGenes[GENE_TERRAIN_ADAPTATION] = random(0.3, 0.6); baseGenes[GENE_DIET_PLANT] = random(0.6, 0.9); baseGenes[GENE_DIET_CORPSE] = random(0.2, 0.5); baseGenes[GENE_DIET_HUNT] = random(0.2, 0.6); for (let i = 0; i < creaturesPerColony; i++) { const startX = base.x + random(-BASE_RADIUS * 1.5, BASE_RADIUS * 1.5); const startY = base.y + random(-BASE_RADIUS * 1.5, BASE_RADIUS * 1.5); const initialGenes = [...baseGenes]; for(let g=0; g < CREATURE_GENE_COUNT; g++) { if (Math.random() < 0.3) { initialGenes[g] *= (1 + random(-0.1, 0.1)); initialGenes[g] = clamp(initialGenes[g], 0, 1); } } creatures.push(new Creature(clamp(startX, 0, app.screen.width), clamp(startY, 0, app.screen.height), base.id, base, initialGenes, 1)); } }); console.log(`Created ${creatures.length} creatures across ${NUM_COLONIES} colonies.`);
             for (let i = 0; i < STARTING_PLANTS; i++) { food.push(new Food(null, null, null, null, 'plant', true)); } console.log(`Created ${STARTING_PLANTS} initial plants.`);
             gameLoopRunning = true; app.ticker.add(gameLoop); console.log("Game loop started.");
         } catch (error) { console.error("Initialization failed:", error); if (error instanceof Error) { console.error("Msg:", error.message); console.error("Stack:", error.stack); } canvasContainer.innerHTML = `<p class="text-red-500 p-4">Init failed. Check console. Msg: ${error.message || 'Unknown'}</p>`; }

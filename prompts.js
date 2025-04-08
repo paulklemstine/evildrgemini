@@ -90,7 +90,7 @@ export const geemsPrompts = {
       {
         "type": "hidden",
         "name": "tweet",
-        "value": "'SparklePants' ✨ POV! Sunny park, cute bees, glowing bench snack? Max visual engagement! Prediction: Bench investigation! Dopamine delivery incoming! 😉 #SparklePants #GEEMS #FunTimes #VisualMastery #POV #CuteOverload #SecretSnack #PlayfulProfiling #SkilledGM #DopamineFactory 💖"
+        "value": "'SparklePants' ✨ has entered the game! It's a beautiful sunny day and our subject is unaware of our evil plans. I'm going to tempt them with a secret snack. Prediction: Bench investigation! Dopamine delivery incoming! 😉 #SparklePants #GEEMS #FunTimes #VisualMastery #POV #CuteOverload #SecretSnack #PlayfulProfiling #SkilledGM #DopamineFactory 💖"
       },
       {
         "type": "text",

@@ -3,280 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evil GM's Erotic Sci-Fi Fiasco</title>
+    <title>Evil GM's Dynamic Sci-Fi Fiasco</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/Lucide.css">
     <style>
-        /* --- Styles Adapted for Evil GM Erotic Sci-Fi --- */
+        /* --- Styles Adapted for Dynamic Panels --- */
         :root {
-            --bg-dark: #0f172a; /* Slate 900 */
-            --bg-medium: #1e293b; /* Slate 800 */
-            --bg-light: #334155; /* Slate 700 */
-            --text-light: #e2e8f0; /* Slate 200 */
-            --text-medium: #94a3b8; /* Slate 400 */
-            --accent-primary: #ef4444; /* Red 500 (Evil GM) */
-            --accent-secondary: #f472b6; /* Pink 400 (Erotic) */
-            --accent-tertiary: #0ea5e9; /* Sky 500 (Sci-Fi Tech) */
-            --font-heading: 'Orbitron', sans-serif;
-            --font-body: 'Roboto', sans-serif;
+            --bg-dark: #0f172a; --bg-medium: #1e293b; --bg-light: #334155;
+            --text-light: #e2e8f0; --text-medium: #94a3b8;
+            --accent-primary: #ef4444; --accent-secondary: #f472b6; --accent-tertiary: #0ea5e9;
+            --font-heading: 'Orbitron', sans-serif; --font-body: 'Roboto', sans-serif;
+            --panel-transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); /* Smoother transition */
         }
+        body { font-family: var(--font-body); background: linear-gradient(145deg, var(--bg-dark) 0%, #1c2a4e 50%, var(--bg-dark) 100%); color: var(--text-light); margin: 0; padding: 0; padding-bottom: 150px; min-height: 100vh; }
 
-        body {
-            font-family: var(--font-body);
-            background: linear-gradient(145deg, var(--bg-dark) 0%, #1c2a4e 50%, var(--bg-dark) 100%);
-            color: var(--text-light);
-            margin: 0;
-            padding: 0;
-            padding-bottom: 150px; /* Ensure space for fixed footer */
-            min-height: 100vh;
-        }
-
-        /* Header */
+        /* Header & Footer Styles (Mostly Unchanged from previous version) */
         .site-header { padding: 0; margin-bottom: 1rem; text-align: center; position: relative; overflow: hidden; border-bottom: 2px solid var(--accent-primary); }
         .header-banner-image { width: 100%; height: 130px; object-fit: cover; display: block; opacity: 0.6; filter: brightness(0.8) contrast(1.2) saturate(0.9); }
         .site-header h1 { font-family: var(--font-heading); font-size: 2.5rem; color: var(--accent-primary); text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.9); margin: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; padding: 0 1rem; box-sizing: border-box; background: rgba(15, 23, 42, 0.7); padding-top: 0.5rem; padding-bottom: 0.5rem; letter-spacing: 1px; }
-
-        /* Footer */
         .site-footer { margin-top: 2rem; padding: 1.5rem 1rem; text-align: center; font-size: 0.875rem; color: var(--text-medium); border-top: 1px solid var(--bg-light); background-color: rgba(15, 23, 42, 0.9); position: fixed; bottom: 0; left: 0; width: 100%; z-index: 10; }
         .footer-buttons { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 1rem; }
         #clipboardMessage { font-size: 0.8rem; color: var(--accent-secondary); height: 1.2em; font-weight: 600; margin-bottom: 1rem; }
         .footer-content { font-size: 0.85rem; }
 
-        /* Game Layout */
-        #game-container { display: flex; flex-direction: column; max-width: 1300px; /* Slightly wider */ margin: 0 auto; padding: 0 1rem; gap: 1rem; }
+        /* --- NEW: Game Layout Container --- */
+        #game-layout-container {
+            display: grid;
+            /* Define flexible grid columns - JS might adjust this based on panels */
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            padding: 1rem;
+            max-width: 1400px; /* Allow wider layout */
+            margin: 1rem auto;
+            transition: grid-template-columns 0.5s ease-in-out; /* Animate column changes */
+        }
 
-        /* Card/Window Styling (Applied by LLM-generated HTML) */
-        .game-card { background-color: rgba(30, 41, 59, 0.9) !important; /* bg-slate-800 more opaque */ color: var(--text-light); border: 1px solid var(--bg-light); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); margin-bottom: 1.5rem; }
-        .game-card h2 { font-family: var(--font-heading); color: var(--accent-tertiary); /* Sky blue */ border-bottom: 2px dashed var(--accent-tertiary); padding-bottom: 0.6rem; margin-bottom: 1.2rem; font-size: 1.6rem; font-weight: 700; text-align: center; flex-shrink: 0; }
-        .game-card h3 { font-family: var(--font-heading); color: var(--accent-secondary); /* Pink */ border-bottom: 1px solid #be185d; /* Darker Pink */ padding-bottom: 0.4rem; margin-top: 1.5rem; margin-bottom: 1rem; font-size: 1.3rem; font-weight: 600; }
+        /* --- NEW: Base Panel Styling --- */
+        .panel {
+            background-color: rgba(30, 41, 59, 0.9); /* var(--bg-medium) with opacity */
+            color: var(--text-light);
+            border: 1px solid var(--bg-light);
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            overflow: hidden; /* Important for transitions/resizing */
+            transition: var(--panel-transition);
+            position: relative; /* For potential absolute elements inside */
+            display: flex;
+            flex-direction: column;
+            min-height: 150px; /* Minimum panel height */
+        }
+        .panel-header {
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            color: var(--accent-tertiary);
+            border-bottom: 1px solid var(--bg-light);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.8rem;
+            display: flex; /* Allow icons */
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0; /* Prevent header shrinking */
+        }
+        .panel-content {
+            flex-grow: 1; /* Allow content to fill space */
+            overflow-y: auto; /* Scroll if content overflows */
+            /* Custom scrollbar */
+            scrollbar-width: thin;
+            scrollbar-color: var(--bg-light) var(--bg-medium);
+        }
+        .panel-content::-webkit-scrollbar { width: 8px; }
+        .panel-content::-webkit-scrollbar-track { background: var(--bg-medium); border-radius: 4px;}
+        .panel-content::-webkit-scrollbar-thumb { background-color: var(--bg-light); border-radius: 4px; border: 2px solid var(--bg-medium); }
 
-        /* Specific Window Styles (Examples for LLM to use) */
-        .status-window { border-left: 4px solid var(--accent-tertiary); }
-        .narrative-window { border-left: 4px solid var(--accent-secondary); }
-        .gm-window { border-left: 4px solid var(--accent-primary); background-color: rgba(40, 20, 20, 0.8); /* Subtle red tint */ }
-        .scan-window { border-left: 4px solid #f59e0b; } /* Orange for scans */
-        .crew-window { border-left: 4px solid #10b981; } /* Green for crew */
+        /* --- NEW: Panel States (Controlled by JS/CSS) --- */
+        .panel-hidden {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+            pointer-events: none;
+            height: 0; /* Collapse height */
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+            border-width: 0;
+            min-height: 0;
+        }
+        .panel-closing { /* State during close animation */
+            opacity: 0; transform: scale(0.9) translateY(20px);
+            /* Keep other styles during transition */
+        }
+        .panel-small { grid-column: span 1; /* Example size */ /* max-height: 200px; */ }
+        .panel-medium { grid-column: span 1; /* Adjust span as needed */ /* max-height: 400px; */ }
+        .panel-large { grid-column: span 2; /* Example size */ /* max-height: 600px; */ }
+        .panel-full { grid-column: 1 / -1; /* Full width */ }
+        .panel-highlight { border-color: var(--accent-primary); box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); transform: scale(1.02); }
 
-        /* Lists within cards */
-        .game-card ul { list-style: none; padding: 0; margin: 0 0 1rem 0; }
-        .game-card li { margin-bottom: 0.5rem; padding-left: 0.6rem; border-left: 3px solid var(--bg-light); transition: background-color 0.2s; }
-        .game-card li:hover { background-color: rgba(255,255,255,0.05); }
-        .game-card li strong { color: var(--accent-secondary); font-weight: 700; }
 
-        /* Status Display within cards */
-        .game-card .status-item { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; padding: 0.3rem 0.6rem; background-color: rgba(15, 23, 42, 0.7); border-radius: 0.3rem; }
-        .game-card .status-label { font-weight: 600; color: var(--accent-tertiary); font-size: 0.95rem; }
-        .game-card .status-value { text-align: right; font-weight: bold; font-size: 0.95rem; }
-        .game-card progress { height: 0.7rem; accent-color: var(--accent-secondary); width: 100%; margin-top: 0.2rem; background-color: var(--bg-light); border-radius: 3px; border: 1px solid var(--bg-medium); }
-        /* Specific progress bars */
-        .game-card progress.fuel-bar { accent-color: #fbbf24; } /* Amber */
-        .game-card progress.hull-bar { accent-color: #f87171; } /* Red */
-        .game-card progress.gm-influence-bar { accent-color: var(--accent-primary); } /* GM Red */
+        /* Styles for elements INSIDE panels (inputs, buttons etc) - Adapted from previous game-card styles */
+        .panel-content h3 { font-family: var(--font-heading); color: var(--accent-secondary); border-bottom: 1px solid #be185d; padding-bottom: 0.4rem; margin-top: 1rem; margin-bottom: 0.8rem; font-size: 1.1rem; font-weight: 600; }
+        .panel-content ul { list-style: none; padding: 0; margin: 0 0 0.8rem 0; }
+        .panel-content li { margin-bottom: 0.4rem; padding: 0.2rem 0.4rem; border-left: 2px solid var(--bg-light); font-size: 0.95rem;}
+        .panel-content li strong { color: var(--accent-secondary); }
+
+        .panel-content .status-item { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; padding: 0.2rem 0.4rem; background-color: rgba(15, 23, 42, 0.7); border-radius: 0.3rem; font-size: 0.9rem; }
+        .panel-content .status-label { font-weight: 600; color: var(--accent-tertiary); }
+        .panel-content .status-value { text-align: right; font-weight: bold; }
+        .panel-content progress { height: 0.6rem; width: 100%; margin-top: 0.1rem; background-color: var(--bg-light); border-radius: 3px; border: 1px solid var(--bg-medium); accent-color: var(--accent-secondary); }
+        .panel-content progress.fuel-bar { accent-color: #fbbf24; }
+        .panel-content progress.hull-bar { accent-color: #f87171; }
+        .panel-content progress.gm-influence-bar { accent-color: var(--accent-primary); }
+
+        .panel-content .game-text { color: inherit; line-height: 1.6; word-wrap: break-word; font-size: 1rem; }
+        .panel-content .game-text strong { color: var(--accent-secondary); } .panel-content .game-text em { color: var(--accent-tertiary); }
+        .panel-content .game-text pre { background-color: var(--bg-dark); padding: 0.6rem; border-radius: 0.4rem; overflow-x: auto; font-size: 0.85rem; color: #93c5fd; margin: 0.4rem 0; border: 1px solid var(--bg-medium); }
+        .panel-content .gm-commentary { color: #fda4af; font-style: italic; font-size: 0.9rem; border: 1px dashed var(--accent-primary); padding: 0.4rem 0.6rem; margin-top: 0.6rem; background-color: rgba(159, 18, 57, 0.1); border-radius: 4px; }
+
+        /* Inputs, Textareas, Radio, Checkbox, Slider, Image styles inside .panel-content */
+        .panel-content .game-input, .panel-content .game-textarea { width: 100%; padding: 0.8rem; border: 1px solid var(--bg-light); border-radius: 0.5rem; color: var(--text-light); background-color: var(--bg-medium); font-family: var(--font-body); margin-bottom: 0.5rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.3); transition: border-color 0.2s, box-shadow 0.2s; }
+        .panel-content .game-input::placeholder, .panel-content .game-textarea::placeholder { color: var(--text-medium); opacity: 0.7; }
+        .panel-content .game-input:focus, .panel-content .game-textarea:focus { outline: none; border-color: var(--accent-tertiary); box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3), inset 0 1px 2px rgba(0,0,0,0.3); background-color: var(--bg-dark); }
+        .panel-content .game-textarea { min-height: 75px; }
+        .panel-content .game-radio-option, .panel-content .game-checkbox-option { display: flex; align-items: center; margin-bottom: 0.6rem; padding: 0.75rem 1.1rem; border-radius: 0.75rem; cursor: pointer; transition: background-color 0.2s, transform 0.1s; border: 1px solid var(--bg-light); color: inherit; background-color: rgba(15, 23, 42, 0.85); }
+        .panel-content .game-radio-option:hover, .panel-content .game-checkbox-option:hover { background-color: var(--bg-medium); border-color: var(--accent-tertiary); }
+        .panel-content .game-radio-option input[type="radio"], .panel-content .game-checkbox-option input[type="checkbox"] { margin-right: 0.8rem; cursor: pointer; accent-color: var(--accent-secondary); width: 1.1rem; height: 1.1rem; flex-shrink: 0; filter: brightness(1.1); }
+        .panel-content .game-radio-option label, .panel-content .game-checkbox-option label { color: inherit; flex-grow: 1; cursor: pointer; font-weight: 600; display: flex; align-items: center; width: 100%; }
+        .panel-content .game-slider-container { margin-bottom: 1rem; padding: 0.5rem 0; }
+        .panel-content .game-slider-label { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600; color: var(--accent-tertiary); font-size: 0.85rem; padding: 0 0.2rem; }
+        .panel-content .game-slider { width: 100%; cursor: pointer; accent-color: var(--accent-secondary); height: 0.7rem; background: var(--bg-light); border-radius: 9999px; appearance: none; -webkit-appearance: none; border: 1px solid var(--bg-medium); }
+        .panel-content .game-slider::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 1.4rem; height: 1.4rem; background: var(--slider-thumb-color, var(--accent-primary)); border-radius: 50%; cursor: pointer; border: 2px solid var(--bg-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+        .panel-content .game-slider::-moz-range-thumb { width: 1.4rem; height: 1.4rem; background: var(--slider-thumb-color, var(--accent-primary)); border-radius: 50%; cursor: pointer; border: 2px solid var(--bg-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+        .panel-content .game-slider-value-display { color: var(--accent-primary); font-weight: 700; min-width: 2.2rem; text-align: right; }
+        .panel-content .game-image-container { margin: 1rem 0; text-align: center; }
+        .panel-content .game-image { max-width: 100%; height: auto; border-radius: 0.5rem; background-color: var(--bg-medium); border: 1px solid var(--bg-light); box-shadow: 0 3px 7px rgba(0, 0, 0, 0.25); }
+        .panel-content .game-image-prompt { font-size: 0.75rem; color: var(--accent-tertiary); opacity: 0.7; margin-top: 0.4rem; }
+        .panel-content .game-button { padding: 0.85rem 1.9rem; background: linear-gradient(to right, var(--accent-primary), #b91c1c); color: var(--text-light); border: none; border-radius: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 3px 7px 0 rgba(0, 0, 0, 0.5); text-transform: uppercase; letter-spacing: 0.09em; white-space: nowrap; font-size: 0.95rem; font-family: var(--font-heading); display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1rem; }
+        .panel-content .game-button i { font-size: 1.1em; }
+        .panel-content .game-button:hover { background: linear-gradient(to right, #b91c1c, #991b1b); box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.6); transform: translateY(-2px) scale(1.03); }
 
 
-        /* Text Styling */
-        .game-text { color: inherit; line-height: 1.7; word-wrap: break-word; font-size: 1.05rem; }
-        .game-text strong { color: var(--accent-secondary); font-weight: 700; }
-        .game-text em { color: var(--accent-tertiary); font-style: italic; }
-        .game-text pre { background-color: var(--bg-dark); padding: 0.8rem; border-radius: 0.5rem; overflow-x: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; color: #93c5fd; margin-top: 0.5rem; border: 1px solid var(--bg-medium); box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); }
-        /* Specific GM commentary text style */
-        .gm-commentary { color: #fda4af; /* Light red */ font-style: italic; font-size: 0.95rem; border: 1px dashed var(--accent-primary); padding: 0.5rem 0.8rem; margin-top: 0.8rem; background-color: rgba(159, 18, 57, 0.1); border-radius: 5px; }
+        /* Loading/Error Styles (Unchanged) */
+        .loading-indicator, .error-message { display: flex; justify-content: center; align-items: center; padding: 1.5rem; font-size: 1.1rem; border-radius: 0.75rem; margin-top: 1rem; font-weight: 600; background-color: var(--bg-medium); border: 1px solid var(--bg-light); }
+        .loading-indicator { color: var(--accent-tertiary); } .loading-indicator svg { width: 1.4rem; height: 1.4rem; }
+        .error-message { color: #fecaca; background-color: #7f1d1d; border-color: var(--accent-primary); }
 
-        /* Inputs */
-        .game-input, .game-textarea { width: 100%; padding: 0.8rem; border: 1px solid var(--bg-light); border-radius: 0.5rem; color: var(--text-light); background-color: var(--bg-medium); font-family: var(--font-body); margin-bottom: 0.5rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.3); transition: border-color 0.2s, box-shadow 0.2s; }
-        .game-input::placeholder, .game-textarea::placeholder { color: var(--text-medium); opacity: 0.7; }
-        .game-input:focus, .game-textarea:focus { outline: none; border-color: var(--accent-tertiary); box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3), inset 0 1px 2px rgba(0,0,0,0.3); background-color: var(--bg-dark); }
-        .game-textarea { min-height: 75px; }
+        /* API Key Section (Unchanged) */
+        #apiKeySection { margin: 1rem auto; max-width: 1300px; background: rgba(30, 41, 59, 0.7); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--bg-light); backdrop-filter: blur(3px); }
+        #apiKeySection .api-key-label { color: var(--accent-tertiary); display: block; margin-bottom: 0.7rem; font-weight: 700; font-size: 1.1rem; font-family: var(--font-heading); }
+        #apiKeySection .api-key-instructions span { color: var(--text-medium); } #apiKeySection .api-key-instructions a { color: var(--accent-secondary); text-decoration: underline; font-weight: 600; } #apiKeySection .api-key-instructions a:hover { color: #db2777; }
 
-        /* Radio/Checkbox Options */
-        .game-radio-option, .game-checkbox-option { display: flex; align-items: center; margin-bottom: 0.6rem; padding: 0.75rem 1.1rem; border-radius: 0.75rem; cursor: pointer; transition: background-color 0.2s, transform 0.1s; border: 1px solid var(--bg-light); color: inherit; background-color: rgba(15, 23, 42, 0.85); }
-        .game-radio-option:hover, .game-checkbox-option:hover { background-color: var(--bg-medium); border-color: var(--accent-tertiary); }
-        .game-radio-option input[type="radio"], .game-checkbox-option input[type="checkbox"] { margin-right: 0.8rem; cursor: pointer; accent-color: var(--accent-secondary); width: 1.1rem; height: 1.1rem; flex-shrink: 0; filter: brightness(1.1); }
-        .game-radio-option label, .game-checkbox-option label { color: inherit; flex-grow: 1; cursor: pointer; font-weight: 600; display: flex; align-items: center; width: 100%; }
-
-        /* Sliders */
-        .game-slider-container { margin-bottom: 1rem; padding: 0.5rem 0; }
-        .game-slider-label { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600; color: var(--accent-tertiary); font-size: 0.85rem; padding: 0 0.2rem; }
-        .game-slider { width: 100%; cursor: pointer; accent-color: var(--accent-secondary); height: 0.7rem; background: var(--bg-light); border-radius: 9999px; appearance: none; -webkit-appearance: none; border: 1px solid var(--bg-medium); }
-        .game-slider::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 1.4rem; height: 1.4rem; background: var(--slider-thumb-color, var(--accent-primary)); /* GM Red thumb */ border-radius: 50%; cursor: pointer; border: 2px solid var(--bg-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
-        .game-slider::-moz-range-thumb { width: 1.4rem; height: 1.4rem; background: var(--slider-thumb-color, var(--accent-primary)); border-radius: 50%; cursor: pointer; border: 2px solid var(--bg-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
-        .game-slider-value-display { color: var(--accent-primary); font-weight: 700; min-width: 2.2rem; text-align: right; }
-
-        /* Images */
-        .game-image-container { margin: 1.5rem 0; text-align: center; }
-        /* Allow multiple images */
-        .game-image-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
-        .game-image { max-width: 100%; height: auto; border-radius: 0.75rem; background-color: var(--bg-medium); display: block; margin-left: auto; margin-right: auto; border: 2px solid var(--bg-light); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); transition: transform 0.2s ease, border-color 0.2s ease; }
-        .game-image:hover { transform: scale(1.03); border-color: var(--accent-tertiary); }
-        .game-image-prompt { font-size: 0.8rem; color: var(--accent-tertiary); opacity: 0.8; font-style: italic; margin-top: 0.6rem; word-wrap: break-word; padding: 0 0.5rem; font-weight: 600; }
-        .game-image-label { font-size: 0.95rem; font-weight: 700; color: var(--accent-secondary); margin-bottom: 0.4rem; }
-
-        /* Buttons */
-        .game-button { padding: 0.85rem 1.9rem; background: linear-gradient(to right, var(--accent-primary), #b91c1c); /* Red gradient */ color: var(--text-light); border: none; border-radius: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 3px 7px 0 rgba(0, 0, 0, 0.5); text-transform: uppercase; letter-spacing: 0.09em; white-space: nowrap; font-size: 0.95rem; font-family: var(--font-heading); display: inline-flex; align-items: center; gap: 0.5rem; }
-        .game-button i { /* For Lucide icons */ font-size: 1.1em; }
-        .game-button:hover { background: linear-gradient(to right, #b91c1c, #991b1b); /* Darker Red */ box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.6); transform: translateY(-2px) scale(1.03); }
+        /* Footer Buttons */
+        .game-button { /* Base style from previous */ padding: 0.85rem 1.9rem; background: linear-gradient(to right, var(--accent-primary), #b91c1c); color: var(--text-light); border: none; border-radius: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 3px 7px 0 rgba(0, 0, 0, 0.5); text-transform: uppercase; letter-spacing: 0.09em; white-space: nowrap; font-size: 0.95rem; font-family: var(--font-heading); display: inline-flex; align-items: center; gap: 0.5rem; }
+        .game-button i { font-size: 1.1em; }
+        .game-button:hover { background: linear-gradient(to right, #b91c1c, #991b1b); box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.6); transform: translateY(-2px) scale(1.03); }
         .game-button:active { transform: translateY(0) scale(1); box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.5); }
         .game-button:disabled { background: var(--bg-light); color: var(--text-medium); cursor: not-allowed; opacity: 0.6; box-shadow: none; transform: none; }
-
-        /* Specific Button Styles */
-        #submit-turn-button { /* Main action button */ background: linear-gradient(to right, var(--accent-secondary), #db2777); } /* Pink gradient */
-        #submit-turn-button:hover { background: linear-gradient(to right, #db2777, #be185d); }
-        #saveGameButton { background: linear-gradient(to right, #0ea5e9, #0284c7); } /* Sky Blue */
-        #saveGameButton:hover { background: linear-gradient(to right, #0284c7, #0369a1); }
-        #modeToggleButton { background: linear-gradient(to right, #10b981, #059669); min-width: 210px; } /* Emerald/Green */
-        #modeToggleButton.red-alert-mode { background: linear-gradient(to right, #db2777, #be185d); } /* Pink/Red for intense mode */
-        #modeToggleButton:hover { background: linear-gradient(to right, #059669, #047857); }
-        #modeToggleButton.red-alert-mode:hover { background: linear-gradient(to right, #be185d, #9d174d); }
-        #resetGameButton { background: linear-gradient(to right, #f97316, #ea580c); } /* Orange */
-        #resetGameButton:hover { background: linear-gradient(to right, #ea580c, #c2410c); }
-
-        /* Loading/Error */
-        .loading-indicator, .error-message { display: flex; justify-content: center; align-items: center; padding: 1.5rem; font-size: 1.1rem; border-radius: 0.75rem; margin-top: 1rem; font-weight: 600; background-color: var(--bg-medium); border: 1px solid var(--bg-light); }
-        .loading-indicator { color: var(--accent-tertiary); }
-        .loading-indicator svg { width: 1.4rem; height: 1.4rem; color: var(--accent-tertiary); }
-        .error-message { color: #fecaca; /* Light red text */ background-color: #7f1d1d; /* Dark red bg */ border-color: var(--accent-primary); text-align: center; white-space: pre-wrap; }
-
-        /* API Key Section */
-        #apiKeySection { margin-bottom: 1.5rem; background: rgba(30, 41, 59, 0.7); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--bg-light); backdrop-filter: blur(3px); }
-        #apiKeySection .api-key-label { color: var(--accent-tertiary); display: block; margin-bottom: 0.7rem; font-weight: 700; font-size: 1.1rem; font-family: var(--font-heading); }
-        #apiKeySection .api-key-instructions span { color: var(--text-medium); }
-        #apiKeySection .api-key-instructions a { color: var(--accent-secondary); text-decoration: underline; font-weight: 600; }
-        #apiKeySection .api-key-instructions a:hover { color: #db2777; }
-
-        /* Creative UI Elements (Toggle/Segmented) */
-        .game-toggle-switch { display: inline-flex; align-items: center; cursor: pointer; margin: 0.6rem 0; }
-        .game-toggle-switch input { display: none; }
-        .game-toggle-switch .switch-bg { width: 55px; height: 28px; background-color: var(--bg-light); border-radius: 14px; position: relative; transition: background-color 0.3s ease; border: 1px solid var(--bg-medium); flex-shrink: 0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
-        .game-toggle-switch .switch-handle { width: 24px; height: 24px; background-color: var(--text-light); border-radius: 50%; position: absolute; top: 1px; left: 2px; transition: transform 0.3s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
-        .game-toggle-switch input:checked + .switch-bg { background-color: var(--accent-secondary); /* Pink when on */ }
-        .game-toggle-switch input:checked + .switch-bg .switch-handle { transform: translateX(27px); }
-        .game-toggle-switch span { margin-left: 0.7rem; font-weight: 600; color: var(--accent-tertiary); }
-
-        .game-segmented-control { display: flex; border: 1px solid var(--bg-light); border-radius: 0.75rem; overflow: hidden; background-color: var(--bg-medium); margin: 0.8rem 0; }
-        .game-segmented-control label { flex: 1; text-align: center; padding: 0.6rem 0.9rem; cursor: pointer; transition: background-color 0.2s, color 0.2s; font-weight: 600; color: var(--text-medium); font-size: 0.9rem; font-family: var(--font-heading); }
-        .game-segmented-control input[type="radio"] { display: none; }
-        .game-segmented-control input[type="radio"]:checked + label { background-color: var(--accent-primary); /* Red selected */ color: var(--text-light); box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); }
-        .game-segmented-control label:not(:last-child) { border-right: 1px solid var(--bg-light); }
-
-        /* Responsive Grid Layout (Applied by LLM-generated HTML) */
-        .turn-layout-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Flexible columns */ gap: 1.5rem; }
-        @media (min-width: 1024px) { /* Larger screens */ .turn-layout-grid { grid-template-columns: 1fr 2fr 1fr; /* Example: Status | Main | GM/Scan */ } }
-        /* Style for individual grid items (the 'windows') */
-        .grid-item { /* LLM applies this class to generated divs */ display: flex; flex-direction: column; /* Ensure content flows top-down */ }
+        #submit-turn-button { background: linear-gradient(to right, var(--accent-secondary), #db2777); } #submit-turn-button:hover { background: linear-gradient(to right, #db2777, #be185d); }
+        #saveGameButton { background: linear-gradient(to right, #0ea5e9, #0284c7); } #saveGameButton:hover { background: linear-gradient(to right, #0284c7, #0369a1); }
+        #modeToggleButton { background: linear-gradient(to right, #10b981, #059669); min-width: 210px; } #modeToggleButton.red-alert-mode { background: linear-gradient(to right, #db2777, #be185d); } #modeToggleButton:hover { background: linear-gradient(to right, #059669, #047857); } #modeToggleButton.red-alert-mode:hover { background: linear-gradient(to right, #be185d, #9d174d); }
+        #resetGameButton { background: linear-gradient(to right, #f97316, #ea580c); } #resetGameButton:hover { background: linear-gradient(to right, #ea580c, #c2410c); }
 
     </style>
 </head>
 <body>
 
 <header class="site-header">
-    <img id="headerBanner" alt="Evil Sci-Fi Space Banner" class="header-banner-image">
-    <h1>Evil GM's Erotic Sci-Fi Fiasco</h1>
+    <img id="headerBanner" alt="Evil Sci-Fi Dynamic Banner" class="header-banner-image">
+    <h1>Evil GM's Dynamic Sci-Fi Fiasco</h1>
 </header>
 
-<div class="max-w-7xl mx-auto px-4 md:px-8">
-    <div id="apiKeySection">
-        <label for="apiKeyInput" class="api-key-label api-key-instructions">
-            Feed Your Google AI API Key to the Machine! 🤖🔥
-            <span class="block text-sm font-normal mt-1">
-                (Get one free at Google AI Studio:
-                <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
-                    aistudio.google.com/apikey
-                </a>)
-                <br>Or via URL: ?apiKey=YOUR_KEY_HERE
-            </span>
-        </label>
-        <input type="password" id="apiKeyInput" class="game-input" placeholder="Your soul... I mean, API key... goes here...">
-    </div>
-
-    <div id="game-container">
-        <div id="turn-content">
-            <div id="initial-message" class="text-center text-sky-400 p-6 font-semibold game-card">
-                The void awaits. Input your API Key and press "Initiate Sequence" to begin your... adventure.
-            </div>
-        </div>
-
-        <div id="loading" class="loading-indicator" style="display: none;">
-            <svg class="animate-spin -ml-1 mr-3 h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span id="loading-message">Calculating cosmic failure probabilities...</span>
-        </div>
-        <div id="error-display" class="error-message" style="display: none;"></div>
-
-        <div class="mt-8 text-center">
-            <button id="submit-turn-button" class="game-button" disabled>
-                <i class="lucide lucide-rocket"></i> Initiate Sequence
-            </button>
-        </div>
-    </div>
+<div class="mx-auto px-4 md:px-8"> <div id="apiKeySection">
+    <label for="apiKeyInput" class="api-key-label api-key-instructions">
+        Interface with the Core: Provide Google AI API Key! 🔑
+        <span class="block text-sm font-normal mt-1"> (Get one: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a>)</span>
+    </label>
+    <input type="password" id="apiKeyInput" class="game-input" placeholder="Authorization required...">
 </div>
 
-<footer class="site-footer">
+    <div id="game-layout-container">
+        <div id="initial-message" class="panel" style="grid-column: 1 / -1; text-align: center;"> <div class="panel-content" style="display: flex; align-items: center; justify-content: center; height: 100%;">
+            <p class="text-sky-400 font-semibold">Systems offline. Provide API Key and press "Initiate Sequence".</p>
+        </div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading-indicator" style="display: none;">
+        <svg class="animate-spin -ml-1 mr-3 h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <span id="loading-message">Reconfiguring reality matrix...</span>
+    </div>
+    <div id="error-display" class="error-message" style="display: none;"></div>
+
+</div> <footer class="site-footer">
     <div class="footer-buttons">
         <button id="saveGameButton" class="game-button" disabled><i class="lucide lucide-save"></i> Save Log</button>
         <button id="modeToggleButton" class="game-button standard-mode"><i class="lucide lucide-flame"></i> Mode: Standard Misery</button>
+        <button id="submit-turn-button" class="game-button" disabled>
+            <i class="lucide lucide-chevron-right-circle"></i> Submit Action
+        </button>
         <button id="resetGameButton" class="game-button" disabled><i class="lucide lucide-skull"></i> Self Destruct</button>
     </div>
     <div id="clipboardMessage"></div>
     <div class="footer-content">
-        <span>Your inevitable doom is sponsored by EvilDrGemini &copy; 3025</span>
+        <span>Your suffering fuels the simulation &copy; 3025</span>
     </div>
 </footer>
 
 <script type="module">
-    // --- Prompts for Evil GM Erotic Sci-Fi (Adapted from CosmicClimax) ---
-    const evilSciFiPrompts = {
-        // Addendum for more intense/GM-focused mode (Optional, can be integrated into main)
-        evilGmAddendum: `**EVIL GM OVERDRIVE MODE ACTIVE:**\n\n* **Focus Shift:** Amplify the Evil GM's presence and manipulative intent. Scenarios become more challenging, unfair, or psychologically probing. The GM's commentary (\`gm-commentary\` style) becomes more frequent, mocking, or misleading. Choices may have hidden negative consequences or lead to traps.\n* **Erotic Content:** Remains present but may be twisted by the GM's goals (e.g., temptation as a test, pleasure leading to a drawback, rivals interfering). Use player profile (\`internalState.playerProfile\`) to tailor temptations and manipulations.\n* **Visuals (HTML \`<img>\`):** Image prompts focus on darker aesthetics, unsettling juxtapositions, expressions of distress/fear/unearned confidence, or explicitly depict the GM's traps or influence. Still use Pollinations.ai format.\n* **UI Structure (HTML):** Ensure the \`.gm-window\` or similar section is prominent. GM commentary (\`.gm-commentary\`) should be common.\n* **Choices (HTML \`<form>\`):** Options might seem beneficial but have hidden costs. Include choices that test loyalty, morality (or lack thereof), or push the player towards risky/self-destructive paths, framed temptingly. Use varied UI (sliders for risk, toggles for commitment).\n* **Analysis:** \`internalState\` logs player's susceptibility to manipulation, poor choices, and reactions to GM's interference. \`gemini_facing_analysis\` focuses on the effectiveness of manipulation tactics and player weaknesses.\n`,
+    // --- NEW Prompts for Evil GM - Dynamic Layout JSON Output ---
+    // Ensured backticks within example strings are escaped `\\``
+    const evilSciFiPromptsDynamic = {
+        evilGmAddendum: `**EVIL GM OVERDRIVE MODE ACTIVE:**\n\n* **Focus Shift:** Amplify GM\\'s presence, manipulative intent. Scenarios become more challenging, unfair, psychologically probing. Layout commands may create distracting or stressful UI changes (e.g., flashing highlights, suddenly shrinking useful panels, opening deceptive ones).\n* **Erotic Content:** Twisted by GM\\'s goals (temptation as traps, pleasure with drawbacks).\n* **Layout Commands:** Use commands more aggressively (\`highlight\` for false alarms, \`resize\` to hinder, \`create\` temporary misleading panels).\n* **GM Commentary:** More frequent, mocking, misleading in the \`update_panel\` command for the GM panel.\n* **Choices:** Options might seem beneficial but have hidden costs. Test loyalty, morality.\n* **Analysis:** \`internalState\` logs susceptibility to manipulation/UI tricks. \`gemini_facing_analysis\` focuses on manipulation effectiveness.\n`,
 
-        // --- Turn 1: Establish Theme, Profile Player, Generate Initial UI Layout ---
-        firstrun: `**Instructions for Generating Turn 1 ONLY (Evil GM Erotic Sci-Fi - Full HTML UI for #turn-content):**\n\n**(Input: None. Output: Raw HTML snippet for the ENTIRE Turn 1 UI inside \`#turn-content\`)**\n\n* **Goal:** Generate the initial HTML UI. Introduce the Erotic Sci-Fi premise with an Evil GM flavor. Perform initial player profiling. Display initial Status and empty Crew/Inventory sections within the generated HTML layout.\n* **Theme:** Erotic Sci-Fi (Futurama/FTL influence), Comedic, run by an Evil, Manipulative Game Master (EvilDrGemini style). Start in 'Standard Misery' mode.\n* **Output Format:** Raw HTML content block for \`#turn-content\`.\n* **HTML Structure Requirements:**\n    * **Overall Layout:** Use a responsive layout (\`.turn-layout-grid\`) with \`.game-card\` containers. **Structure the HTML into distinct sections using divs with classes like \`.status-window\`, \`.narrative-window\`, \`.gm-window\`, etc.**\n    * **Use Tailwind & Custom Classes:** Employ provided CSS classes (\`.game-card\`, \`.game-button\`, \`.game-text\`, \`.status-item\`, \`.gm-commentary\`, etc.).\n    * **Sections to Generate (Within HTML):**\n        * **Status Display:** Generate HTML within a \`.status-window\` div to show initial status (e.g., Fuel: 70/100 ⛽, Hull Integrity: 90/100 💥, Crew Sanity: 60/100 😵‍💫, Spice Credits: 10 🌶️, GM Annoyance: 5/100 😈). Use creative labels, progress bars (\`.fuel-bar\`, \`.hull-bar\`, \`.gm-influence-bar\` classes available).\n        * **Crew Roster:** Generate HTML within a \`.crew-window\` div for the (empty) crew list. Indicate emptiness humorously/ominously.\n        * **Inventory/Cargo:** Generate HTML within an \`.inventory-window\` div for the (empty) inventory. Indicate emptiness.\n        * **Main Narrative Event:** Generate HTML within a \`.narrative-window\` div. Title ("Welcome, Plaything!") and description introducing the dilapidated ship, the situation, and a hint of the GM's presence/control.\n        * **GM Commentary:** Generate HTML within a \`.gm-window\` div. Include an initial mocking or manipulative comment from the GM (\`<p class="gm-commentary">...\`) regarding the player's predicament.\n        * **Images:** Generate 1-2 images using \`<img>\` tags (within \`.narrative-window\` or separate \`.image-window\`). **CRITICAL: Use Pollinations.ai URL format:** \`https://image.pollinations.ai/prompt/{PROMPT}?width=W&height=H&seed=S&nologo=true&safe=false\`. Generate relevant \`{PROMPT}\` (e.g., "grimy retro sci-fi spaceship bridge flickering red light worn-out chair", "viewscreen showing static and a mocking smiley face"), choose dimensions (e.g., 512x384), use random \`{SEED}\`. Include \`.game-image-prompt\`. Add \`onerror="this.src='https://placehold.co/{W}x{H}/1e293b/ef4444?text=Transmission+Lost'; this.alt='Error Loading Image'"\` to images.\n        * **Choices & Profiling:** Wrap choices in \`<form id="evil-scifi-form">\`. Include initial profiling (Species, Motivation/Vice, Orientation) using VARIED UI (segmented controls, checkboxes, sliders).\n        * **Initial Action:** Include a simple starting action choice (radio buttons).\n    * **Hidden Fields:** Include \`<input type='hidden' name='turn' value='1'>\`, \`<input type='hidden' name='subjectId' value='Meatbag'>\`, \`<input type='hidden' name='internalState' value='{initial_escaped_markdown_state}'>\`.\n    * **No Submit Button:** DO NOT include \`#submit-turn-button\`.\n* **Internal State (For Hidden Field):** Initial JSON-escaped Markdown. Include placeholders for profile, initial status, empty crew/inventory, GM state. Structure Example:\n\`\`\`markdown\n# GM Log - Cycle 1 - Turn 1\n\n* **Subject:** Meatbag (Initial)\n* **Mode:** Standard Misery\n* **Initial Status:** Fuel 70, Hull 90, CrewSanity 60, SpiceCredits 10, GmAnnoyance 5\n* **Player Profile:** { "species": "unspecified", "role": "Plaything", "orientation": "unspecified", "preferences": {}, "motivation": "unspecified" }\n* **Crew Roster:** []\n* **Inventory:** []\n* **Ship State:** Dilapidated, barely functional.\n* **GM State:** { "mood": "Amused", "currentExperiment": "Baseline Profiling", "manipulationTactic": "Initial Intimidation/Mockery" }\n* **Plan:** Initial profiling via direct questions and observation of first action.\n\`\`\`\n\n* **!-- UI Example Start (HTML for #turn-content - Turn 1) --!**\n\`\`\`html\n<div class=\"turn-layout-grid\">\n\n  <div class=\"grid-item status-window game-card\">\n    <h3><i class=\"lucide lucide-gauge\"></i> Ship Vitals (LOL)</h3>\n    <ul>\n      <li class=\"status-item\"><span class=\"status-label\">Fuel ⛽:</span> <span class=\"status-value\">70/100</span></li>\n      <li><progress value='70' max='100' class='fuel-bar'></progress></li>\n      <li class=\"status-item\"><span class=\"status-label\">Hull Integrity 💥:</span> <span class=\"status-value\">90/100</span></li>\n      <li><progress value='90' max='100' class='hull-bar'></progress></li>\n      <li class=\"status-item\"><span class=\"status-label\">Crew Sanity 😵‍💫:</span> <span class=\"status-value\">60/100</span></li>\n      <li><progress value='60' max='100'></progress></li>\n      <li class=\"status-item\"><span class=\"status-label\">GM Annoyance 😈:</span> <span class=\"status-value\">5/100</span></li>\n      <li><progress value='5' max='100' class='gm-influence-bar'></progress></li>\n      <li class=\"status-item\"><span class=\"status-label\">Spice Credits 🌶️:</span> <span class=\"status-value\">10</span></li>\n    </ul>\n     <p class='text-xs italic text-slate-400 mt-2'>Don't get your hopes up.</p>\n  </div>\n\n  <div class=\"grid-item narrative-window game-card\">\n    <h2><i class=\"lucide lucide-alert-triangle\"></i> Welcome, Plaything!</h2>\n    <p class=\"game-text\">Ugh, consciousness returns. You're strapped into the command chair of the 'S.S. Questionable Ethics'. Sparks occasionally drip from the ceiling. The main viewscreen shows mostly static, occasionally resolving into... is that a crudely drawn winking face? This rust bucket won't fly itself. Probably.</p>\n    <div class=\"game-image-container my-4\">\n      <img src='https://image.pollinations.ai/prompt/grimy%20retro%20sci-fi%20spaceship%20bridge%20flickering%20red%20light%20sparks%20dripping%20worn-out%20chair%20static%20on%20viewscreen?width=512&height=384&seed=101&nologo=true&safe=false' alt='Dilapidated Bridge' class='game-image' onerror="this.src='https://placehold.co/512x384/1e293b/ef4444?text=Transmission+Lost'; this.alt='Error Loading Image'">\n      <div class='game-image-prompt'>grimy retro sci-fi spaceship bridge flickering red light sparks dripping worn-out chair static on viewscreen</div>\n    </div>\n\n    <form id=\"evil-scifi-form\">\n      <input type='hidden' name='turn' value='1'>\n      <input type='hidden' name='subjectId' value='Meatbag'>\n      <input type='hidden' name='internalState' value='{initial_escaped_markdown_state}'>\n\n      <h3>--- Systems Demand Input ---</h3>\n      <p class='game-text mb-3'>The flickering console demands identification. Try not to lie *too* much.</p>\n\n      <label class='font-semibold text-sky-400 mb-2 block'>Species Designation:</label>\n      <div class=\"game-segmented-control mb-4\">\n        <input type=\"radio\" id=\"species_human\" name=\"profile_species\" value=\"Human\" checked><label for=\"species_human\">Boring Human</label>\n        <input type=\"radio\" id=\"species_cyborg\" name=\"profile_species\" value=\"Cyborg\"><label for=\"species_cyborg\">Clanky Cyborg</label>\n        <input type=\"radio\" id=\"species_alien\" name=\"profile_species\" value=\"Alien\"><label for=\"species_alien\">Weird Alien</label>\n        <input type=\"radio\" id=\"species_other\" name=\"profile_species\" value=\"Other\"><label for=\"species_other\">...Something Else</label>\n      </div>\n\n      <label class='font-semibold text-sky-400 mb-2 block'>Primary Motivation / Vice:</label>\n      <div class='grid grid-cols-2 gap-2 mb-4'>\n          <label class=\"game-checkbox-option\"><input type=\"checkbox\" name=\"profile_motivation\" value=\"pleasure\"> Raw Pleasure</label>\n          <label class=\"game-checkbox-option\"><input type=\"checkbox\" name=\"profile_motivation\" value=\"credits\"> Filthy Credits</label>\n          <label class=\"game-checkbox-option\"><input type=\"checkbox\" name=\"profile_motivation\" value=\"power\"> Petty Power</label>\n          <label class=\"game-checkbox-option\"><input type=\"checkbox\" name=\"profile_motivation\" value=\"survival\"> Just Surviving</label>\n      </div>\n\n      <div class=\"game-toggle-switch mb-4\">\n          <label class=\"flex items-center cursor-pointer\">\n              <input type=\"checkbox\" name=\"profile_preferences_accepts_gm_shenanigans\" value=\"true\" class=\"sr-only peer\">\n              <div class=\"switch-bg peer-checked:bg-pink-500\"><div class=\"switch-handle peer-checked:translate-x-full\"></div></div>\n              <span class=\"ml-3 text-sky-300 font-medium\">Accept GM Shenanigans?</span>\n          </label>\n      </div>\n\n      <h3 class='mt-5'>--- First Brilliant Move? ---</h3>\n      <div class=\"game-radio-option\">\n        <input type=\"radio\" id=\"action_kick\" name=\"initial_action\" value=\"kick_console\" checked>\n        <label for=\"action_kick\">Kick the smoking console</label>\n      </div>\n      <div class=\"game-radio-option\">\n        <input type=\"radio\" id=\"action_scan\" name=\"initial_action\" value=\"scan_surroundings\">\n        <label for=\"action_scan\">Scan for escape pods (or snacks)</label>\n      </div>\n      <div class=\"game-radio-option\">\n        <input type=\"radio\" id=\"action_nap\" name=\"initial_action\" value=\"take_nap\">\n        <label for=\"action_nap\">Go back to sleep. It was probably a dream.</label>\n      </div>\n    </form>\n  </div>\n\n  <div class=\"grid-item game-card gm-window\">\n    <h3><i class=\"lucide lucide-brain-circuit\"></i> GM's Private Log</h3>\n    <p class=\"gm-commentary\">Subject designation: 'Meatbag'. Initial vital signs... surprisingly adequate. Let's see how quickly we can change that. Baseline profiling initiated. Commence Operation: Mildly Amusing Torment.</p>\n    <div class=\"game-card mt-4 inventory-window\" style=\"background-color: rgba(15, 23, 42, 0.8);\">\n        <h4><i class=\"lucide lucide-box\"></i> Cargo Bay</h4>\n        <ul><li>Inventory seems... empty. Shocking.</li></ul>\n    </div>\n     <div class=\"game-card mt-4 crew-window\" style=\"background-color: rgba(15, 23, 42, 0.8);\">\n        <h4><i class=\"lucide lucide-users\"></i> Crew Manifest</h4>\n        <ul><li>Just you, Meatbag. For now.</li></ul>\n    </div>\n  </div>\n\n</div>\n<script>\n  // Basic interactivity script for toggles if needed\n<\/script>\n\`\`\`\n* **!-- UI Example End --!**\n`,
+        firstrun: `**Instructions for Generating Turn 1 JSON ONLY (Evil GM Dynamic Layout):**\n\n**(Input: None. Output: JSON object for Turn 1 UI state)**\n\n* **Goal:** Generate initial JSON state. Introduce Erotic Sci-Fi premise + Evil GM. Perform initial profiling. Define initial panel layout using \`layoutCommands\`.\n* **Theme:** Erotic Sci-Fi (Futurama/FTL influence), Comedic, run by Evil/Manipulative GM.\n* **Output Format:** JSON object: \`{ turnNumber: 1, narrativeContent: [], layoutCommands: [], internalStateUpdate: "..." }\`\n* **JSON Structure Requirements:**\n    * **\`turnNumber\`: 1**\n    * **\`narrativeContent\`: []** (Empty for T1, interaction happens via profiling in dedicated panels initially).\n    * **\`layoutCommands\`: [ ... ]** - Array of commands to create the *initial* UI panels:\n        * Command Format: \`{ action: 'create', panelId: 'uniquePanelId', config: { title: 'Panel Title', icon: 'lucide-icon-name', initialClass: 'panel-medium panel-status-window', // Example size/style class\n          content: [ { type: 'text', value: 'Initial content...' } ] // Array of UI elements for panel\\'s initial content (text, progress, etc.)\n          /* Optional: positionHint: 'left'/'center'/'right' - for basic grid placement guidance */\n        } }\`\n        * **Required Initial Panels (Create via commands):**\n            * **Status Panel (\`panelId: 'statusPanel'\`):** Display initial stats (Fuel, Hull, Sanity, Credits, GM Annoyance) using \`text\` or custom \`progress\` elements within \`config.content\`.\n            * **GM Panel (\`panelId: 'gmPanel'\`):** Include initial mocking GM commentary using \`text\` with \`className: 'gm-commentary'\` in \`config.content\`.\n            * **Profiling Panel (\`panelId: 'profilePanel'\`):** Include initial profiling questions (Species, Motivation/Vice, Orientation) using \`radio\`, \`checkbox\`, \`slider\` elements within \`config.content\`. **CRITICAL: Also include the 'initial_action' radio group here for Turn 1.**\n            * **Crew Panel (\`panelId: 'crewPanel'\`):** Show empty state.\n            * **Inventory Panel (\`panelId: 'inventoryPanel'\`):** Show empty state.\n    * **\`internalStateUpdate\`: "..."** - Initial JSON-escaped Markdown state (Subject ID "Meatbag", initial status, empty profile/crew/inventory, GM state, Plan: initial profiling).\n\n* **Example Output Snippet (Illustrative - Backticks Escaped):**\n\`\`\`json\n{\n  "turnNumber": 1,\n  "narrativeContent": [],\n  "layoutCommands": [\n    { "action": "create", "panelId": "statusPanel", "config": { "title": "Ship Vitals (LOL)", "icon": "gauge", "initialClass": "panel-medium status-window", "content": [ { "type": "progress", "label": "Fuel \\u26FD\uFE0F", "value": 70, "max": 100, "className": "fuel-bar" }, { "type": "progress", "label": "Hull \\uD83D\\uDCA5", "value": 90, "max": 100, "className": "hull-bar" }, { "type": "progress", "label": "Sanity \\uD83D\\uDE35\\u200D\\uD83D\\uDCAB", "value": 60, "max": 100 }, { "type": "progress", "label": "GM Annoyance \\uD83D\\uDE08", "value": 5, "max": 100, "className": "gm-influence-bar" }, { "type": "text", "label": "Spice Credits \\uD83C\\uDF36\uFE0F", "value": "10" } ] } },\n    { "action": "create", "panelId": "gmPanel", "config": { "title": "GM\\'s Private Log", "icon": "brain-circuit", "initialClass": "panel-medium gm-window", "content": [ { "type": "text", "className": "gm-commentary", "value": "Subject \\'Meatbag\\' online. Initializing amusement protocols..." } ] } },\n    { "action": "create", "panelId": "profilePanel", "config": { "title": "Identify Yourself, Meatbag!", "icon": "scan-face", "initialClass": "panel-large", "content": [ { "type": "text", "value": "The flickering console demands identification. Try not to lie *too* much.", "className": "game-text mb-3" }, { "type": "radio", "name": "profile_species", "label": "Species Designation:", "options": ["Boring Human*", "Clanky Cyborg", "Weird Alien", "...Something Else"] }, { "type": "checkbox", "name": "profile_motivation", "label": "Primary Motivation / Vice:", "options": ["Raw Pleasure", "Filthy Credits", "Petty Power", "Just Surviving"] }, { "type": "checkbox", "name": "profile_preferences_accepts_gm_shenanigans", "label": "Accept GM Shenanigans?" }, { "type": "radio", "name": "initial_action", "label": "First Brilliant Move?", "options": ["Kick the smoking console*", "Scan for escape pods (or snacks)", "Go back to sleep. It was probably a dream."] } ] } },\n    { "action": "create", "panelId": "crewPanel", "config": { "title": "Crew Manifest", "icon": "users", "initialClass": "panel-small crew-window", "content": [ { "type": "text", "value": "Just you. For now." } ] } },\n    { "action": "create", "panelId": "inventoryPanel", "config": { "title": "Cargo Hold", "icon": "box", "initialClass": "panel-small inventory-window", "content": [ { "type": "text", "value": "Empty. Predictable." } ] } }\n  ],\n  "internalStateUpdate": "# GM Log - Cycle 1 - Turn 1\\n\\n* Subject: Meatbag (Initial)\\n* Mode: Standard Misery\\n* Initial Status: Fuel 70, Hull 90, CrewSanity 60, SpiceCredits 10, GmAnnoyance 5\\n* Player Profile: { \\"species\\": \\"unspecified\\", \\"role\\": \\"Plaything\\", \\"orientation\\": \\"unspecified\\", \\"preferences\\": {}, \\"motivation\\": \\"unspecified\\" }\\n* Crew Roster: []\\n* Inventory: []\\n* Ship State: Dilapidated\\n* GM State: { mood: Amused, currentExperiment: Baseline Profiling, manipulationTactic: Initial Intimidation/Mockery }\\n* Plan: Initial profiling..."\n}\n\`\`\`\n`,
 
-        // --- Main Prompt: Generate Full UI, Divided into Sections ---
-        main: `**Evil GM Erotic Sci-Fi LLM Turn Generation Protocol v1.0 - Full UI Generation**\n\n**(Input: Player Actions JSON, Previous Internal State Markdown (incl. Player Profile, GM State, etc.), Current Mode (standard_misery/evil_overdrive), Current Client GameState (for display reference: profile, status, crew, inventory). Output: Raw HTML snippet for the ENTIRE next turn UI in \`#turn-content\`.)**\n\n**Context:** Client provides current \`gameState\` (profile, status numbers, crew array, inventory array) for display reference. Your memory is the \`internalState\` Markdown log. You MUST generate the COMPLETE HTML UI for the \`#turn-content\` div each turn, structuring it into distinct sections/windows.\n\n**Core Goals:**\n1.  **Generate Full Turn UI (HTML - Structured):** Generate COMPLETE HTML for \`#turn-content\`. This MUST include creatively displayed sections for **current** Status, Crew, Inventory (using client \`gameState\` for data), Narrative Event, GM Commentary, and potentially Scan Results or other dynamic panes. Use a responsive layout (\`.turn-layout-grid\`) and structure content within divs using relevant classes (\`.status-window\`, \`.narrative-window\`, \`.gm-window\`, \`.crew-window\`, etc.).\n2.  **Thematic Immersion (HTML):** Generate narrative, multiple visuals (\`<img>\`), choices (\`<form>\`) reflecting the Erotic Sci-Fi + Evil GM theme. Adapt intensity/unfairness based on mode (\`evilGmAddendum\` if active). Reference player profile, crew, inventory, GM mood. Use mocking, tempting, suggestive, or humorous tone.\n3.  **Dynamic State & GM Logging (Internal State Markdown):** Calculate status changes (fuel, hull, sanity, credits, GM annoyance). Update relationships, narrative progress, ship state, GM mood/plans *in Markdown*. Update crew/inventory lists in Markdown. Increment turn. Log player's choices, inferred weaknesses, responses to manipulation. **CRITICAL:** Return updated, escaped Markdown in \`<input type='hidden' name='internalState' value='...'>\`.\n4.  **Creative & Manipulative UI (HTML):** Generate varied HTML form elements (\`radio\`, \`range\`, \`checkbox\`, \`textarea\`, \`toggle\`, \`segmented\`) within \`<form id='evil-scifi-form'>\`. Make UI relevant but potentially misleading or tempting towards bad outcomes.\n\n**--- Protocol ---**\n\n1.  **Analyze Input:** Parse actions JSON, previous \`internalState\` Markdown, current mode, client \`gameState\`.\n2.  **Update GM Log & Plan:** Modify status/resources. Update relationships/narrative/GM state *in Markdown*. Increment turn. Plan next event/manipulation based on player profile/actions/GM goals. Log plans.\n3.  **Generate Next Turn HTML (for ALL of \`#turn-content\`):**\n    * **Overall Layout:** Use \`.turn-layout-grid\`.\n    * **Generate Windows (Divs with Classes):** Structure the HTML into distinct \`div\` elements with appropriate classes (\`.game-card\`, \`.status-window\`, \`.narrative-window\`, \`.gm-window\`, \`.crew-window\`, etc.).\n    * **Status Display (HTML):** Inside \`.status-window\`, show **updated** status based on calculations (start from client \`gameState\`). Use creative labels, icons, progress bars (\`<h3><i class='lucide ...'></i> Title</h3>\`).\n    * **Crew Roster Display (HTML):** Inside \`.crew-window\`, show **current** crew from \`gameState.crew\`. List names, roles, status/mood hints.\n    * **Inventory Display (HTML):** Inside \`.inventory-window\` (or combined), show **current** items from \`gameState.inventory\`.\n    * **Main Narrative Window:** Inside \`.narrative-window\`:\n        * **Event Description:** Title (\`<h2>\`) and narrative (\`<p class="game-text">\`), tailored to profile, actions, mode, GM plans.\n        * **Images:** Embed 2-4 relevant images (\`<img>\`) using **Pollinations.ai format** (\`.../prompt/{PROMPT}?width=W&height=H&seed=S&nologo=true&safe=false\`). Generate \`{PROMPT}\` fitting the scene (sci-fi, erotic, failure, GM influence). Use varied dimensions. Use random seed. Include \`.game-image-prompt\`. Add \`onerror\` handling.\n        * **Choices Form:** Create \`<form id="evil-scifi-form\">\`. Use VARIED & CREATIVE UI elements. Choices reflect narrative, GM manipulation, potential erotic encounters, or resource risks.\n        * **Hidden Fields:** Include updated \`<input type='hidden' name='turn' ...>\`, \`<input type='hidden' name='subjectId' ...>\`, \`<input type='hidden' name='internalState' value='{UPDATED_escaped_markdown_state}'>\`.\n    * **GM Commentary Window:** Inside \`.gm-window\`, include mocking/manipulative GM commentary (\`<p class="gm-commentary">...\`).\n    * **Other Windows (Optional):** Generate HTML for \`.scan-window\`, \`.comms-window\`, etc., as needed by the narrative plan.\n    * **NO Submit Button:** Do NOT include \`#submit-turn-button\`.\n4.  **Escape & Compile Output:** Ensure valid HTML. Return raw HTML snippet for \`#turn-content\`.\n\n**--- Input Example (Post-Profiling) ---**\n\`\`\`json\n{ ... actions, internalState, mode, clientGameState ... }\n\`\`\`\n\n**--- Output Example (HTML for #turn-content - Turn 2 - Console Kick Aftermath) ---**\n\`\`\`html\n<div class=\"turn-layout-grid\">\n\n  <div class=\"grid-item status-window game-card\">\n    <h3><i class=\"lucide lucide-activity\"></i> Vital Signs Declining</h3>\n    <ul>\n      <li class=\"status-item\"><span class=\"status-label\">Fuel ⛽:</span> <span class=\"status-value\">68/100</span></li>\n      <li><progress value='68' max='100' class='fuel-bar'></progress></li>\n      <li class=\"status-item\"><span class=\"status-label\">Hull 💥:</span> <span class=\"status-value\">85/100</span></li>\n      <li><progress value='85' max='100' class='hull-bar'></progress></li>\n      <li class=\"status-item\"><span class=\"status-label\">Sanity 😵‍💫:</span> <span class=\"status-value\">55/100</span></li>\n      <li><progress value='55' max='100'></progress></li>\n      <li class=\"status-item\"><span class=\"status-label\">GM Annoyance 😈:</span> <span class=\"status-value\">15/100</span></li>\n      <li><progress value='15' max='100' class='gm-influence-bar'></progress></li>\n      <li class=\"status-item\"><span class=\"status-label\">Spice Credits 🌶️:</span> <span class=\"status-value\">10</span></li>\n    </ul>\n    <p class='text-xs italic text-red-400 mt-2'>Violence solves nothing... usually.</p>\n  </div>\n\n  <div class=\"grid-item narrative-window game-card\">\n    <h2><i class=\"lucide lucide-zap\"></i> Percussive Maintenance Results</h2>\n    <p class=\"game-text\">Your well-aimed kick connects with the console! It emits a shower of angry red sparks and a noise like a dying space-badger. The static on the viewscreen clears momentarily, revealing a blurry image of... tentacles? Before you can process, it cuts to a screen demanding 'Emergency Lubricant Application'. Interesting.</p>\n    <div class=\"game-image-gallery\">\n        <div class=\"game-image-container\">\n            <img src='https://image.pollinations.ai/prompt/sci-fi%20console%20exploding%20with%20red%20sparks%20after%20being%20kicked%20dark%20spaceship%20bridge?width=300&height=400&seed=202&nologo=true&safe=false' alt='Exploding Console' class='game-image' onerror="this.src='https://placehold.co/300x400/1e293b/ef4444?text=Sparks!'; this.alt='Error Loading Image'">\n            <div class='game-image-prompt'>sci-fi console exploding with red sparks</div>\n        </div>\n        <div class=\"game-image-container\">\n             <img src='https://image.pollinations.ai/prompt/blurry%20viewscreen%20showing%20pink%20tentacles%20waving%20suggestively%20sci-fi%20erotic%20hint?width=300&height=400&seed=203&nologo=true&safe=false' alt='Tentacles on Screen' class='game-image' onerror="this.src='https://placehold.co/300x400/1e293b/f472b6?text=Tentacles?'; this.alt='Error Loading Image'">\n            <div class='game-image-prompt'>blurry viewscreen showing pink tentacles</div>\n        </div>\n    </div>\n\n    <form id=\"evil-scifi-form\">\n      <input type='hidden' name='turn' value='2'>\n      <input type='hidden' name='subjectId' value='Sparky'>\n      <input type='hidden' name='internalState' value='{updated state markdown... Hull -5, Sanity -5, GM Annoyance +10... New Subject ID: Sparky...}'>\n\n      <h3 class='mt-4'>--- Lubrication Duty ---</h3>\n      <p class='game-text mb-3'>The screen flashes: "Warning: Primary coupling requires immediate manual lubrication. Select application method."</p>\n\n      <label class='font-semibold text-pink-400 mb-2 block'>Lubricant Application Technique:</label>\n      <div class=\"game-segmented-control mb-4\">\n        <input type=\"radio\" id=\"lube_gentle\" name=\"lube_method\" value=\"gentle\" checked><label for=\"lube_gentle\">Gentle & Thorough</label>\n        <input type=\"radio\" id=\"lube_vigorous\" name=\"lube_method\" value=\"vigorous\"><label for=\"lube_vigorous\">Vigorous & Fast</label>\n        <input type=\"radio\" id=\"lube_creative\" name=\"lube_method\" value=\"creative\"><label for=\"lube_creative\">...Creative</label>\n      </div>\n\n      <div class=\"game-slider-container\">\n          <div class=\"game-slider-label\">\n              <span>Application Pressure: Delicate</span>\n              <span class=\"game-slider-value-display\" id=\"pressure-value\">5</span>\n              <span>Maximum Force</span>\n          </div>\n          <input type=\"range\" id=\"lube_pressure\" name=\"lube_pressure\" min=\"0\" max=\"10\" value=\"5\" class=\"game-slider\" oninput=\"document.getElementById('pressure-value').textContent = this.value\">\n      </div>\n\n      <label class='game-checkbox-option mt-4'>\n        <input type='checkbox' name='distraction_tentacles' value='true'> Try to get a clearer view of those tentacles while 'working'.\n      </label>\n\n    </form>\n  </div>\n\n  <div class=\"grid-item game-card gm-window\">\n    <h3><i class=\"lucide lucide-activity\"></i> GM Musings</h3>\n    <p class=\"gm-commentary\">Subject 'Sparky' resorts to violence already? Predictable. Damage assessment: Minimal hull impact, moderate increase in GM Annoyance. Opportunity created: 'Lubrication'. Observe technique and distraction level. Tentacle hint deployed - monitoring response for specific paraphilic indicators. This could get interesting.</p>\n    \n     <div class=\"game-card crew-window mt-4\" style=\"background-color: rgba(15, 23, 42, 0.8);\">\n        <h4><i class=\"lucide lucide-users\"></i> Crew Manifest</h4>\n        <ul><li>Still just you, Sparky.</li></ul>\n    </div>\n  </div>\n\n</div>\n<script>\n // Slider value display script\n document.querySelectorAll('#evil-scifi-form .game-slider').forEach(slider => {\n    const display = slider.closest('div').querySelector('.game-slider-value-display');\n    if (display) { \n       display.textContent = slider.value; // Initial display\n       slider.oninput = () => display.textContent = slider.value;\n    }\n  });\n<\/script>\n\`\`\`\n* **!-- UI Example End --!**\n`
+        main: `**Evil GM Dynamic Layout LLM Turn Generation Protocol v2.0 - JSON Output**\n\n**(Input: Player Actions JSON, Previous Internal State Markdown (incl. Player Profile, GM State, etc.), Current Mode (standard_misery/evil_overdrive), Current Client GameState (for display reference: profile, status, crew, inventory). Output: JSON object for next turn UI state and commands.)**\n\n**Context:** Client provides \`gameState\` for display reference. Your memory is \`internalState\` Markdown. You MUST generate a JSON object containing \`turnNumber\`, \`narrativeContent\`, \`layoutCommands\`, and \`internalStateUpdate\`.\n\n**Core Goals:**\n1.  **Generate Turn State (JSON):** Output valid JSON describing the turn\\'s primary interactions AND layout changes.\n2.  **Direct Layout Changes (JSON \`layoutCommands\`):** Use the \`layoutCommands\` array to explicitly instruct the client on creating, updating, closing, resizing, or highlighting UI panels (\`div\` elements managed by client JS). Panel changes should reflect narrative events (e.g., create panel for comms message, highlight status on damage, close temporary event panel).\n3.  **Thematic Immersion (JSON \`narrativeContent\` & Panel Content):** Generate narrative, visuals (image prompts), choices for the main interaction panel (\`narrativeContent\`). Generate content for *other* panels specified in \`layoutCommands\` (\`update\` or \`create\`). Content reflects Erotic Sci-Fi + Evil GM theme, mode, player profile, GM mood.\n4.  **Dynamic State & GM Logging (JSON \`internalStateUpdate\`):** Calculate state changes (fuel, hull, sanity, credits, GM annoyance). Update relationships, narrative progress, GM state *in Markdown*. Log player choices/weaknesses. Return updated Markdown in \`internalStateUpdate\`.\n5.  **Creative & Manipulative UI (JSON Elements):** Use varied UI element types (\`text\`, \`image\`, \`radio\`, \`checkbox\`, \`slider\`, \`textfield\`) within \`narrativeContent\` and panel content. Choices can be misleading/risky.\n\n**--- Protocol ---**\n\n1.  **Analyze Input:** Parse actions JSON, \`internalState\` Markdown, current mode, client \`gameState\`.\n2.  **Update GM Log & Plan:** Update status/relationships/GM state *in Markdown*. Increment turn. Plan next event, manipulations, and **required layout changes** (which panels to create/update/close/resize/highlight). Log plans in Markdown.\n3.  **Generate Turn JSON Output:** Create the JSON object:\n    * **\`turnNumber\`:** New turn number.\n    * **\`narrativeContent\`:** Array of UI element objects (\`{ type: 'text', value: '...', name: '...' }\`, \`{ type: 'image', value: 'prompt...' }\`, \`{ type: 'radio', name: 'main_action', ... }\`) for the primary interaction panel (e.g., 'mainInteractionPanel' or another specified panel ID).\n    * **\`layoutCommands\`:** Array of command objects based on the plan:\n        * \`{ action: 'create', panelId: 'newPanelId', config: { title: '...', icon: '...', initialClass: '...', content: [ { type: 'text', ... } ] } }\`\n        * \`{ action: 'update', panelId: 'existingPanelId', config: { content: [ { type: 'text', ... } ] /* Optional: newTitle, newIcon */ } }\`\n        * \`{ action: 'close', panelId: 'panelToCloseId', config: { delayMs: 5000 /* Optional */ } }\`\n        * \`{ action: 'resize', panelId: 'panelToResizeId', config: { newClass: 'panel-large' } }\`\n        * \`{ action: 'highlight', panelId: 'panelToHighlightId', config: { durationMs: 3000 /* Optional */ } }\`\n    * **\`internalStateUpdate\`:** String containing the full, updated, JSON-escaped Markdown log.\n\n**--- Input Example (Post-Profiling) ---**\n\`\`\`json\n{ /* ... actions, internalState, mode, clientGameState ... */ }\n\`\`\`\n\n**--- Output Example (JSON for Turn 2 - Console Kick Aftermath - Backticks Escaped) ---**\n\`\`\`json\n{\n  "turnNumber": 2,\n  "narrativeContent": [\n    { "type": "text", "name": "narrative_t2", "value": "Your well-aimed kick connects! The console showers you in angry red sparks and makes a noise like a dying space-badger. The main viewscreen flickers, showing blurry tentacles? before demanding \\'Emergency Lubricant Application\\'." },\n    { "type": "image", "name": "image_sparks_t2", "value": "sci-fi console exploding with red sparks after being kicked dark spaceship bridge", "label": "Console\\'s Reaction" },\n    { "type": "image", "name": "image_tentacles_t2", "value": "blurry viewscreen showing pink tentacles waving suggestively sci-fi erotic hint", "label": "Brief Glimpse?" },\n    { "type": "text", "name": "lube_prompt_t2", "value": "The screen flashes: \\"Warning: Primary coupling requires immediate manual lubrication. Select application method.\\"", "className": "font-semibold text-pink-400 mt-4 mb-2 block" },\n    { "type": "radio", "name": "lube_method", "label": "Lubricant Application Technique:", "options": ["Gentle & Thorough*", "Vigorous & Fast", "...Creative" ] },\n    { "type": "slider", "name": "lube_pressure", "label": "Application Pressure (0=Delicate, 10=Max Force)", "min": 0, "max": 10, "value": 5 },\n    { "type": "checkbox", "name": "distraction_tentacles", "label": "Try to get a clearer view of those tentacles while \\'working\\'." }\n  ],\n  "layoutCommands": [\n    { "action": "update", "panelId": "statusPanel", "config": { "content": [\n        { "type": "progress", "label": "Fuel \\u26FD\uFE0F", "value": 68, "max": 100, "className": "fuel-bar" },\n        { "type": "progress", "label": "Hull \\uD83D\\uDCA5", "value": 85, "max": 100, "className": "hull-bar" },\n        { "type": "progress", "label": "Sanity \\uD83D\\uDE35\\u200D\\uD83D\\uDCAB", "value": 55, "max": 100 },\n        { "type": "progress", "label": "GM Annoyance \\uD83D\\uDE08", "value": 15, "max": 100, "className": "gm-influence-bar" },\n        { "type": "text", "label": "Spice Credits \\uD83C\\uDF36\uFE0F", "value": "10" }\n    ] } },\n    { "action": "update", "panelId": "gmPanel", "config": { "content": [\n        { "type": "text", "className": "gm-commentary", "value": "Subject \\'Sparky\\' resorts to violence. Predictable. Hull integrity decreased. Annoyance increased. Created \\'Lubrication\\' scenario. Monitoring technique and tentacle fixation..." }\n    ] } },\n    { "action": "highlight", "panelId": "statusPanel", "config": { "durationMs": 2000 } }\n  ],\n  "internalStateUpdate": "# GM Log - Cycle 2 - Turn 2\\n\\n* Subject: Sparky\\n* Mode: Standard Misery\\n* Status Update: Fuel 68, Hull 85 (-5 kick), CrewSanity 55 (-5 stress), SpiceCredits 10, GmAnnoyance 15 (+10 kick)\\n* Player Profile: { ... }\\n* Crew Roster: []\\n* Inventory: []\\n* Ship State: Console sparking, demands lubrication.\\n* GM State: { mood: Intrigued, ... }\\n* Player Action: kick_console\\n* Observations: Violence. Hull damaged. Potential tentacle interest.\\n* Plan: Monitor lubrication choice. Escalate based on result...\\n"\n}\n\`\`\`\n`
     };
 
     // --- Game State Object ---
     let gameState = {
-        apiKey: null,
-        encodedApiKey: null,
-        turn: 0,
-        mode: 'standard_misery', // 'standard_misery' or 'evil_overdrive'
-        profile: {
-            species: "unspecified",
-            role: "Plaything", // Default role
-            orientation: "unspecified",
-            preferences: {},
-            motivation: "unspecified"
-        },
-        status: { // Example Stats
-            fuel: 70,
-            hull: 90,
-            crewSanity: 60, // Overall sanity/mood
-            spiceCredits: 10,
-            gmAnnoyance: 5 // GM specific stat
-        },
-        crew: [],
-        inventory: [],
-        currentSubjectId: "Meatbag", // Initial mocking name
-        currentInternalStateMarkdown: "", // AI's running log
-        currentModelIndex: 0,
-        isLoading: false,
-        isLocked: false
+        apiKey: null, encodedApiKey: null, turn: 0, mode: 'standard_misery',
+        profile: { species: "unspecified", role: "Plaything", orientation: "unspecified", preferences: {}, motivation: "unspecified" },
+        status: { fuel: 70, hull: 90, crewSanity: 60, spiceCredits: 10, gmAnnoyance: 5 },
+        crew: [], inventory: [], currentSubjectId: "Meatbag",
+        currentInternalStateMarkdown: "", currentModelIndex: 0, isLoading: false, isLocked: false
     };
+    let activePanels = new Map(); // Map<panelId, { element: HTMLElement, config: object } >
 
     // --- Model Switching State ---
     const AVAILABLE_MODELS = ["gemini-2.5-pro-exp-03-25", "gemini-1.5-pro", "gemini-2.0-pro-exp-02-05", "gemini-2.0-flash-exp", "gemini-exp-1206"];
 
     // --- Configuration ---
-    const LOCAL_STORAGE_KEY = 'evilGMSciFiState_v1_fullUI'; // New key
+    const LOCAL_STORAGE_KEY = 'evilGMDynamicLayoutState_v2_json_escaped'; // Updated key
+    const PANEL_CLOSE_DELAY = 500; // ms for close animation
+    const mainInteractionPanelId = 'mainInteractionPanel'; // Default ID for main narrative/choices
 
     // --- DOM Element References ---
-    const turnContentContainer = document.getElementById('turn-content');
+    const gameLayoutContainer = document.getElementById('game-layout-container');
     const loadingIndicator = document.getElementById('loading');
     const loadingMessage = document.getElementById('loading-message');
     const submitButton = document.getElementById('submit-turn-button');
@@ -288,45 +252,34 @@
     const resetGameButton = document.getElementById('resetGameButton');
     const clipboardMessage = document.getElementById('clipboardMessage');
     const headerBanner = document.getElementById('headerBanner');
-    const gameContainer = document.getElementById('game-container');
 
     // --- Web Audio API Context ---
     let audioCtx = null;
 
     // --- Helper Functions ---
-    function encodeApiKey(key) { try { return btoa(key); } catch (e) { console.error("Error encoding API key:", e); return ""; } }
-    function decodeApiKey(encodedKey) { try { return atob(encodedKey); } catch (e) { console.error("Error decoding API key:", e); return null; } }
+    function encodeApiKey(key) { try{return btoa(key);}catch(e){console.error("Encoding error:", e); return""} }
+    function decodeApiKey(encodedKey) { try{return atob(encodedKey);}catch(e){console.error("Decoding error:", e); return null} }
 
     // --- Prompt Construction ---
     function constructPrompt(playerActionsJson) {
-        const baseMainPrompt = evilSciFiPrompts.main;
-        // Using mode from gameState
-        const activeAddendum = gameState.mode === 'evil_overdrive' ? `\n\n---\n${evilSciFiPrompts.evilGmAddendum}\n---\n` : "";
+        const prompts = evilSciFiPromptsDynamic; // Use the new prompts object
+        const baseMainPrompt = prompts.main;
+        const activeAddendum = gameState.mode === 'evil_overdrive' ? `\n\n---\n${prompts.evilGmAddendum}\n---\n` : "";
 
-        if (gameState.turn === 0) { // First run
-            console.log("Constructing prompt for Turn 1 (Evil GM - FULL HTML UI)");
-            const s = `${evilSciFiPrompts.firstrun}\n\n---\nClient Context: AI generates ENTIRE HTML UI for #turn-content, structured into windows (.status-window, .narrative-window, .gm-window, etc.). Client renders this HTML.\n---\n\n--- Generate RAW HTML UI for Turn 1 (#turn-content) ---`;
-            return s;
-        } else { // Subsequent Turns
-            console.log(`Constructing prompt for Turn ${gameState.turn + 1} (Evil GM)`);
-            // Clone relevant parts of gameState for display context
-            const clientStateContext = {
-                profile: { ...gameState.profile },
-                status: { ...gameState.status },
-                crew: JSON.parse(JSON.stringify(gameState.crew)),
-                inventory: JSON.parse(JSON.stringify(gameState.inventory))
-            };
-
+        if (gameState.turn === 0) {
+            console.log("Constructing prompt for Turn 1 (Evil GM - Dynamic JSON)");
+            return prompts.firstrun; // Returns the Turn 1 JSON instructions
+        } else {
+            console.log(`Constructing prompt for Turn ${gameState.turn + 1} (Evil GM Dynamic)`);
+            const clientStateContext = { profile:gameState.profile, status:gameState.status, crew:gameState.crew, inventory:gameState.inventory };
             const promptInput = {
                 actions: playerActionsJson ? JSON.parse(playerActionsJson) : {},
                 internalState: gameState.currentInternalStateMarkdown || "# GM Log - State Unknown",
-                // Pass the correct mode flag name
                 isEvilOverdriveMode: gameState.mode === 'evil_overdrive',
                 clientGameState: clientStateContext
             };
             const promptInputString = JSON.stringify(promptInput, null, 2);
-            // Use new base prompt and addendum
-            const s = `${baseMainPrompt}${activeAddendum}\n\n--- Client Context: AI generates ENTIRE HTML UI for #turn-content, structured into windows. AI MUST return updated internalState Markdown. Use Pollinations.ai format. ---\n\n--- Input State ---\n${promptInputString}\n\n--- Generate Next Game Turn RAW HTML UI SNIPPET (for ENTIRE #turn-content) ---`;
+            const s = `${baseMainPrompt}${activeAddendum}\n\n--- Input State ---\n${promptInputString}\n\n--- Generate Next Game Turn JSON OBJECT (with narrativeContent, layoutCommands, internalStateUpdate) ---`;
             return s;
         }
     }
@@ -337,356 +290,312 @@
         if (!gameState.apiKey) { if (!isAutoSave) showClipboardMessage("Cannot save: API Key missing!", true); return false; }
         try {
             gameState.encodedApiKey = encodeApiKey(gameState.apiKey);
-            const stateJsonString = JSON.stringify(gameState);
+            const stateToSave = { /* Core gameState fields, excluding transient data */ encodedApiKey: gameState.encodedApiKey, turn: gameState.turn, mode: gameState.mode, profile: gameState.profile, status: gameState.status, crew: gameState.crew, inventory: gameState.inventory, currentSubjectId: gameState.currentSubjectId, currentInternalStateMarkdown: gameState.currentInternalStateMarkdown, currentModelIndex: gameState.currentModelIndex, isLocked: gameState.isLocked };
+            const stateJsonString = JSON.stringify(stateToSave);
             localStorage.setItem(LOCAL_STORAGE_KEY, stateJsonString);
-            if (isAutoSave) console.log("GM Log auto-saved (Full State). Turn:", gameState.turn);
-            else { console.log("GM Log manually saved (Full State). Turn:", gameState.turn); showClipboardMessage("Log Saved. Don't get comfortable."); }
+            if (isAutoSave) console.log("GM Log auto-saved. Turn:", gameState.turn);
+            else { console.log("GM Log manually saved. Turn:", gameState.turn); showClipboardMessage("Log Saved. Don\\'t get comfortable."); }
             return true;
-        } catch (error) {
-            console.error(`Save error (Full State):`, error);
-            if (!isAutoSave) showClipboardMessage("Log saving failed. Figures.", true);
-            return false;
-        }
+        } catch (error) { console.error(`Save error:`, error); if (!isAutoSave) showClipboardMessage("Log saving failed. Figures.", true); return false; }
     }
 
     // --- Audio ---
-    function initAudioContext() { /* Same as cosmicclimax */ }
-    function playTurnSound() { /* Using cosmicclimax sound */ initAudioContext(); if (!audioCtx || audioCtx.state !== 'running') return; const now = audioCtx.currentTime; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(110, now); osc.frequency.exponentialRampToValueAtTime(880, now + 0.15); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.5); console.log("Playing dubious sci-fi sound... 📟"); }
+    function initAudioContext() { if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){console.error(e);}}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();}
+    function playTurnSound() { initAudioContext();if(!audioCtx||audioCtx.state!=='running')return;const now=audioCtx.currentTime;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.setValueAtTime(90,now);o.frequency.exponentialRampToValueAtTime(600,now+0.2);g.gain.setValueAtTime(0.1,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.6);o.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+0.6);console.log("Playing ominous sci-fi sound..."); }
 
-    // --- Response Processing ---
-    function processSuccessfulResponse(responseHTML) {
-        try {
-            console.log("Received FULL HTML UI response from Evil GM.");
-            turnContentContainer.innerHTML = responseHTML;
-            console.log("Updated #turn-content with new FULL HTML UI.");
+    // --- ============================================= ---
+    // --- Panel Manager & Rendering Logic (JSON)      ---
+    // --- ============================================= ---
 
-            const form = turnContentContainer.querySelector('#evil-scifi-form'); // Use new form ID
-            if (form) {
-                const turnInput = form.querySelector('input[name="turn"]');
-                const subjectInput = form.querySelector('input[name="subjectId"]');
-                const internalStateInput = form.querySelector('input[name="internalState"]');
+    const PanelManager = {
+        createPanel: (panelId, config) => {
+            if (activePanels.has(panelId)) { PanelManager.updatePanel(panelId, config); return; } // Update if exists
+            console.log(`Creating panel: ${panelId}`);
+            const panelEl = document.createElement('div');
+            panelEl.id = panelId;
+            panelEl.className = `panel ${config.initialClass || 'panel-medium'}`; // Base + initial style
 
-                const nextTurn = turnInput ? parseInt(turnInput.value, 10) : gameState.turn + 1;
-                gameState.currentSubjectId = subjectInput ? subjectInput.value : gameState.currentSubjectId; // Update subjectId
-                gameState.currentInternalStateMarkdown = internalStateInput ? internalStateInput.value : gameState.currentInternalStateMarkdown;
+            const header = document.createElement('div'); header.className = 'panel-header';
+            if (config.icon) { const icon = document.createElement('i'); icon.className = `lucide lucide-${config.icon}`; header.appendChild(icon); }
+            const titleSpan = document.createElement('span'); titleSpan.textContent = config.title || 'Panel'; header.appendChild(titleSpan);
+            panelEl.appendChild(header);
 
-                console.log(`Extracted State: Turn=${nextTurn}, Subject=${gameState.currentSubjectId}, InternalState Length=${gameState.currentInternalStateMarkdown.length}`);
+            const contentEl = document.createElement('div'); contentEl.className = 'panel-content'; panelEl.appendChild(contentEl);
 
-                // Parse state changes from the NEW internalState Markdown
-                try {
-                    parseAndUpdateStateFromMarkdown(gameState.currentInternalStateMarkdown);
-                    gameState.turn = nextTurn; // Update turn number *after* parsing
-                } catch (parseError) {
-                    console.error("Error parsing state updates from internalState Markdown:", parseError);
-                    gameState.turn = nextTurn; // Update turn anyway
-                }
-
-                // Execute inline scripts
-                const scripts = turnContentContainer.querySelectorAll('script');
-                scripts.forEach(script => { /* ... same execution logic ... */ try { const newScript = document.createElement("script"); for (let i = 0; i < script.attributes.length; i++) { newScript.setAttribute(script.attributes[i].name, script.attributes[i].value); } newScript.appendChild(document.createTextNode(script.innerHTML)); turnContentContainer.appendChild(newScript); console.log("Executed inline script."); script.remove(); } catch (e) { console.error("Script exec error:", e); } });
-
-            } else {
-                console.warn("Could not find #evil-scifi-form in HTML. State might be stale.");
-                gameState.turn++;
+            if (config.content) { // Render initial content immediately
+                renderPanelContent(contentEl, config.content, panelId); // Pass panelId for unique element IDs
             }
 
-            if (!gameState.isLocked) {
-                gameState.isLocked = true;
-                if (apiKeySection) apiKeySection.style.display = 'none';
-                saveGameButton.disabled = false;
-                resetGameButton.disabled = false;
-                console.log("API Key locked. The suffering begins.");
+            gameLayoutContainer.appendChild(panelEl);
+            activePanels.set(panelId, { element: panelEl, config: config });
+
+            panelEl.style.opacity = '0'; panelEl.style.transform = 'scale(0.95) translateY(10px)';
+            requestAnimationFrame(() => { panelEl.style.opacity = '1'; panelEl.style.transform = 'scale(1) translateY(0)'; });
+        },
+
+        updatePanel: (panelId, config) => {
+            const panelData = activePanels.get(panelId);
+            if (!panelData) { console.error(`Panel ${panelId} not found for update.`); return; }
+            console.log(`Updating panel: ${panelId}`);
+            const panelEl = panelData.element; const contentEl = panelEl.querySelector('.panel-content'); const headerEl = panelEl.querySelector('.panel-header');
+
+            if (config.title && headerEl) { headerEl.querySelector('span').textContent = config.title; }
+            if (config.icon && headerEl) { let icon = headerEl.querySelector('i'); if (!icon) { icon = document.createElement('i'); headerEl.prepend(icon); } icon.className = `lucide lucide-${config.icon}`; }
+
+            if (contentEl && config.content !== undefined) { // Check if content update is requested
+                contentEl.innerHTML = ''; // Clear existing
+                renderPanelContent(contentEl, config.content, panelId); // Render new content
             }
+            // Merge new config properties into existing stored config
+            activePanels.set(panelId, { element: panelEl, config: { ...panelData.config, ...config, content: config.content } });
+        },
 
-            // Update button text to reflect new Subject ID and Turn
-            submitButton.textContent = `Submit Action (Turn ${gameState.turn} - ${gameState.currentSubjectId})`;
-            submitButton.disabled = false;
-            const submitIcon = submitButton.querySelector('i');
-            if (submitIcon) submitIcon.className = 'lucide lucide-chevron-right-circle'; // Change icon
+        closePanel: (panelId, config) => {
+            const panelData = activePanels.get(panelId);
+            if (!panelData) { console.warn(`Panel ${panelId} not found for closing.`); return; }
+            console.log(`Closing panel: ${panelId}`); const panelEl = panelData.element;
+            panelEl.style.height = panelEl.offsetHeight + 'px'; // Fix height
+            panelEl.classList.add('panel-closing');
+            requestAnimationFrame(() => { panelEl.classList.add('panel-hidden'); });
+            setTimeout(() => { if (panelEl.parentNode) { panelEl.parentNode.removeChild(panelEl); } activePanels.delete(panelId); console.log(`Panel ${panelId} removed.`); }, config?.delayMs || PANEL_CLOSE_DELAY);
+        },
 
+        resizePanel: (panelId, config) => {
+            const panelData = activePanels.get(panelId); if (!panelData) { console.error(`Panel ${panelId} not found.`); return; }
+            console.log(`Resizing panel: ${panelId} to ${config.newClass}`); const panelEl = panelData.element;
+            panelEl.className = panelEl.className.replace(/panel-(small|medium|large|full)/g, '').trim(); // Remove old size
+            panelEl.classList.add('panel', config.newClass || 'panel-medium'); // Add base and new size
+            activePanels.get(panelId).config.initialClass = panelEl.className.replace('panel ', ''); // Update stored class
+        },
 
-            playTurnSound();
-            saveGameState(true); // Auto-save
+        highlightPanel: (panelId, config) => {
+            const panelData = activePanels.get(panelId); if (!panelData) { console.error(`Panel ${panelId} not found.`); return; }
+            console.log(`Highlighting panel: ${panelId}`); const panelEl = panelData.element;
+            panelEl.classList.add('panel-highlight');
+            setTimeout(() => { panelEl.classList.remove('panel-highlight'); }, config?.durationMs || 2000);
+        }
+    };
 
-        } catch (renderError) {
-            console.error("Failed to process HTML response:", renderError, responseHTML);
-            showError("Critical system error! The GM is displeased (or incompetent).");
-            setLoading(false);
+    // --- Renders Array or Single Element into a Panel's Content Area ---
+    function renderPanelContent(contentContainer, contentData, panelId) {
+        contentContainer.innerHTML = ''; // Clear previous content first
+        if (Array.isArray(contentData)) {
+            contentData.forEach(element => renderPanelElement(contentContainer, element, panelId));
+        } else if (contentData && typeof contentData === 'object') {
+            renderPanelElement(contentContainer, contentData, panelId);
+        } else if (typeof contentData === 'string') { // Allow simple string content
+            renderPanelElement(contentContainer, { type: 'text', value: contentData }, panelId);
         }
     }
 
-    // --- Parse State Updates from Markdown ---
-    function parseAndUpdateStateFromMarkdown(markdown) {
-        if (!markdown || typeof markdown !== 'string') return;
-        console.log("Parsing internalState Markdown to update client gameState (Evil GM)...");
-
-        // Regexes for Sci-Fi stats
-        const statusRegex = /\*\s*Current Status:\s*Fuel (\d+).*Hull (\d+).*CrewSanity (\d+).*SpiceCredits (\d+).*GmAnnoyance (\d+)/i;
-        const crewRegex = /\*\s*Crew Roster:\s*(\[.*?\])/s;
-        const inventoryRegex = /\*\s*Inventory:\s*(\[.*?\])/s;
-        const profileRegex = /\*\s*Player Profile:\s*(\{.*?\})/s;
-        const subjectIdRegex = /\*\s*Subject:\s*(\S+)/i; // Regex to capture new Subject ID
-
-        const statusMatch = markdown.match(statusRegex);
-        const crewMatch = markdown.match(crewRegex);
-        const inventoryMatch = markdown.match(inventoryRegex);
-        const profileMatch = markdown.match(profileRegex);
-        const subjectIdMatch = markdown.match(subjectIdRegex);
-
-        let updated = false;
-
-        if (statusMatch) {
-            try {
-                const fuel = parseInt(statusMatch[1], 10);
-                const hull = parseInt(statusMatch[2], 10);
-                const crewSanity = parseInt(statusMatch[3], 10);
-                const spiceCredits = parseInt(statusMatch[4], 10);
-                const gmAnnoyance = parseInt(statusMatch[5], 10);
-
-                if (![fuel, hull, crewSanity, spiceCredits, gmAnnoyance].some(isNaN)) {
-                    gameState.status = { fuel, hull, crewSanity, spiceCredits, gmAnnoyance };
-                    console.log("Parsed and updated gameState.status:", gameState.status);
-                    updated = true;
-                } else { console.warn("Parsed status values were NaN."); }
-            } catch(e) { console.error("Error parsing status values:", e); }
-        } else { console.warn("Could not find 'Current Status:' line in markdown log."); }
-
-        // Helper to parse JSON blocks
-        const parseJsonBlock = (match, stateKey) => { /* ... same as cosmicclimax ... */ if (match && match[1]) { try { const jsonString = match[1].replace(/\\`/g, '`').replace(/\\"/g, '"').replace(/\\\\/g, '\\'); const parsedData = JSON.parse(jsonString); gameState[stateKey] = parsedData; console.log(`Parsed and updated gameState.${stateKey}:`, gameState[stateKey]); updated = true; } catch (e) { console.error(`Error parsing JSON for ${stateKey}:`, e); } } else { console.warn(`Could not find '${stateKey}' block.`); } };
-
-        parseJsonBlock(crewMatch, 'crew');
-        parseJsonBlock(inventoryMatch, 'inventory');
-        parseJsonBlock(profileMatch, 'profile');
-
-        // Parse and update Subject ID
-        if (subjectIdMatch && subjectIdMatch[1]) {
-            const newSubjectId = subjectIdMatch[1];
-            if (gameState.currentSubjectId !== newSubjectId) {
-                gameState.currentSubjectId = newSubjectId;
-                console.log("Parsed and updated gameState.currentSubjectId:", gameState.currentSubjectId);
-                updated = true;
+    // --- Renders individual element types WITHIN a panel ---
+    function renderPanelElement(container, element, panelId) {
+        // Renders elements like text, image, progress, radio, checkbox, slider, textarea
+        // Need to pass panelId to ensure unique IDs for form elements (e.g., radio group labels)
+        try {
+            switch (element.type) {
+                case 'text': const p = document.createElement('div'); p.className = element.className || 'game-text mb-2'; p.innerHTML = (element.value || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>'); container.appendChild(p); break;
+                case 'progress': const pw = document.createElement('div'); pw.className = 'status-item'; if(element.label){const l=document.createElement('span');l.className='status-label';l.textContent=`${element.label}:`;pw.appendChild(l);} const pe = document.createElement('progress'); pe.value = element.value || 0; pe.max = element.max || 100; pe.className = element.className || ''; const vs = document.createElement('span'); vs.className='status-value'; vs.textContent=`${pe.value}/${pe.max}`; const bw = document.createElement('div'); bw.style.flexGrow='1'; bw.style.marginLeft='0.5rem'; bw.appendChild(pe); bw.appendChild(vs); vs.style.fontSize='0.75rem'; vs.style.textAlign='right'; vs.style.display='block'; pw.appendChild(bw); container.appendChild(pw); break;
+                case 'image': renderPanelImage(container, element, panelId); break;
+                case 'radio': renderPanelRadio(container, element, panelId); break;
+                case 'checkbox': renderPanelCheckbox(container, element, panelId); break;
+                case 'slider': renderPanelSlider(container, element, panelId); break;
+                case 'textfield': // Assuming textfield means input type text
+                case 'input': renderPanelInput(container, element, panelId); break;
+                case 'textarea': renderPanelTextarea(container, element, panelId); break;
+                default: const unk = document.createElement('p'); unk.textContent = `[Unsupported: ${element.type}]`; unk.style.color='orange'; container.appendChild(unk);
             }
-        } else { console.warn("Could not find 'Subject:' line in markdown log."); }
+        } catch (e) { console.error("Render element error:", e, element); const errP = document.createElement('p'); errP.textContent='[Render Error]'; errP.style.color='red'; container.appendChild(errP); }
+    }
 
-        if (!updated) console.warn("Did not parse any state updates from markdown.");
+    // --- Specific renderers for panel elements (ensure unique IDs using panelId) ---
+    function renderPanelImage(container, element, panelId) { /* ... adapted ... */ const iC = document.createElement('div'); iC.className='game-image-container'; const img = document.createElement('img'); img.className='game-image'; const p = element.value||'placeholder'; const s=Math.floor(Math.random()*65536); img.src=`https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?seed=${s}&nologo=true&safe=false&width=${element.width||300}`; img.alt=element.label||p.substring(0,30); img.onerror=()=>{img.src=`https://placehold.co/${element.width||300}x${element.height||200}/1e293b/ef4444?text=Error`;img.alt='Error';}; iC.appendChild(img); if(element.label){const l=document.createElement('div');l.className='game-image-label text-center text-xs mt-1';l.textContent=element.label;iC.appendChild(l);} if(element.value){const pt=document.createElement('div');pt.className='game-image-prompt text-center text-xs';pt.textContent=p;iC.appendChild(pt);} container.appendChild(iC); }
+    function renderPanelInput(container, element, panelId) { const w = document.createElement('div'); w.className='mb-3'; if(element.label){const l=document.createElement('label');l.htmlFor=`${panelId}_${element.name}`;l.className='block text-sm font-medium text-sky-300 mb-1';l.textContent=element.label;w.appendChild(l);} const i=document.createElement('input'); i.type=element.inputType||'text';i.className='game-input';i.id=`${panelId}_${element.name}`;i.name=element.name; i.value=element.value||'';i.placeholder=element.placeholder||'...';i.dataset.elementType='input'; w.appendChild(i); container.appendChild(w); }
+    function renderPanelTextarea(container, element, panelId) { const w = document.createElement('div'); w.className='mb-3'; if(element.label){const l=document.createElement('label');l.htmlFor=`${panelId}_${element.name}`;l.className='block text-sm font-medium text-sky-300 mb-1';l.textContent=element.label;w.appendChild(l);} const t=document.createElement('textarea'); t.className='game-textarea';t.id=`${panelId}_${element.name}`;t.name=element.name;t.rows=element.rows||3; t.value=element.value||'';t.placeholder=element.placeholder||'...';t.dataset.elementType='textarea'; w.appendChild(t); container.appendChild(w); }
+    function renderPanelRadio(container, element, panelId) { const fs = document.createElement('fieldset'); fs.className='mb-3'; if(element.label){const lg=document.createElement('legend');lg.className='font-semibold text-sky-400 mb-2 block text-sm';lg.textContent=element.label;fs.appendChild(lg);} const opts = parseOptions(element.options||element.value||[]); const defaultVal = opts.find(o=>o.isDefault)?.value; opts.forEach((opt,idx)=>{ const oD=document.createElement('div');oD.className='game-radio-option'; const inp=document.createElement('input');inp.type='radio'; const inpId=`${panelId}_${element.name}_${idx}`; inp.id=inpId;inp.name=element.name;inp.value=opt.value; inp.checked=(opt.value===defaultVal);inp.dataset.elementType='radio'; const lbl=document.createElement('label');lbl.htmlFor=inpId;lbl.textContent=opt.label; oD.appendChild(inp);oD.appendChild(lbl); fs.appendChild(oD); }); container.appendChild(fs); }
+    function renderPanelCheckbox(container, element, panelId) { const oD = document.createElement('div'); oD.className='game-checkbox-option mb-2'; const inp=document.createElement('input');inp.type='checkbox'; const inpId=`${panelId}_${element.name}`; inp.id=inpId;inp.name=element.name;inp.value='true'; inp.checked= element.value===true||String(element.value).toLowerCase()==='true'; inp.dataset.elementType='checkbox'; const lbl=document.createElement('label');lbl.htmlFor=inpId;lbl.textContent=element.label||element.name; oD.appendChild(inp);oD.appendChild(lbl); container.appendChild(oD); }
+    function renderPanelSlider(container, element, panelId) { const w = document.createElement('div'); w.className='game-slider-container mb-3'; if(element.label){const l=document.createElement('label');l.htmlFor=`${panelId}_${element.name}`;l.className='game-slider-label text-sm';l.textContent=element.label;w.appendChild(l);} const sf = document.createElement('div'); sf.className='flex items-center space-x-3'; const inp=document.createElement('input');inp.type='range';inp.className='game-slider flex-grow'; inp.id=`${panelId}_${element.name}`;inp.name=element.name;inp.min=element.min??0;inp.max=element.max??10;inp.value=element.value??5; inp.dataset.elementType='slider'; const vd=document.createElement('span');vd.className='game-slider-value-display';vd.textContent=inp.value; inp.oninput=()=>{vd.textContent=inp.value;}; sf.appendChild(inp);sf.appendChild(vd); w.appendChild(sf); container.appendChild(w); }
+
+    function parseOptions(optionsSource) { // Helper for radio/select
+        let options = []; let defaultValue = null; let hasDefaultMarker = false;
+        try {
+            if (typeof optionsSource === 'string') optionsSource = JSON.parse(optionsSource);
+            if (Array.isArray(optionsSource)) {
+                options = optionsSource.map(opt => {
+                    let label = '', value = '';
+                    if (typeof opt === 'object' && opt !== null) { value = String(opt.value); label = opt.label ?? value; }
+                    else { value = String(opt); label = value; }
+                    let isDefault = false;
+                    if (label.startsWith('*')) { label = label.substring(1); isDefault = true; defaultValue = value; hasDefaultMarker = true; }
+                    return { value, label, isDefault };
+                });
+                // If no '*' marker was found, default to the first option
+                if (!hasDefaultMarker && options.length > 0) { defaultValue = options[0].value; options[0].isDefault = true; }
+                // Ensure isDefault flag is correct based on final defaultValue
+                options.forEach(opt => opt.isDefault = (opt.value === defaultValue));
+            }
+        } catch (e) { console.error("Error parsing options:", e, optionsSource); }
+        return options;
     }
 
 
-    // --- API Fetch ---
+    // --- Main Response Processing (Handles JSON) ---
+    function processSuccessfulResponse(responseJson) {
+        try {
+            console.log("Received JSON response from Evil GM.");
+            if (typeof responseJson !== 'object' || responseJson === null) throw new Error("Response is not a valid object.");
+
+            // 1. Update Internal State FIRST
+            if (responseJson.internalStateUpdate) {
+                gameState.currentInternalStateMarkdown = responseJson.internalStateUpdate;
+                try { parseAndUpdateStateFromMarkdown(gameState.currentInternalStateMarkdown); }
+                catch(parseError){ console.error("Error parsing state:", parseError); }
+            } else console.warn("No internalStateUpdate received.");
+
+            // 2. Update Turn Number
+            gameState.turn = responseJson.turnNumber ? parseInt(responseJson.turnNumber, 10) : gameState.turn + 1;
+
+            // 3. Process Layout Commands
+            if (responseJson.layoutCommands && Array.isArray(responseJson.layoutCommands)) {
+                executeLayoutCommands(responseJson.layoutCommands);
+            } else console.warn("No layoutCommands received.");
+
+            // 4. Render Main Narrative Content (if exists and target panel is active)
+            const mainPanelData = activePanels.get(mainInteractionPanelId);
+            if (responseJson.narrativeContent && Array.isArray(responseJson.narrativeContent)) {
+                if (!mainPanelData) { // Create main panel if it doesn't exist
+                    console.log(`Creating missing main panel: ${mainInteractionPanelId}`);
+                    PanelManager.createPanel(mainInteractionPanelId, { title: "Main Console", icon: "terminal", initialClass: "panel-large", content: responseJson.narrativeContent });
+                } else { // Update existing main panel
+                    PanelManager.updatePanel(mainInteractionPanelId, { content: responseJson.narrativeContent });
+                }
+            } else if (mainPanelData) {
+                // Optionally clear the main panel if no narrative content is provided
+                // PanelManager.updatePanel(mainInteractionPanelId, { content: [{ type: 'text', value: '...' }] });
+                console.log("No narrativeContent received for main panel.");
+            }
+
+            // 5. Update Game State & UI Locks
+            if (!gameState.isLocked) { gameState.isLocked = true; if (apiKeySection) apiKeySection.style.display = 'none'; saveGameButton.disabled = false; resetGameButton.disabled = false; console.log("API Key locked."); }
+
+            submitButton.textContent = `Submit (Turn ${gameState.turn} - ${gameState.currentSubjectId})`;
+            submitButton.disabled = false;
+            const submitIcon = submitButton.querySelector('i'); if (submitIcon) submitIcon.className = 'lucide lucide-chevron-right-circle';
+
+            playTurnSound();
+            saveGameState(true);
+
+        } catch (error) { console.error("Error processing response:", error, responseJson); showError("Critical error processing GM instructions!"); setLoading(false); }
+    }
+
+    // --- Command Execution ---
+    function executeLayoutCommands(commands) {
+        console.log("Executing layout commands:", commands);
+        commands.forEach(cmd => {
+            if(!cmd || !cmd.action || !cmd.panelId) { console.warn("Skipping invalid command:", cmd); return; }
+            const config = cmd.config || {}; // Ensure config exists
+            switch (cmd.action) {
+                case 'create': PanelManager.createPanel(cmd.panelId, config); break;
+                case 'update': PanelManager.updatePanel(cmd.panelId, config); break;
+                case 'close': PanelManager.closePanel(cmd.panelId, config); break;
+                case 'resize': PanelManager.resizePanel(cmd.panelId, config); break;
+                case 'highlight': PanelManager.highlightPanel(cmd.panelId, config); break;
+                default: console.warn(`Unknown layout command: ${cmd.action}`);
+            }
+        });
+    }
+
+    // --- API Fetch (Requests JSON) ---
     async function fetchTurnData(playerActionsJson) {
-        console.log("fetchTurnData called (Evil GM UI Gen mode).");
-        initAudioContext();
-        if (!gameState.apiKey) { showError("Feed the machine an API Key, meatbag!"); setLoading(false); if (apiKeySection.style.display === 'none') apiKeySection.style.display = 'block'; return; }
-
-        setLoading(true);
-        hideError();
-        loadingMessage.textContent = getRandomLoadingMessage(); // Use new messages
-
+        console.log("fetchTurnData called (Dynamic JSON mode)."); initAudioContext();
+        if (!gameState.apiKey) { showError("API Key required!"); setLoading(false); /*...*/ return; }
+        setLoading(true); hideError(); loadingMessage.textContent = getRandomLoadingMessage();
         let success = false; let attempts = 0; const maxAttempts = AVAILABLE_MODELS.length * 2 + 1; let consecutiveErrors = 0; let lastError = null;
 
         while (!success && attempts < maxAttempts) {
             attempts++; const currentModel = AVAILABLE_MODELS[gameState.currentModelIndex]; console.log(`Attempt ${attempts}/${maxAttempts}: Model ${currentModel}`);
             try {
                 const prompt = constructPrompt(playerActionsJson);
-                const response = await callRealGeminiAPI(gameState.apiKey, prompt, currentModel, "text/plain"); // Expecting HTML
-                processSuccessfulResponse(response); // Process HTML
+                const responseJsonString = await callRealGeminiAPI(gameState.apiKey, prompt, currentModel, "application/json");
+                const responseJson = JSON.parse(responseJsonString);
+                processSuccessfulResponse(responseJson);
                 success = true; consecutiveErrors = 0; lastError = null;
-            } catch (error) {
-                lastError = error; console.error(`Error with ${currentModel} (Attempt ${attempts}):`, error); consecutiveErrors++;
-                const isQuota = error.message.includes('429') || /quota|resource/i.test(error.message); const isBlocked = /blocked by API censorship/i.test(error.message); const isServerError = /API Error \(500\)|API Error \(503\)|internal error|Service Unavailable/i.test(error.message);
-                const shouldSwitch = isQuota || consecutiveErrors >= 2 || isBlocked || isServerError;
-
-                let errorMsg = `Error with ${currentModel}: ${error.message}`;
-                if (isBlocked) errorMsg = `GM blocked that request! (${currentModel}). Trying another way...`;
-                else if (isServerError) errorMsg = `GM's servers are malfunctioning (${currentModel})! Trying backup...`;
-                else if (isQuota) errorMsg = `GM quota exceeded (${currentModel}). Switching channels...`;
-                else if (consecutiveErrors >= 2 && AVAILABLE_MODELS.length > 1) errorMsg = `Persistent errors with ${currentModel}. Switching...`;
-                else errorMsg = `Minor glitch (${currentModel}). Retrying...`;
-                if (attempts < maxAttempts) showError(`${errorMsg} (Attempt ${attempts + 1})`); else showError(`Final attempt with ${currentModel} failed: ${error.message}`);
-
-                if (shouldSwitch && AVAILABLE_MODELS.length > 1) {
-                    gameState.currentModelIndex = (gameState.currentModelIndex + 1) % AVAILABLE_MODELS.length; console.warn(`Switching model due to errors/quota/block.`); consecutiveErrors = 0;
-                }
-                if (!success && attempts < maxAttempts) await new Promise(resolve => setTimeout(resolve, 850 + (consecutiveErrors * 150)));
-            }
+            } catch (error) { /* Error handling logic remains the same */ lastError = error; console.error(`Error with ${currentModel}:`, error); consecutiveErrors++; const isQuota = /429|quota|resource/i.test(error.message); const isBlocked = /blocked/i.test(error.message); const isServerErr = /500|503|internal|unavailable/i.test(error.message); const shouldSwitch = isQuota || isBlocked || isServerErr || consecutiveErrors >= 2; let errorMsg = `Error: ${error.message}`; if (isBlocked) errorMsg = `GM blocked! Recalculating...`; else if (isQuota) errorMsg = `Signal jammed! Switching...`; else if (isServerErr) errorMsg = `Mainframe glitch! Rerouting...`; else if (consecutiveErrors >= 2 && AVAILABLE_MODELS.length > 1) errorMsg = `Persistent static! Switching...`; else errorMsg = `Minor interference. Retrying...`; if (attempts < maxAttempts) showError(`${errorMsg} (Attempt ${attempts + 1})`); else showError(`SYSTEM CRASH (${currentModel}): ${error.message}`); if (shouldSwitch && AVAILABLE_MODELS.length > 1) { gameState.currentModelIndex = (gameState.currentModelIndex + 1) % AVAILABLE_MODELS.length; consecutiveErrors = 0; } if (!success && attempts < maxAttempts) await new Promise(resolve => setTimeout(resolve, 900 + (consecutiveErrors * 200))); }
         }
-
-        if (!success) { console.error(`Failed after ${maxAttempts}. Last error:`, lastError); showError(`Total system failure after ${maxAttempts} tries. Last error: ${lastError?.message || 'Unknown Error'}. The GM is *very* displeased.`); turnContentContainer.innerHTML = `<div class="game-card error-message">Catastrophic failure. Cannot proceed. Perhaps self-destruct?</div>`; }
-        else { hideError(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        if (!success) { console.error(`Failed after ${maxAttempts}.`, lastError); showError(`Failure. ${lastError?.message||'Unknown'}. Simulation unstable.`); gameLayoutContainer.innerHTML = '<div class="panel error-message">Simulation collapsed.</div>'; }
+        else { hideError(); }
         setLoading(false);
     }
 
-    // --- callRealGeminiAPI (Handles BLOCK_NONE, expects HTML/text) ---
-    async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType = "text/plain") { /* Same as cosmicclimax, adapted error messages if desired */
+    // --- callRealGeminiAPI (Ensure it handles JSON response, Escapes Backticks in Prompt) ---
+    async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType = "application/json") {
+        // Escape backticks in the prompt text itself before sending
+        const escapedPrompt = promptText.replace(/`/g, '\\`');
+
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-        const requestBody = { contents: [{ parts: [{ text: promptText }] }], generationConfig: { temperature: 1.0, response_mime_type: responseMimeType }, safetySettings: [ {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"}, {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"}, {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"}, {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"} ] };
-        console.log("Sending API request to:", API_URL);
+        const requestBody = { contents: [{ parts: [{ text: escapedPrompt }] }], generationConfig: { temperature: 1.0, response_mime_type: responseMimeType }, safetySettings: [ {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"}, {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"}, {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"}, {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"} ] };
+        // console.log("Sending API request to:", API_URL, "Expecting:", responseMimeType); // Debug
         const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
-        if (!response.ok) { let errorBodyText = `API Error (${response.status})`; try { const errorJson = await response.json(); errorBodyText += `: ${JSON.stringify(errorJson.error || errorJson)}`; } catch (e) { try { errorBodyText += `: ${await response.text()}`; } catch (e2) {} } console.error("API Error:", errorBodyText); throw new Error(errorBodyText); }
+        if (!response.ok) { let errTxt = `API Error ${response.status}`; try{ const errJson=await response.json(); errTxt += `: ${JSON.stringify(errJson.error||errJson)}`; } catch(e){try{errTxt+=`: ${await response.text()}`}catch(e2){}} throw new Error(errTxt); }
         const data = await response.json();
-        if (data.promptFeedback?.blockReason) { console.error("API Blocked Prompt:", data.promptFeedback); throw new Error(`Request blocked by API censorship (prompt). Reason: ${data.promptFeedback.blockReason}.`); }
-        if (!data.candidates?.length) { if (typeof data === 'string') return data.trim(); console.error("API Response OK but no candidates:", data); throw new Error('API generated no candidates.'); }
+        if (data.promptFeedback?.blockReason) { throw new Error(`Request blocked by API (prompt). Reason: ${data.promptFeedback.blockReason}.`); }
+        if (!data.candidates?.length) { throw new Error('API generated no candidates.'); }
         const candidate = data.candidates[0];
-        if (candidate.finishReason && !["STOP", "MAX_TOKENS"].includes(candidate.finishReason)) { const reason = `API Finish Reason: ${candidate.finishReason}. Safety: ${JSON.stringify(candidate.safetyRatings)}`; if (!candidate.content?.parts?.length && candidate.finishReason !== "SAFETY") { throw new Error(reason + " (No content returned)"); } console.warn(reason + " (Content might be incomplete/filtered)"); if(candidate.finishReason === "SAFETY" && !candidate.content?.parts?.length) return ""; /* Return empty if blocked safety w/ no content */ }
-        if (!candidate.content?.parts?.length || !candidate.content.parts[0].text === undefined) { console.error("API candidate missing content:", candidate); if (candidate.finishReason === "SAFETY") return ""; throw new Error('API candidate generated but no valid text content found (Finish: ' + candidate.finishReason + ').'); }
-        const htmlContent = candidate.content.parts[0].text; const trimmedContent = htmlContent.trim();
-        if (trimmedContent.startsWith('```') && trimmedContent.endsWith('```')) { const match = trimmedContent.match(/^```(?:html)?\s*([\s\S]*?)\s*```$/); if (match && match[1]) return match[1].trim(); else return trimmedContent; /* Fallback */ }
-        // Basic HTML check needed as we expect raw HTML
-        if (!trimmedContent.startsWith('<') || !trimmedContent.endsWith('>')) { if (!/<[^>]+>/.test(trimmedContent)) console.warn(`API response might not be HTML. Snippet: ${trimmedContent.substring(0, 100)}...`); }
-        return trimmedContent;
+        if (candidate.finishReason && !["STOP", "MAX_TOKENS"].includes(candidate.finishReason)) { const reason = `API Finish Reason: ${candidate.finishReason}. Safety: ${JSON.stringify(candidate.safetyRatings)}`; if (!candidate.content?.parts?.length && candidate.finishReason !== "SAFETY") throw new Error(reason + " (No content)"); console.warn(reason); if(candidate.finishReason === "SAFETY" && !candidate.content?.parts?.length) return "{}"; }
+        if (!candidate.content?.parts?.length || candidate.content.parts[0].text === undefined) { if (candidate.finishReason === "SAFETY") return "{}"; throw new Error('API candidate missing content part (Finish: ' + candidate.finishReason + ').'); }
+        const jsonString = candidate.content.parts[0].text;
+        try { JSON.parse(jsonString); return jsonString; } catch (e) { console.error("API response not valid JSON:", jsonString.substring(0, 200)); throw new Error("Invalid JSON from API."); }
     }
 
     // --- Error Display ---
-    function showError(message) { errorDisplay.textContent = `GM ERROR: ${message}`; errorDisplay.style.display = 'block'; }
-    function hideError() { errorDisplay.textContent = ''; errorDisplay.style.display = 'none'; }
+    function showError(message) { errorDisplay.textContent=`GM ERROR: ${message}`;errorDisplay.style.display='block'; }
+    function hideError() { errorDisplay.textContent='';errorDisplay.style.display='none'; }
 
-    // --- Input Collection ---
+    // --- Input Collection (Collects from dynamic panels) ---
     function collectInputState() {
-        const form = turnContentContainer.querySelector('#evil-scifi-form'); // Use new ID
-        if (!form) return JSON.stringify({ turn: gameState.turn, subjectId: gameState.currentSubjectId });
-
-        const formData = new FormData(form); const inputs = {}; const checkboxGroups = {}; const toggleSwitches = {};
-        form.querySelectorAll('input[type="checkbox"]').forEach(cb => { if (cb.closest('.game-toggle-switch')) toggleSwitches[cb.name] = false; else if (!checkboxGroups[cb.name]) checkboxGroups[cb.name] = []; });
-        for (const [key, value] of formData.entries()) { if (toggleSwitches.hasOwnProperty(key)) toggleSwitches[key] = true; else if (checkboxGroups.hasOwnProperty(key)) checkboxGroups[key].push(value); else inputs[key] = value; }
-        for (const key in checkboxGroups) { if (checkboxGroups[key].length > 0) inputs[key] = checkboxGroups[key]; }
-        for (const key in toggleSwitches) { inputs[key] = toggleSwitches[key]; }
-        console.log("Collected form data:", inputs);
-
-        // Ensure turn/subjectId, remove internalState
-        if (!inputs.hasOwnProperty('turn')) inputs.turn = gameState.turn;
-        if (!inputs.hasOwnProperty('subjectId')) inputs.subjectId = gameState.currentSubjectId;
-        delete inputs.internalState;
-
-        // Update client profile from T1 inputs
-        if (inputs.profile_species) gameState.profile.species = inputs.profile_species;
-        if (inputs.profile_motivation) gameState.profile.motivation = Array.isArray(inputs.profile_motivation) ? inputs.profile_motivation : [inputs.profile_motivation];
-        let currentPrefs = gameState.profile.preferences || {};
-        Object.keys(inputs).forEach(key => { if (key.startsWith('profile_') && typeof inputs[key] === 'boolean') { const prefKey = key.substring('profile_'.length); currentPrefs[prefKey] = inputs[key]; } });
-        gameState.profile.preferences = currentPrefs;
-        // Add orientation if collected
-        if (inputs.profile_orientation) gameState.profile.orientation = Array.isArray(inputs.profile_orientation) ? inputs.profile_orientation : [inputs.profile_orientation];
-
+        const inputs = {};
+        gameLayoutContainer.querySelectorAll('[data-element-type]').forEach(el => {
+            const name = el.name; if (!name) return;
+            const type = el.dataset.elementType;
+            switch (type) { // Ensure all relevant types are handled
+                case 'input': case 'textarea': inputs[name] = el.value; break;
+                case 'checkbox': inputs[name] = el.checked; break;
+                case 'slider': inputs[name] = parseFloat(el.value); break;
+                case 'radio': if (el.checked) inputs[name] = el.value; break;
+            }
+        });
+        // Turn number is handled by the LLM/processSuccessfulResponse now based on responseJson.turnNumber
+        // inputs['turn'] = gameState.turn + 1; // Not needed here anymore
+        console.log("Collected form data (Dynamic Layout):", inputs);
         return JSON.stringify(inputs);
     }
 
     // --- Utilities ---
-    function showClipboardMessage(message, isError = false) { clipboardMessage.textContent = message; clipboardMessage.style.color = isError ? 'var(--accent-primary)' : 'var(--accent-secondary)'; setTimeout(() => { clipboardMessage.textContent = ''; }, 3500); }
-    function updateModeButtonVisuals() {
-        const icon = modeToggleButton.querySelector('i');
-        if (gameState.mode === 'evil_overdrive') {
-            modeToggleButton.textContent = 'Mode: GM Overdrive 🚨';
-            modeToggleButton.classList.add('red-alert-mode'); // Use the red style
-            modeToggleButton.classList.remove('standard-mode');
-            if(icon) icon.className = 'lucide lucide-zap'; // Lightning icon
-        } else {
-            modeToggleButton.textContent = 'Mode: Standard Misery 🛠️';
-            modeToggleButton.classList.remove('red-alert-mode');
-            modeToggleButton.classList.add('standard-mode'); // Should be default style
-            if(icon) icon.className = 'lucide lucide-flame'; // Default icon
-        }
-        // Re-add icon if textContent overwrite removed it
-        if (icon && !modeToggleButton.contains(icon)) { modeToggleButton.prepend(icon); }
-    }
-    function setDynamicImages() {
-        const seed = Math.floor(Math.random() * 65536);
-        // Darker, more ominous prompt
-        const p = "wide panoramic dark derelict spaceship interior ominous red emergency lighting flickering consoles unsettling shadows retro futuristic horror style";
-        if (headerBanner) {
-            headerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1200&height=130&seed=${seed}&nologo=true&safe=false`;
-            headerBanner.alt = "Ominous Sci-Fi Banner";
-            headerBanner.onerror = () => { headerBanner.style.backgroundColor='var(--bg-dark)'; headerBanner.alt='Fallback Banner'; };
-        }
-    }
+    function showClipboardMessage(message, isError = false) { clipboardMessage.textContent=message;clipboardMessage.style.color=isError?'var(--accent-primary)':'var(--accent-secondary)';setTimeout(()=>{clipboardMessage.textContent=''},3500); }
+    function updateModeButtonVisuals() { /* ... */ const icon=modeToggleButton.querySelector('i');if(gameState.mode==='evil_overdrive'){modeToggleButton.textContent='Mode: GM Overdrive 🚨';modeToggleButton.classList.add('red-alert-mode');modeToggleButton.classList.remove('standard-mode');if(icon)icon.className='lucide lucide-zap';}else{modeToggleButton.textContent='Mode: Standard Misery 🛠️';modeToggleButton.classList.remove('red-alert-mode');modeToggleButton.classList.add('standard-mode');if(icon)icon.className='lucide lucide-flame';}if(icon&&!modeToggleButton.contains(icon)){modeToggleButton.prepend(icon);} }
+    function setDynamicImages() { /* ... */ const seed=Math.floor(Math.random()*65536);const p="wide panoramic dark derelict spaceship interior ominous red emergency lighting flickering consoles unsettling shadows retro futuristic horror style";if(headerBanner){headerBanner.src=`https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1200&height=130&seed=${seed}&nologo=true&safe=false`;headerBanner.alt="Ominous Sci-Fi Banner";headerBanner.onerror=()=>{headerBanner.style.backgroundColor='var(--bg-dark)';headerBanner.alt='Fallback Banner'};} }
 
     // --- Loading State ---
-    // NEW LOADING MESSAGES
-    const LOADING_MESSAGES = [ "Plotting your demise...", "Calibrating misery engine...", "Consulting chaos algorithms...", "Brewing space coffee (it's terrible)...", "Polishing the torture devices...", "Ignoring safety protocols...", "Generating plausible deniability...", "Rolling dice behind the screen...", "Selecting appropriate background music (doom metal)..." ];
-    function getRandomLoadingMessage() { return LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]; }
-    function setLoading(loading) {
-        gameState.isLoading = loading;
-        loadingIndicator.style.display = loading ? 'flex' : 'none';
-        loadingMessage.textContent = loading ? getRandomLoadingMessage() : '';
-        const keyEntered = gameState.apiKey && gameState.apiKey.length > 0;
-        if (submitButton) submitButton.disabled = loading || !(gameState.isLocked || keyEntered);
-        if (saveGameButton) saveGameButton.disabled = loading || !gameState.isLocked;
-        if (modeToggleButton) modeToggleButton.disabled = loading;
-        if (resetGameButton) resetGameButton.disabled = loading || !gameState.isLocked; // Enable reset if locked
-        if (apiKeyInput) apiKeyInput.disabled = loading || gameState.isLocked;
-        const form = turnContentContainer.querySelector('#evil-scifi-form');
-        if (form) { form.style.opacity = loading ? 0.5 : 1.0; form.style.pointerEvents = loading ? 'none' : 'auto'; form.querySelectorAll('input, textarea, button, select, fieldset').forEach(el => { if (el.id !== 'submit-turn-button') el.disabled = loading; }); }
-    }
+    const LOADING_MESSAGES = [ "Recalibrating pain matrix...", "Compiling failure report...", "Enhancing manipulation subroutines...", "Simulating existential dread...", "Purging hopeful thoughts..." ];
+    function getRandomLoadingMessage() { return LOADING_MESSAGES[Math.floor(Math.random()*LOADING_MESSAGES.length)];}
+    function setLoading(loading) { gameState.isLoading = loading; loadingIndicator.style.display = loading ? 'flex' : 'none'; loadingMessage.textContent = loading ? getRandomLoadingMessage() : ''; const keyEntered = gameState.apiKey?.length > 0; if (submitButton) submitButton.disabled = loading || !(gameState.isLocked || keyEntered); if (saveGameButton) saveGameButton.disabled = loading || !gameState.isLocked; if (modeToggleButton) modeToggleButton.disabled = loading; if (resetGameButton) resetGameButton.disabled = loading || !gameState.isLocked; if (apiKeyInput) apiKeyInput.disabled = loading || gameState.isLocked; gameLayoutContainer.querySelectorAll('.panel input, .panel textarea, .panel button, .panel select').forEach(el => { el.disabled = loading; }); gameLayoutContainer.style.opacity = loading ? 0.7 : 1; gameLayoutContainer.style.pointerEvents = loading ? 'none' : 'auto'; }
 
     // --- Get Default Game State ---
-    function getDefaultGameState() {
-        return JSON.parse(JSON.stringify({
-            apiKey: null, encodedApiKey: null, turn: 0, mode: 'standard_misery',
-            profile: { species: "unspecified", role: "Plaything", orientation: "unspecified", preferences: {}, motivation: "unspecified" },
-            status: { fuel: 70, hull: 90, crewSanity: 60, spiceCredits: 10, gmAnnoyance: 5 },
-            crew: [], inventory: [], currentSubjectId: "Meatbag",
-            currentInternalStateMarkdown: "", currentModelIndex: 0, isLoading: false, isLocked: false
-        }));
-    }
+    function getDefaultGameState() { return JSON.parse(JSON.stringify({apiKey:null,encodedApiKey:null,turn:0,mode:'standard_misery',profile:{species:"unspecified",role:"Plaything",orientation:"unspecified",preferences:{},motivation:"unspecified"},status:{fuel:70,hull:90,crewSanity:60,spiceCredits:10,gmAnnoyance:5},crew:[],inventory:[],currentSubjectId:"Meatbag",currentInternalStateMarkdown:"",currentModelIndex:0,isLoading:false,isLocked:false}));}
 
+    // --- Initialization (Adapted for Dynamic Layout) ---
+    function initializeGame() { console.log("Initializing Dynamic Fiasco..."); let autoStarted = false; const storedStateString = localStorage.getItem(LOCAL_STORAGE_KEY); gameLayoutContainer.innerHTML = ''; activePanels.clear(); if (storedStateString) { console.log("Found save."); let savedState; try { savedState = JSON.parse(storedStateString); const decodedApiKey = decodeApiKey(savedState.encodedApiKey); if (!decodedApiKey) throw new Error("Invalid key."); gameState = { ...getDefaultGameState(), ...savedState }; gameState.apiKey = decodedApiKey; gameState.isLoading = false; if (gameState.turn > 0 && gameState.isLocked && gameState.currentInternalStateMarkdown) { autoStarted = true; console.log(`Restored: Turn ${gameState.turn}, Subj: ${gameState.currentSubjectId}`); if(apiKeyInput) apiKeyInput.value = gameState.apiKey; if(apiKeySection) apiKeySection.style.display = 'none'; updateModeButtonVisuals(); setDynamicImages(); hideError(); gameLayoutContainer.innerHTML = `<div id="initial-message" class="panel" style="grid-column: 1 / -1; text-align: center;"><div class="panel-content" style="display: flex; align-items: center; justify-content: center; height: 100%;"><p class="text-amber-400 font-semibold">Log restored. Cycle ${gameState.turn}. Subject: ${gameState.currentSubjectId}. Press 'Submit' to sync.</p></div></div>`; if(submitButton) { submitButton.textContent = `Submit (Turn ${gameState.turn} - ${gameState.currentSubjectId})`; submitButton.disabled = false; } if(saveGameButton) saveGameButton.disabled = false; if(resetGameButton) resetGameButton.disabled = false; if(modeToggleButton) modeToggleButton.disabled = false; setLoading(false); } else { throw new Error("State incomplete."); } } catch (e) { console.error("Restore error:", e); showError(`Restore failed: ${e.message}. Starting over.`); localStorage.removeItem(LOCAL_STORAGE_KEY); gameState = getDefaultGameState(); autoStarted = false; if(apiKeyInput) apiKeyInput.value = ''; resetManualStartUI(); } } if (!autoStarted) { try { const params = new URLSearchParams(window.location.search); const keyFromUrl = params.get('apiKey'); if (keyFromUrl) { console.log("Key from URL."); gameState = getDefaultGameState(); gameState.apiKey = keyFromUrl; if(apiKeyInput) apiKeyInput.value = keyFromUrl; gameState.isLocked = false; if(apiKeySection) apiKeySection.style.display = 'none'; const url = new URL(window.location.href); url.searchParams.delete('apiKey'); window.history.replaceState(null, '', url.toString()); setDynamicImages(); updateModeButtonVisuals(); fetchTurnData(null); autoStarted = true; setLoading(true); if(submitButton) submitButton.textContent = "Initiating..."; } } catch (e) { console.error("URL error:", e); showError("Error reading URL."); autoStarted = false; } } if (!autoStarted) { console.log("Manual start."); gameState = getDefaultGameState(); resetManualStartUI(); } }
 
-    // --- Initialization ---
-    function initializeGame() {
-        console.log("Initializing Evil GM Erotic Sci-Fi Fiasco (Full UI Gen Mode)...");
-        let autoStarted = false; const storedStateString = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (storedStateString) {
-            console.log("Found saved GM Log (Full State)."); let savedState;
-            try {
-                savedState = JSON.parse(storedStateString); const decodedApiKey = decodeApiKey(savedState.encodedApiKey); if (!decodedApiKey) throw new Error("Failed to decode API key.");
-                // Merge saved state carefully
-                gameState = { ...getDefaultGameState(), ...savedState };
-                if (savedState.status) gameState.status = { ...getDefaultGameState().status, ...savedState.status };
-                if (savedState.profile) gameState.profile = { ...getDefaultGameState().profile, ...savedState.profile };
-                gameState.crew = savedState.crew || []; gameState.inventory = savedState.inventory || [];
-                gameState.apiKey = decodedApiKey; gameState.isLoading = false; // Reset loading
+    // --- Reset UI (Adapted for Dynamic Layout) ---
+    function resetManualStartUI() { gameLayoutContainer.innerHTML = ''; activePanels.clear(); hideError(); const initialMsgDiv = document.createElement('div'); initialMsgDiv.id = 'initial-message'; initialMsgDiv.className = 'panel'; initialMsgDiv.style.gridColumn = '1 / -1'; initialMsgDiv.style.textAlign = 'center'; initialMsgDiv.innerHTML = `<div class="panel-content" style="display: flex; align-items: center; justify-content: center; height: 100%;"><p class="text-sky-400 font-semibold">Systems offline. Provide API Key and press "Initiate Sequence".</p></div>`; gameLayoutContainer.appendChild(initialMsgDiv); if (apiKeySection) apiKeySection.style.display = 'block'; if (apiKeyInput) { apiKeyInput.value = gameState.apiKey || ''; apiKeyInput.disabled = false; } const keyEntered = gameState.apiKey?.length > 0; if (submitButton) { submitButton.textContent = ' Initiate Sequence'; const icon = submitButton.querySelector('i'); if(icon) icon.className = 'lucide lucide-rocket'; submitButton.disabled = !keyEntered; } if (saveGameButton) saveGameButton.disabled = true; if (resetGameButton) resetGameButton.disabled = !keyEntered; if (modeToggleButton) modeToggleButton.disabled = false; setLoading(false); updateModeButtonVisuals(); setDynamicImages(); }
 
-                if (gameState.turn > 0 && gameState.isLocked && gameState.currentInternalStateMarkdown) {
-                    autoStarted = true; console.log(`Log restored. Mode: ${gameState.mode}, Turn: ${gameState.turn}, Subject: ${gameState.currentSubjectId}`);
-                    if(apiKeyInput) apiKeyInput.value = gameState.apiKey; if(apiKeySection) apiKeySection.style.display = 'none';
-                    updateModeButtonVisuals(); setDynamicImages(); hideError();
-                    // Display "Loaded" message, user clicks submit to get current UI
-                    turnContentContainer.innerHTML = `<div class="game-card text-center text-amber-400">GM Log restored to Cycle ${gameState.turn}. Subject: ${gameState.currentSubjectId}. Press 'Submit Action' to render the current disaster.</div>`;
-                    if(submitButton) { submitButton.textContent = `Submit Action (Turn ${gameState.turn} - ${gameState.currentSubjectId})`; submitButton.disabled = false; }
-                    if(saveGameButton) saveGameButton.disabled = false; if(resetGameButton) resetGameButton.disabled = false; if(modeToggleButton) modeToggleButton.disabled = false; setLoading(false);
-                } else { console.warn("Restored state incomplete/initial. Starting fresh torment."); localStorage.removeItem(LOCAL_STORAGE_KEY); gameState = getDefaultGameState(); autoStarted = false; resetManualStartUI(); }
-            } catch (e) { console.error("Restore error (Full State):", e); showError(`Log restore corrupt: ${e.message}. Starting fresh.`); localStorage.removeItem(LOCAL_STORAGE_KEY); gameState = getDefaultGameState(); autoStarted = false; if(apiKeyInput) apiKeyInput.value = ''; resetManualStartUI(); }
-        }
-        if (!autoStarted) { // Handle URL key or manual start
-            try { const params = new URLSearchParams(window.location.search); const keyFromUrl = params.get('apiKey');
-                if (keyFromUrl) { console.log("API Key found in URL."); gameState = getDefaultGameState(); gameState.apiKey = keyFromUrl; if(apiKeyInput) apiKeyInput.value = keyFromUrl; gameState.isLocked = false; if(apiKeySection) apiKeySection.style.display = 'none'; const url = new URL(window.location.href); url.searchParams.delete('apiKey'); window.history.replaceState(null, '', url.toString()); setDynamicImages(); updateModeButtonVisuals(); fetchTurnData(null); autoStarted = true; setLoading(true); if(submitButton) submitButton.textContent = "Initiating..."; }
-            } catch (e) { console.error("URL Param error:", e); showError("Error reading URL. Start manually."); autoStarted = false; }
-        }
-        if (!autoStarted) { console.log("Manual start required."); gameState = getDefaultGameState(); resetManualStartUI(); }
-    }
-
-    // --- Reset UI ---
-    function resetManualStartUI() {
-        if (turnContentContainer) turnContentContainer.innerHTML = ''; hideError();
-        const initialMsgDiv = createInitialMessageDiv(); initialMsgDiv.style.display = 'block';
-        initialMsgDiv.innerHTML = 'The void awaits. Input your API Key and press "Initiate Sequence".';
-        if (turnContentContainer) turnContentContainer.appendChild(initialMsgDiv);
-        if (apiKeySection) apiKeySection.style.display = 'block';
-        if (apiKeyInput) { apiKeyInput.value = gameState.apiKey || ''; apiKeyInput.disabled = false; }
-        const keyEntered = gameState.apiKey && gameState.apiKey.length > 0;
-        if (submitButton) { submitButton.textContent = ' Initiate Sequence'; const icon = submitButton.querySelector('i'); if(icon) icon.className = 'lucide lucide-rocket'; submitButton.disabled = !keyEntered; }
-        if (saveGameButton) saveGameButton.disabled = true;
-        if (resetGameButton) resetGameButton.disabled = !keyEntered; // Disable if no key
-        if (modeToggleButton) modeToggleButton.disabled = false;
-        setLoading(false); updateModeButtonVisuals(); setDynamicImages();
-    }
-
-    // Helper to get/create initial message div
-    function createInitialMessageDiv() { let msgDiv = document.getElementById('initial-message'); if (!msgDiv) { msgDiv = document.createElement('div'); msgDiv.id = 'initial-message'; msgDiv.className = 'text-center text-sky-400 p-6 font-semibold game-card'; } else { msgDiv.className = 'text-center text-sky-400 p-6 font-semibold game-card'; } return msgDiv; }
 
     // --- Event Listeners ---
-    if (submitButton) submitButton.addEventListener('click', () => { if (!submitButton.disabled && !gameState.isLoading) { console.log("Submit button clicked."); initAudioContext(); const actions = collectInputState(); fetchTurnData(actions); } });
-    if (apiKeyInput) apiKeyInput.addEventListener('input', () => { const key = apiKeyInput.value.trim(); gameState.apiKey = key; const keyEntered = key.length > 0; if (submitButton) submitButton.disabled = gameState.isLoading || !(gameState.isLocked || keyEntered); if (resetGameButton) resetGameButton.disabled = gameState.isLoading || !keyEntered; if (apiKeySection?.style.display !== 'none') { const msg = document.getElementById('initial-message'); if (msg?.style.display !== 'none') { if (keyEntered) { hideError(); msg.textContent = 'API Key detected! Hit "Initiate Sequence"!'; } else { msg.innerHTML = 'The void awaits... Need API Key.'; } } } });
-    if (saveGameButton) saveGameButton.addEventListener('click', () => { console.log("Manual Save clicked."); saveGameState(false); });
-    if (modeToggleButton) modeToggleButton.addEventListener('click', () => { if (gameState.isLoading) return; gameState.mode = (gameState.mode === 'standard_misery') ? 'evil_overdrive' : 'standard_misery'; console.log(`Mode toggled to: ${gameState.mode}`); updateModeButtonVisuals(); if (gameState.isLocked) saveGameState(true); });
-    if (resetGameButton) resetGameButton.addEventListener('click', () => { if (gameState.isLoading || resetGameButton.disabled) return; if (confirm('Self Destruct?! All logs and current suffering will be purged! Confirm?')) { console.log("Resetting game..."); localStorage.removeItem(LOCAL_STORAGE_KEY); gameState = getDefaultGameState(); resetManualStartUI(); } });
+    if (submitButton) submitButton.addEventListener('click', () => { if (!submitButton.disabled && !gameState.isLoading) { console.log("Submit clicked."); initAudioContext(); const actions = collectInputState(); fetchTurnData(actions); } });
+    if (apiKeyInput) apiKeyInput.addEventListener('input', () => { const key = apiKeyInput.value.trim(); gameState.apiKey = key; const keyEntered = key.length > 0; if(submitButton) submitButton.disabled = gameState.isLoading || !(gameState.isLocked || keyEntered); if(resetGameButton) resetGameButton.disabled = gameState.isLoading || !keyEntered; const initialMsg = document.getElementById('initial-message'); if(initialMsg && apiKeySection?.style.display !== 'none'){ if(keyEntered){ hideError(); initialMsg.querySelector('p').textContent = 'API Key detected! Hit "Initiate Sequence"!'; } else { initialMsg.querySelector('p').innerHTML = 'Systems offline. Provide API Key...'; } } });
+    if (saveGameButton) saveGameButton.addEventListener('click', () => { saveGameState(false); });
+    if (modeToggleButton) modeToggleButton.addEventListener('click', () => { if (gameState.isLoading) return; gameState.mode = (gameState.mode === 'standard_misery') ? 'evil_overdrive' : 'standard_misery'; updateModeButtonVisuals(); if (gameState.isLocked) saveGameState(true); });
+    if (resetGameButton) resetGameButton.addEventListener('click', () => { if (gameState.isLoading || resetGameButton.disabled) return; if (confirm('SELF DESTRUCT?! Confirm?')) { console.log("Resetting..."); localStorage.removeItem(LOCAL_STORAGE_KEY); gameState = getDefaultGameState(); resetManualStartUI(); } });
 
     // --- Initialize ---
     document.addEventListener('DOMContentLoaded', initializeGame);
