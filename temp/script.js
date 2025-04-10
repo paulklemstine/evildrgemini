@@ -895,7 +895,7 @@ function showAnalysisModal() {
 
     if (hiddenAnalysisContent) {
         // Basic HTML rendering (similar to renderText)
-        analysisModalBody.innerHTML = ("Tweet: " + hiddenAnalysisContentTweet + "\n\n" + hiddenAnalysisContent + "\n\nSystem notes: " + hiddenAnalysisContentNotes)
+        analysisModalBody.innerHTML = (hiddenAnalysisContentTweet + "\n\n" + hiddenAnalysisContent + "\n\nSystem notes: " + hiddenAnalysisContentNotes)
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
