@@ -97,7 +97,7 @@ export const geemsPrompts = {
     "type": "hidden",
     "name": "tweet",
     // Note: Lighthearted tweet reflecting the innocent start. Positive emoji.
-    "value": "'Stargazer' ✨ has arrived in my cozy tree library! Soaking up the sunbeams and magic. That little floating book is calling... Prediction: They'll open it! Curiosity is a wonderful thing! 😉 Let the gentle discovery begin! 💖 #Stargazer #GEEMS #CozyFantasy #MagicLibrary #FirstTurn #VisualMastery #Wonder #GentleBeginnings 🌸☀️"
+    "value": "'Stargazer' ✨ has arrived in my cozy tree library! Soaking up the sunbeams and magic. That little floating book is calling... Prediction: They'll open it! Curiosity is a wonderful thing! 😉 Let the gentle discovery begin! 💖 #Stargazer #GEEMS #CozyFantasy #MagicLibrary #FirstTurn #Wonder #GentleBeginnings 🌸☀️"
   },
   {
     "type": "text",
@@ -343,7 +343,7 @@ Example turn output:
     "type": "hidden",
     "name": "tweet",
     // Note: Snarky commentary, reflects game state/visuals, mentions subject ID, includes relevant emoji.
-    "value": "Subject 'Twitchy' took the bait! 🎣 Now swimming in a lovely soup of cyber-horror hallucinations.. Look at them spin! Will they chase the next neon carrot ('MORE INSIDE?')? Prediction: YES. This is too fun. 😵‍💫🎨 #GEEMS #Twitchy #Cyberpunk #Hallucinations #SensoryOverload #VisualMastery #Manipulation #NeonNightmare #GoodTimes #SkilledDoctor 😉"
+    "value": "Subject 'Twitchy' took the bait! 🎣 Now swimming in a lovely soup of cyber-horror hallucinations.. Look at them spin! Will they chase the next neon carrot ('MORE INSIDE?')? Prediction: YES. This is too fun. 😵‍💫🎨 #GEEMS #Twitchy #Cyberpunk #Hallucinations #SensoryOverload #Manipulation #NeonNightmare #GoodTimes 😉"
   },
   {
     "type": "text",
