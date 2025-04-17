@@ -19,7 +19,9 @@ let hiddenAnalysisContentTweet = null; // To store content of gemini_facing_anal
 let hiddenAnalysisContentNotes = null; // To store content of gemini_facing_analysis for modal
 
 // --- Model Switching State ---
-const AVAILABLE_MODELS = ["gemini-2.5-pro-exp-03-25",
+const AVAILABLE_MODELS = [
+    "gemini-2.5-flash-preview",
+    "gemini-2.5-pro-exp-03-25",
     "gemini-2.0-pro-exp-02-05",
     "gemini-1.5-pro",
     "gemini-2.0-flash-exp",
