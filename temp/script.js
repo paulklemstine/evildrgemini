@@ -6,7 +6,7 @@ import MPLib from './mp.js';
 
 // --- Game State Variables ---
 let historyQueue = [];
-const MAX_HISTORY_SIZE = 20;
+const MAX_HISTORY_SIZE = 1;
 let currentUiJson = null;
 let currentNotes = {};
 let currentSubjectId = "";
