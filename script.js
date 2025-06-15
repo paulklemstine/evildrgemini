@@ -20,6 +20,7 @@ let hiddenAnalysisContentNotes = null; // To store content of gemini_facing_anal
 
 // --- Model Switching State ---
 const AVAILABLE_MODELS = [
+    "gemini-2.5-flash-preview-05-20",
     "gemini-2.5-pro-exp-03-25",
     "gemini-2.5-flash-preview-04-17",
     "gemini-2.0-pro-exp-02-05",
