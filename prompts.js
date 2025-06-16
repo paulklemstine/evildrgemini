@@ -38,9 +38,7 @@ export const geemsPrompts = {
 //     - You must use the correct type for the question and format its value correctly.
 //         - radio (Choose One): For mutually exclusive options.
 //             - The value MUST be a JSON-escaped string representing an array. The predicted choice MUST be prefixed with an asterisk (*). Example: "value": "[\\"*Attack\\", \\"Flee\\", \\"Negotiate\\"]".
-//         - checkbox_group (Choose Many): For "select all that apply" questions.
-//             - The value MUST be a JSON-escaped string of the available options. Example: "value": "[\\"Power\\",\\"Knowledge\\",\\"Wealth\\"]".
-//         - checkbox_binary (Yes/No Choice): For a single binary decision. Checking the box means "True".
+//         - checkbox (Yes/No Choice): For a single binary decision. Checking the box means "True".
 //             - The label must be a clear yes/no question. The value MUST be "false" by default.
 //         - slider (Scale): For measuring intensity.
 //             - The label text MUST explicitly state what the min and max values mean.
@@ -159,13 +157,12 @@ export const geemsPrompts = {
 //     - CRITICAL ANTI-REPETITION RULE: Before creating any probe, you MUST check the ProbeHistory you updated in Step 1. The name of any probe you generate MUST NOT already be in those lists.
 //     - CRITICAL UI ELEMENT RULES:
 //         - radio (Choose One): For mutually exclusive options. The value MUST be a JSON-escaped array string with the predicted choice prefixed by *.
-//         - checkbox_group (Choose Many): For "select all that apply." The value MUST be a JSON-escaped array string of options.
-//         - checkbox_binary (Yes/No Choice): For a single binary decision. The label must be a clear yes/no question, and the value must be "false" by default.
+//         - checkbox (Yes/No Choice): For a single binary decision. The label must be a clear yes/no question, and the value must be "false" by default.
 //         - slider (Scale): For measuring intensity. The label MUST explain the min and max values. The object MUST include min and max attributes (e.g., "min": "0", "max": "100").
 //     - Probe Implementation:
 //         - Physical Probe (Conditional): If PhysicalDescription has an "Unknown" attribute, add one probe to discover it.
-//         - Mental Breadth Probe: Add one abstract radio or checkbox_group probe.
-//         - Mental Deep Probe: Add one slider or checkbox_binary to investigate the NextProbeFocus.
+//         - Mental Breadth Probe: Add one ui element probe.
+//         - Mental Deep Probe: Add one ui element probe to investigate the NextProbeFocus.
 //         - main_action (MANDATORY): You MUST include a radio group named main_action.
 
 // 5.  Prediction: You MUST predict the player's input for ALL interactive elements, using your Prediction from the StrategicPlan to guide you.
@@ -278,7 +275,7 @@ export const geemsPrompts = {
 "voice": "gemini"
 },
 {
-"type": "checkbox_binary",
+"type": "checkbox",
 "name": "regret_binary_t12",
 "label": "Do you believe, for even a second, that you should just walk away from it all?",
 "value": "false",
