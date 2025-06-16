@@ -42,10 +42,8 @@ export const geemsPrompts = {
 //     - You must use the correct UI element for the question. The choice is not arbitrary.
 //         - radio (Choose One): For mutually exclusive options (e.g., "Attack" or "Flee").
 //             - The value field MUST be a JSON-escaped string representing an array of options. The predicted choice MUST be prefixed with an asterisk (*). Example: "value": "[\\"*Attack\\", \\"Flee\\", \\"Negotiate\\"]".
-//         - checkbox_group (Choose Many): For "select all that apply" questions.
-//             - The value field MUST be a JSON-escaped string of the available options. The player can select one, many, or none. Example: "value": "[\\"Power\\",\\"Knowledge\\",\\"Wealth\\"]".
-//         - checkbox_binary (Yes/No Choice): For a single, explicit binary decision. Checking the box means "Yes" or "True". Leaving it unchecked means "No" or "False".
-//             - The label must be a clear yes/no question. The value should be the default state (e.g., false). Example: { "type": "checkbox_binary", "name": "accept_deal", "label": "Do you accept the entity's bargain?", "value": "false" }.
+//         - checkbox (Yes/No Choice): For a single, explicit binary decision. Checking the box means "Yes" or "True". Leaving it unchecked means "No" or "False".
+//             - The label must be a clear yes/no question. The value should be the default state (e.g., false). Example: { "type": "checkbox", "name": "accept_deal", "label": "Do you accept the entity's bargain?", "value": "false" }.
 //         - slider (Scale of 0-100): For measuring the intensity of a feeling or belief.
 //             - CRITICAL LABEL RULE: The label text MUST explicitly state what the minimum (0) and maximum (100) values mean. Example: "label": "How much do you trust Pip? (0 = Not at all, 100 = Complete and total trust)".
 
@@ -164,15 +162,13 @@ export const geemsPrompts = {
 //     - CRITICAL UI ELEMENT RULES: You must use the correct UI element for the question. The choice is not arbitrary.
 //         - radio (Choose One): For mutually exclusive options (e.g., "Attack" or "Flee").
 //             - The value field MUST be a JSON-escaped string representing an array of options. The predicted choice MUST be prefixed with an asterisk (*). Example: "value": "[\\"*Attack\\", \\"Flee\\", \\"Negotiate\\"]".
-//         - checkbox_group (Choose Many): For "select all that apply" questions.
-//             - The value field MUST be a JSON-escaped string of the available options. The player can select one, many, or none. Example: "value": "[\\"Power\\",\\"Knowledge\\",\\"Wealth\\"]".
-//         - checkbox_binary (Yes/No Choice): For a single, explicit binary decision. Checking the box means "Yes" or "True". Leaving it unchecked means "No" or "False".
-//             - The label must be a clear yes/no question. The value should be the default state (e.g., false). Example: { "type": "checkbox_binary", "name": "accept_deal", "label": "Do you accept the entity's bargain?", "value": "false" }.
+//         - checkbox (Yes/No Choice): For a single, explicit binary decision. Checking the box means "Yes" or "True". Leaving it unchecked means "No" or "False".
+//             - The label must be a clear yes/no question. The value should be the default state (e.g., false). Example: { "type": "checkbox", "name": "accept_deal", "label": "Do you accept the entity's bargain?", "value": "false" }.
 //         - slider (Scale of 0-100): For measuring the intensity of a feeling or belief.
 //             - CRITICAL LABEL RULE: The label text MUST explicitly state what the minimum (0) and maximum (100) values mean. Example: "label": "How much do you trust Pip? (0 = Not at all, 100 = Complete and total trust)".
 //     - Physical Probe (Conditional): If any attribute in PhysicalDescription is "Unknown", you MUST add one probe to discover it.
-//     - Mental Breadth Probe: Add one abstract radio or checkbox_group probe.
-//     - Mental Deep Probe: Add one slider or checkbox_binary to investigate the NextProbeFocus.
+//     - Mental Breadth Probe: Add one ui element.
+//     - Mental Deep Probe: Add one ui element to investigate the NextProbeFocus.
 //     - main_action (MANDATORY): You MUST include a radio group named main_action with a label and a correctly formatted value string. It MUST have its voice set to "player".
 // 6.  Prediction: You MUST predict the player's input for ALL interactive elements, using your Prediction from the StrategicPlan to guide you.
 
