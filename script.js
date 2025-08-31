@@ -10,7 +10,7 @@ const MAX_HISTORY_SIZE = 20;
 let currentUiJson = null;
 let currentNotes = {};
 let currentSubjectId = "";
-let isMasturbationMode = false; // Default mode
+let isExplicitMode = false; // Default mode
 let isLoading = false;
 let apiKeyLocked = false;
 let localGameStateSnapshot = null; // To store local state when viewing remote state
@@ -20,14 +20,8 @@ let hiddenAnalysisContentNotes = null; // To store content of gemini_facing_anal
 
 // --- Model Switching State ---
 const AVAILABLE_MODELS = [
-    //"gemini-2.5-flash-lite-preview-06-17",
-    "gemini-2.5-flash-preview-05-20",
-    "gemini-2.5-pro-exp-03-25",
-    "gemini-2.5-flash-preview-04-17",
-    "gemini-2.0-pro-exp-02-05",
-    "gemini-1.5-pro",
-    "gemini-2.0-flash-exp",
-    "gemini-exp-1206"];
+    "gemini-1.5-pro-latest"
+];
 let currentModelIndex = 0;
 
 // --- Configuration ---
@@ -36,6 +30,15 @@ const LOCAL_STORAGE_KEY = 'geemsGameStateToRestore';
 const DEFAULT_HOST_ID = 'geems-default-game-host'; // Define a host ID for players to connect to
 
 // --- DOM Element References ---
+const lobbyContainer = document.getElementById('lobby-container');
+const gameWrapper = document.getElementById('game-wrapper');
+const proposalModal = document.getElementById('proposalModal');
+const proposalModalTitle = document.getElementById('proposalModalTitle');
+const proposalModalBody = document.getElementById('proposalModalBody');
+const proposerName = document.getElementById('proposerName');
+const proposalAcceptButton = document.getElementById('proposalAcceptButton');
+const proposalDeclineButton = document.getElementById('proposalDeclineButton');
+const interstitialMessage = document.getElementById('interstitial-message');
 const uiContainer = document.getElementById('ui-elements');
 const loadingIndicator = document.getElementById('loading');
 const submitButton = document.getElementById('submit-turn');
@@ -60,6 +63,14 @@ const analysisModalClose = document.getElementById('analysisModalClose'); // e.g
 let audioCtx = null;
 
 // --- Multiplayer State ---
+let isDateActive = false;
+let currentPartnerId = null;
+let amIPlayer1 = false;
+let isMyTurn = false;
+let partnerActions = null; // To store actions from the other player
+let incomingProposal = null; // To store details of a proposal
+let isDateExplicit = false; // Is the current date in explicit mode?
+
 const remoteGameStates = new Map(); // Map<peerId, gameState>
 
 // --- Long Press State ---
@@ -89,19 +100,39 @@ function decodeApiKey(encodedKey) {
     }
 }
 /** Constructs the full prompt for the Gemini API call. */
-function constructPrompt(playerActionsJson, historyQueue, isMasturbationMode) {
-    const baseMainPrompt = geemsPrompts.main;
-    const activeAddendum = isMasturbationMode ? `\n\n---\n${geemsPrompts.masturbationModeAddendum}\n---\n` : "";
-    if (historyQueue.length === 0) {
-        const s = `${geemsPrompts.firstrun}\n\n---\n${baseMainPrompt}${activeAddendum}\n---\n${geemsPrompts.exampleTurn}\n---\n\n--- Generate JSON UI for Turn 1 ---`;
-        console.log("Generated T1 Prompt Snippet:", s.substring(0, 200) + "...");
-        return s;
-    } else {
-        const historyString = historyQueue.map(item => `UI:\n${item.ui}\nActions:\n${item.actions}`).join('\n---\n');
-        const s = `${baseMainPrompt}${activeAddendum}\n\n--- Last Player Actions ---\n${playerActionsJson}\n\n--- Prior Game History (Last ${historyQueue.length} turns) ---\n${historyString}\n\n--- Generate Next Game Turn JSON UI ARRAY ---`;
-        console.log("Generated Subsequent Turn Prompt Snippet:", s.substring(0, 200) + "...");
-        return s;
+function constructPrompt(turnData) {
+    const {
+        isFirstTurn = false,
+        playerA_id = null,
+        playerB_id = null,
+        playerA_actions = null,
+        playerB_actions = null,
+        playerA_notes = null,
+        playerB_notes = null,
+        isExplicit = false
+    } = turnData;
+
+    const activeAddendum = isExplicit ? `\n\n---\n${geemsPrompts.masturbationModeAddendum}\n---\n` : "";
+
+    if (isFirstTurn) {
+        let prompt = geemsPrompts.dating_first_turn;
+        prompt = prompt.replace('{{playerA_id}}', playerA_id);
+        prompt = prompt.replace('{{playerB_id}}', playerB_id);
+        console.log("Generated Dating First Turn Prompt.");
+        return prompt;
     }
+
+    // For subsequent turns
+    let prompt = geemsPrompts.dating_main;
+    prompt += `\n\n---\nPREVIOUS STATE & ACTIONS\n---\n`;
+    prompt += `player_input_A: ${JSON.stringify(playerA_actions)}\n`;
+    prompt += `previous_notes_A: \`\`\`markdown\n${playerA_notes}\n\`\`\`\n\n`;
+    prompt += `player_input_B: ${JSON.stringify(playerB_actions)}\n`;
+    prompt += `previous_notes_B: \`\`\`markdown\n${playerB_notes}\n\`\`\`\n`;
+    prompt += activeAddendum;
+    prompt += `\n--- Generate JSON UI for the next turn for both players ---`;
+    console.log("Generated Subsequent Dating Turn Prompt.");
+    return prompt;
 }
 
 /** Saves the current essential game state to local storage. */
@@ -115,7 +146,7 @@ function autoSaveGameState() {
             encodedApiKey: encodeApiKey(rawApiKey),
             currentUiJson: currentUiJson,
             historyQueue: historyQueue,
-            isMasturbationMode: isMasturbationMode,
+            isExplicitMode: isExplicitMode,
             currentModelIndex: currentModelIndex
         };
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
@@ -269,19 +300,42 @@ function restoreLocalState() {
 
 
 /** Processes the successful response from the Gemini API. */
-function processSuccessfulResponse(responseJson, playerActionsJson) {
-    currentUiJson = responseJson;
+function processSuccessfulResponse(responseJson, turnData) {
     if (!apiKeyLocked) {
         apiKeyLocked = true;
         if (apiKeySection) apiKeySection.style.display = 'none';
         resetGameButton.disabled = false;
     }
-    renderUI(currentUiJson); // This will also populate hiddenAnalysisContent if present
-    playTurnAlertSound();
-    autoSaveGameState();
 
-    // Broadcast the new state to peers after processing locally
-    broadcastGameState();
+    if (isDateActive) {
+        // Two-player date response
+        const { playerA_ui, playerB_ui } = responseJson;
+
+        if (!playerA_ui || !playerB_ui) {
+            showError("Received invalid split-UI response from AI.");
+            isMyTurn = true; // Allow P1 to try again
+            updateTurnStatusDisplay();
+            return;
+        }
+
+        // Player 1 renders their UI and sends Player 2's UI to them
+        currentUiJson = playerA_ui;
+        renderUI(playerA_ui);
+        playTurnAlertSound();
+
+        MPLib.sendDirect(currentPartnerId, { type: 'new_turn_ui', payload: playerB_ui });
+
+    } else {
+        // Single-player response
+        currentUiJson = responseJson;
+        renderUI(currentUiJson);
+        playTurnAlertSound();
+        autoSaveGameState(); // Only autosave single-player games for now
+    }
+
+    // This is a good place for a potential broadcast, but the logic needs to be
+    // adapted for the dating sim context (e.g., broadcasting profiles/status)
+    // broadcastGameState();
 }
 
 /** Broadcasts the current game state to all connected peers */
@@ -297,11 +351,13 @@ function broadcastGameState() {
 }
 
 /** Fetches the next turn's UI data from the Gemini API. */
-async function fetchTurnData(playerActionsJson) {
+async function fetchTurnData(turnData) {
+    // For single-player mode, maintain history queue. For dates, state is passed explicitly.
+    if (!isDateActive) {
+        updateHistoryQueue(turnData.playerA_actions);
+    }
 
-    // Update history queue with the player actions JSON for the current turn.
-    updateHistoryQueue(playerActionsJson); // Update history. Clear flag upon successful response from Gemini.
-    console.log("fetchTurnData called.");
+    console.log("fetchTurnData called with turnData:", turnData);
     initAudioContext();
     const apiKey = apiKeyInput.value.trim();
     if (!apiKey) {
@@ -326,12 +382,12 @@ async function fetchTurnData(playerActionsJson) {
         const currentModel = AVAILABLE_MODELS[currentModelIndex];
         console.log(`Attempt ${attempts}/${maxAttempts}: Trying model ${currentModel}`);
         try {
-            const fullPrompt = constructPrompt(playerActionsJson, historyQueue, isMasturbationMode);
+            const fullPrompt = constructPrompt(turnData);
             console.log(`Sending Prompt to ${currentModel}`);
             const jsonStringResponse = await callRealGeminiAPI(apiKey, fullPrompt, currentModel);
             const responseJson = JSON.parse(jsonStringResponse);
             console.log(`Parsed API response from ${currentModel}.`);
-            processSuccessfulResponse(responseJson, playerActionsJson); // Pass actions that led to this response
+            processSuccessfulResponse(responseJson, turnData);
             success = true;
             currentAttemptConsecutiveErrors = 0;
         } catch (error) {
@@ -501,6 +557,7 @@ function renderSingleElement(element, index) {
             case 'text':
                 renderText(wrapper, element, adjustedColor);
                 break; // Will be skipped for gemini_facing_analysis by the check above
+            case 'input_text': // Alias for textfield
             case 'textfield':
                 renderTextField(wrapper, element, adjustedColor);
                 break;
@@ -510,12 +567,23 @@ function renderSingleElement(element, index) {
             case 'slider':
                 renderSlider(wrapper, element, adjustedColor);
                 break;
+            case 'radio_group': // Alias for radio
             case 'radio':
                 renderRadio(wrapper, element, adjustedColor);
                 break;
             case 'hidden':
-                if (element.name === 'notes') currentNotes = element.value || null; else if (element.name === 'subjectId') currentSubjectId = element.value || "";
-                return;
+                if (element.name === 'notes') {
+                    // Create a hidden input to store the notes value in the DOM
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'notes';
+                    hiddenInput.value = element.value || '';
+                    wrapper.appendChild(hiddenInput);
+                } else if (element.name === 'subjectId') {
+                    currentSubjectId = element.value || "";
+                }
+                // Don't return here, append the wrapper so the hidden input is in the DOM
+                break;
             default:
                 console.warn("Unknown element type:", element.type, element);
                 wrapper.textContent = `Unknown element type: ${element.type}`;
@@ -747,6 +815,7 @@ function renderRadio(wrapper, element, adjustedColor) {
 // --- Utility Functions ---
 function collectInputState() {
     const inputs = {};
+    // Collect visible inputs
     uiContainer.querySelectorAll('[data-element-type]').forEach(el => {
         const name = el.name;
         if (!name) return;
@@ -766,7 +835,13 @@ function collectInputState() {
                 break;
         }
     });
-    inputs['turn'] = historyQueue.length + 1;
+    // Specifically find and add the hidden 'notes' field for the current player
+    const notesInput = uiContainer.querySelector('input[type="hidden"][name="notes"]');
+    if (notesInput) {
+        inputs['notes'] = notesInput.value;
+    }
+
+    inputs['turn'] = historyQueue.length + 1; // Still useful for single player
     return JSON.stringify(inputs);
 }
 
@@ -864,11 +939,11 @@ function showClipboardMessage(message, isError = false) {
 }
 
 function updateModeButtonVisuals() {
-    if (isMasturbationMode) {
-        modeToggleButton.textContent = 'Mode: Explicit';
+    if (isExplicitMode) {
+        modeToggleButton.textContent = '18+ Mode: On';
         modeToggleButton.classList.remove('standard-mode');
     } else {
-        modeToggleButton.textContent = 'Mode: Standard';
+        modeToggleButton.textContent = '18+ Mode: Off';
         modeToggleButton.classList.add('standard-mode');
     }
 }
@@ -1146,30 +1221,13 @@ function addPeerIconStyles() {
 function handlePeerJoined(peerId, conn) {
     console.log(`MPLib Event: Peer joined - ${peerId.slice(-6)}`);
     showNotification(`Peer ${peerId.slice(-6)} connected.`, 'success', 2000);
-    updatePeerListUI();
-    // Optional: If you are host, maybe send them the current state immediately?
-    // MPLib handles initial sync, but subsequent joins might need updates.
-    // Example: if (MPLib.isHost() && apiKeyLocked) { // Only send if game started
-    //     const currentState = getCurrentGameState();
-    //     MPLib.sendDirect(peerId, { type: 'game_state', payload: currentState });
-    // }
+    renderLobby();
 }
 
 function handlePeerLeft(peerId) {
     console.log(`MPLib Event: Peer left - ${peerId.slice(-6)}`);
     showNotification(`Peer ${peerId.slice(-6)} disconnected.`, 'warn', 2000);
-    remoteGameStates.delete(peerId); // Remove any stored state for this peer
-
-    // If we were viewing this peer's state, restore local state
-    const isViewingRemote = localGameStateSnapshot !== null;
-    // A simple check: If we are in remote view mode AND the leaving peer MIGHT be the one we were viewing
-    // (More robust would be storing `currentlyViewingPeerId`)
-    if (isViewingRemote && remoteGameStates.size === 0) { // Or if viewingPeerId === peerId
-        console.log(`Peer ${peerId.slice(-6)} left while being viewed (or was last viewed). Restoring local state.`);
-        restoreLocalState();
-    } else {
-        updatePeerListUI(); // Just update the list if not viewing the leaving peer
-    }
+    renderLobby();
 }
 
 function handleDataReceived(senderId, data) {
@@ -1180,57 +1238,53 @@ function handleDataReceived(senderId, data) {
     }
 
     switch (data.type) {
-        case 'request_game_state':
-            console.log(`Received game state request from ${senderId.slice(-6)}`);
-            // Only send state if the game has started (API key locked)
-            if (apiKeyLocked && currentUiJson) {
-                const currentState = getCurrentGameState();
-                MPLib.sendDirect(senderId, {type: 'game_state', payload: currentState});
-                console.log(`Sent current game state back to ${senderId.slice(-6)}`);
-            } else {
-                console.log(`Game not started or no UI yet, cannot send state to ${senderId.slice(-6)}.`);
-                // Optionally send a message indicating game not ready
-                MPLib.sendDirect(senderId, {type: 'game_state_not_ready'});
+        case 'date_proposal':
+            console.log(`Received date proposal from ${senderId}`);
+            // Store proposal details before showing modal
+            incomingProposal = {
+                proposerId: senderId,
+                proposerExplicitMode: data.payload?.proposerExplicitMode || false
+            };
+            showProposalModal();
+            break;
+        case 'date_accepted':
+            console.log(`Date proposal accepted by ${senderId}`);
+            showNotification(`Your date with ${senderId.slice(-4)} was accepted! Starting...`, "success");
+            const accepterExplicitMode = data.payload?.accepterExplicitMode || false;
+            isDateExplicit = isExplicitMode && accepterExplicitMode;
+            console.log(`Date explicit mode set to: ${isDateExplicit}`);
+            startNewDate(senderId, true); // We are Player 1 (initiator)
+            break;
+        case 'date_declined':
+            console.log(`Date proposal declined by ${senderId}`);
+            showNotification(`Your date with ${senderId.slice(-4)} was declined.`, "warn");
+            const button = document.querySelector(`.propose-date-button[data-peer-id="${senderId}"]`);
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'Propose Date';
             }
             break;
-        case 'game_state':
-            console.log(`Received game state from ${senderId.slice(-6)}`);
-            if (data.payload) {
-                remoteGameStates.set(senderId, data.payload); // Store the received state
-                loadGameState(data.payload, senderId); // Load the received state for viewing
-                // updatePeerListUI is called within loadGameState
-            } else {
-                console.warn("Received game_state message with no payload.");
-                showNotification(`Failed to load state from ${senderId.slice(-6)}.`, "error", 3000);
-                highlightPeerIcon(null); // Clear potential highlight if state load failed
-                submitButton.disabled = false; // Re-enable submit if state load failed
+        case 'turn_actions':
+            // This is Player 1 receiving actions from Player 2
+            console.log(`Received turn actions from ${senderId}`);
+            if (isDateActive && amIPlayer1) {
+                partnerActions = data.payload;
+                isMyTurn = true;
+                updateTurnStatusDisplay();
+                // Now Player 1 can take their turn.
             }
             break;
-        case 'game_state_not_ready':
-            console.log(`Received game_state_not_ready from ${senderId.slice(-6)}`);
-            showNotification(`Peer ${senderId.slice(-6)}'s game has not started yet.`, "info", 3000);
-            highlightPeerIcon(null); // Clear potential highlight
-            submitButton.disabled = false; // Re-enable submit locally
-            break;
-        case 'game_state_update':
-            console.log(`Received game state update broadcast from ${senderId.slice(-6)}`);
-            // Store this update if needed.
-            if (data.payload) {
-                remoteGameStates.set(senderId, data.payload); // Update stored state
-                const isViewingRemote = localGameStateSnapshot !== null;
-                // If user is currently viewing THIS peer, refresh the view
-                // (Requires tracking `currentlyViewingPeerId`, simplified check here)
-                const viewingIcon = peerListContainer?.querySelector('.peer-icon-wrapper.viewing');
-                if (isViewingRemote && viewingIcon && viewingIcon.dataset.peerId === senderId) {
-                    console.log(`Auto-refreshing view for peer ${senderId.slice(-6)}.`);
-                    loadGameState(data.payload, senderId); // Refresh view
-                } else {
-                    // Just notify if not actively viewing this peer
-                    showNotification(`Received state update from ${senderId.slice(-6)}.`, 'info', 1500);
-                }
+        case 'new_turn_ui':
+            // This is Player 2 receiving their new UI from Player 1
+            console.log(`Received new turn UI from ${senderId}`);
+            if (isDateActive && !amIPlayer1) {
+                currentUiJson = data.payload;
+                renderUI(currentUiJson);
+                playTurnAlertSound();
+                isMyTurn = true;
+                updateTurnStatusDisplay();
             }
             break;
-        // Add other custom message types your game needs
         default:
             console.warn(`Received unknown message type '${data.type}' from ${senderId.slice(-6)}`);
     }
@@ -1273,13 +1327,58 @@ function handleConnectedToHost(hostId) {
 
 // Modify the original click listener
 submitButton.addEventListener('click', () => {
-    // --- Original Short Click Action ---
-    console.log("Submit button clicked (short press).");
-    initAudioContext();
-    const playerActions = collectInputState();
     if (isLoading) return;
-    fetchTurnData(playerActions);
-    // --- End Original Short Click Action ---
+
+    if (isDateActive) {
+        // --- Two-Player Date Logic ---
+        if (!isMyTurn) {
+            showNotification("Not your turn!", "warn");
+            return;
+        }
+
+        const myActionsString = collectInputState();
+
+        if (amIPlayer1) {
+            // Player 1's turn: They must have received actions from Player 2
+            if (!partnerActions) {
+                showNotification("Waiting for your partner's actions first!", "warn");
+                return;
+            }
+            console.log("Player 1 is submitting combined turn.");
+
+            const myParsedActions = JSON.parse(myActionsString);
+            const partnerParsedActions = JSON.parse(partnerActions);
+
+            const turnData = {
+                isFirstTurn: false,
+                playerA_actions: myParsedActions,
+                playerB_actions: partnerParsedActions,
+                playerA_notes: myParsedActions.notes,
+                playerB_notes: partnerParsedActions.notes,
+                isExplicit: isDateExplicit
+            };
+
+            fetchTurnData(turnData);
+            isMyTurn = false;
+            partnerActions = null; // Reset for the next turn
+            updateTurnStatusDisplay();
+
+        } else {
+            // Player 2's turn: Send actions to Player 1
+            console.log("Player 2 is sending actions to Player 1.");
+            MPLib.sendDirect(currentPartnerId, { type: 'turn_actions', payload: myActionsString });
+            isMyTurn = false;
+            updateTurnStatusDisplay();
+        }
+
+    } else {
+        // --- Original Single-Player Logic ---
+        console.log("Submit button clicked (single-player mode).");
+        initAudioContext();
+        const playerActions = collectInputState();
+        // For single player, historyQueue is still managed by the global variable
+        fetchTurnData({ playerA_actions: JSON.parse(playerActions), historyQueue: historyQueue, isExplicitMode: isExplicitMode });
+    }
 });
 // --- MODIFICATION END: Long Press Logic ---
 
@@ -1304,8 +1403,8 @@ apiKeyInput.addEventListener('input', () => {
 
 modeToggleButton.addEventListener('click', () => {
     if (isLoading) return;
-    isMasturbationMode = !isMasturbationMode;
-    console.log(`Mode Toggled: ${isMasturbationMode ? 'Explicit' : 'Standard'}`);
+    isExplicitMode = !isExplicitMode;
+    console.log(`18+ Mode Toggled: ${isExplicitMode ? 'On' : 'Off'}`);
     updateModeButtonVisuals();
     autoSaveGameState();
 });
@@ -1368,164 +1467,181 @@ if (analysisModal) {
 
 
 // --- Initial Game Setup ---
-function initializeGame() {
-    console.log("Initializing GEEMS...");
-    let autoStarted = false;
-    const storedStateString = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (storedStateString) {
-        console.log("Found saved state. Attempting restore...");
-        let savedState;
-        try {
-            savedState = JSON.parse(storedStateString);
-            const decodedApiKey = decodeApiKey(savedState.encodedApiKey);
-            if (!decodedApiKey) throw new Error("Failed to decode API key.");
-            apiKeyInput.value = decodedApiKey;
-            historyQueue = savedState.historyQueue || [];
-            currentUiJson = savedState.currentUiJson || null;
-            isMasturbationMode = savedState.isMasturbationMode === true;
-            currentModelIndex = savedState.currentModelIndex || 0;
-            apiKeyLocked = true;
-            autoStarted = true;
-            console.log("State restored from localStorage.");
-            setDynamicImages();
-            if (currentUiJson) renderUI(currentUiJson); else throw new Error("Restored state incomplete (missing UI).");
-            updateModeButtonVisuals();
-            apiKeySection.style.display = 'none';
-            const msg = document.getElementById('initial-message');
-            if (msg) msg.style.display = 'none';
-            hideError();
-            setLoading(false);
-        } catch (error) {
-            console.error("Error restoring state:", error);
-            showError(`Error restoring saved state: ${error.message}. Start manually.`);
-            localStorage.removeItem(LOCAL_STORAGE_KEY);
-            historyQueue = [];
-            currentUiJson = null;
-            isMasturbationMode = false;
-            currentModelIndex = 0;
-            apiKeyLocked = false;
-            autoStarted = false;
-            apiKeyInput.value = '';
-            uiContainer.innerHTML = '';
-            const initialMsg = document.getElementById('initial-message') || createInitialMessage();
-            initialMsg.style.display = 'block';
-            initialMsg.innerHTML = 'Error restoring. Enter API Key';
-            if (apiKeySection) apiKeySection.style.display = 'block';
-            setLoading(false);
-            setDynamicImages();
-        }
-    }
-    if (!autoStarted) {
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const keyFromUrlParam = urlParams.get('apiKey');
-            if (keyFromUrlParam) {
-                console.log("API Key from URL. Auto-starting...");
-                apiKeyInput.value = keyFromUrlParam;
-                apiKeyLocked = false;
-                currentModelIndex = 0;
-                isMasturbationMode = false;
-                historyQueue = [];
-                currentUiJson = null;
-                hiddenAnalysisContent = null;
-                if (apiKeySection) apiKeySection.style.display = 'none';
-                const msg = document.getElementById('initial-message') || createInitialMessage();
-                msg.style.display = 'none';
-                const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.delete('apiKey');
-                window.history.replaceState(null, '', currentUrl.toString());
-                setDynamicImages();
-                fetchTurnData("{}");
-                autoStarted = true;
-                setLoading(true);
-                updateModeButtonVisuals();
-                modeToggleButton.disabled = true;
-                resetGameButton.disabled = true;
-            }
-        } catch (e) {
-            console.error("Error processing URL params:", e);
-            showError("Error reading URL params. Start manually.");
-            autoStarted = false;
-        }
-    }
-    if (!autoStarted) {
-        console.log("Manual start.");
-        historyQueue = [];
-        currentUiJson = null;
-        isMasturbationMode = false;
-        currentModelIndex = 0;
-        apiKeyLocked = false;
-        hiddenAnalysisContent = null;
-        uiContainer.innerHTML = '';
-        const initialMsg = document.getElementById('initial-message') || createInitialMessage();
-        initialMsg.style.display = 'block';
-        initialMsg.innerHTML = 'Enter API Key';
-        if (apiKeySection) apiKeySection.style.display = 'block';
-        apiKeyInput.value = '';
-        setLoading(false);
-        hideError();
-        updateModeButtonVisuals();
-        setDynamicImages();
+
+/** Renders the lobby UI */
+function renderLobby() {
+    if (!lobbyContainer) return;
+
+    // Ensure the correct view is shown
+    lobbyContainer.style.display = 'block';
+    gameWrapper.style.display = 'none';
+
+    lobbyContainer.innerHTML = '<h2>Welcome to the Lobby</h2>';
+    const grid = document.createElement('div');
+    grid.className = 'lobby-grid';
+
+    const peers = MPLib.getConnections ? Array.from(MPLib.getConnections().keys()) : [];
+
+    if (peers.length === 0) {
+        grid.innerHTML = '<p>No other users are currently online. Please wait for someone to connect.</p>';
+    } else {
+        peers.forEach(peerId => {
+            const card = document.createElement('div');
+            card.className = 'profile-card';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'profile-avatar';
+            const randomSeed = peerId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            avatar.innerHTML = `<img src="https://image.pollinations.ai/prompt/cute%20cartoon%20animal%20avatar?seed=${randomSeed}&nologo=true&safe=false" alt="User Avatar">`;
+
+            const name = document.createElement('div');
+            name.className = 'profile-name';
+            name.textContent = `User-${peerId.slice(-4)}`;
+
+            const id = document.createElement('div');
+            id.className = 'profile-id';
+            id.textContent = `ID: ${peerId}`;
+
+            const button = document.createElement('button');
+            button.className = 'geems-button propose-date-button';
+            button.textContent = 'Propose Date';
+            button.dataset.peerId = peerId; // Store peerId for the handler
+            button.onclick = (event) => {
+                console.log(`Proposing date to ${peerId}`);
+                const payload = {
+                    proposerExplicitMode: isExplicitMode
+                };
+                MPLib.sendDirect(peerId, { type: 'date_proposal', payload: payload });
+                event.target.disabled = true;
+                event.target.textContent = 'Request Sent';
+            };
+
+            card.appendChild(avatar);
+            card.appendChild(name);
+            card.appendChild(id);
+            card.appendChild(button);
+            grid.appendChild(card);
+        });
     }
 
-    // --- Initialize Multiplayer AFTER initial setup ---
+    lobbyContainer.appendChild(grid);
+}
+
+/** Shows the date proposal modal and sets up its button handlers. */
+function showProposalModal() {
+    if (!proposalModal || !incomingProposal) return;
+
+    proposerName.textContent = `User-${incomingProposal.proposerId.slice(-4)}`;
+
+    // Use .onclick to easily overwrite previous listeners
+    proposalAcceptButton.onclick = () => {
+        if (!incomingProposal) return;
+        console.log(`Accepting date from ${incomingProposal.proposerId}`);
+        const payload = {
+            accepterExplicitMode: isExplicitMode
+        };
+        MPLib.sendDirect(incomingProposal.proposerId, { type: 'date_accepted', payload: payload });
+        proposalModal.style.display = 'none';
+
+        // Determine if the date is explicit
+        isDateExplicit = isExplicitMode && incomingProposal.proposerExplicitMode;
+        console.log(`Date explicit mode set to: ${isDateExplicit}`);
+
+        startNewDate(incomingProposal.proposerId, false); // We are Player 2 (receiver)
+        incomingProposal = null; // Clear the stored proposal
+    };
+
+    proposalDeclineButton.onclick = () => {
+        if (!incomingProposal) return;
+        console.log(`Declining date from ${incomingProposal.proposerId}`);
+        MPLib.sendDirect(incomingProposal.proposerId, { type: 'date_declined' });
+        proposalModal.style.display = 'none';
+        incomingProposal = null; // Clear the stored proposal
+    };
+
+    proposalModal.style.display = 'flex';
+}
+
+/** Transitions from lobby to game view and initializes date state */
+function startNewDate(partnerId, iAmPlayer1) {
+    console.log(`Starting new date with ${partnerId}. Am I Player 1? ${iAmPlayer1}`);
+
+    isDateActive = true;
+    currentPartnerId = partnerId;
+    amIPlayer1 = iAmPlayer1;
+    isMyTurn = iAmPlayer1; // Player 1 goes first
+    partnerActions = null;
+
+    // Hide lobby, show game
+    lobbyContainer.style.display = 'none';
+    gameWrapper.style.display = 'block';
+
+    // This will be replaced by the actual first turn UI from the AI
+    uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started!</h2></div>`;
+
+    updateTurnStatusDisplay();
+
+    // Player 1 is responsible for fetching the first turn
+    if (amIPlayer1) {
+        console.log("I am Player 1, fetching the first turn.");
+        const turnData = {
+            isFirstTurn: true,
+            playerA_id: MPLib.getLocalPeerId(),
+            playerB_id: currentPartnerId,
+            isExplicit: isDateExplicit
+        };
+        fetchTurnData(turnData);
+    }
+}
+
+/** Updates the UI to show whose turn it is and manages the interstitial screen */
+function updateTurnStatusDisplay() {
+    if (!isDateActive) return;
+
+    if (isMyTurn) {
+        showNotification("It's your turn!", "success", 2000);
+        interstitialMessage.style.display = 'none';
+        uiContainer.classList.remove('hidden-by-interstitial');
+        submitButton.disabled = false;
+    } else {
+        showNotification(`Waiting for User-${currentPartnerId.slice(-4)} to play...`, "info", 5000);
+        interstitialMessage.style.display = 'flex';
+        uiContainer.classList.add('hidden-by-interstitial');
+        submitButton.disabled = true;
+    }
+}
+
+
+function initializeGame() {
+    console.log("Initializing SparkSync...");
+
+    // --- Initialize Multiplayer FIRST ---
     if (typeof MPLib !== 'undefined' && typeof MPLib.initialize === 'function') {
         console.log("Initializing Multiplayer Library...");
-        addPeerIconStyles(); // Add styles if not already present
-        // Create peer list container in the footer
-        if (footerElement && !peerListContainer) {
-            peerListContainer = document.createElement('div');
-            peerListContainer.id = 'peer-list';
-            peerListContainer.className = 'peer-list-container'; // Add class for styling
-            // Insert before the copyright/content div in the footer
-            const footerContent = footerElement.querySelector('.footer-content');
-            if (footerContent) {
-                footerElement.insertBefore(peerListContainer, footerContent);
-            } else {
-                footerElement.appendChild(peerListContainer); // Fallback append
-            }
-        }
-
         MPLib.initialize({
-            targetHostId: DEFAULT_HOST_ID, // Use the defined host ID
-            debugLevel: 1, // Set desired debug level
+            targetHostId: DEFAULT_HOST_ID,
+            debugLevel: 1,
             onStatusUpdate: handleStatusUpdate,
             onError: handleError,
             onPeerJoined: handlePeerJoined,
             onPeerLeft: handlePeerLeft,
             onDataReceived: handleDataReceived,
-            onConnectedToHost: handleConnectedToHost,
-            onBecameHost: handleBecameHost,
-            getInitialSyncData: () => apiKeyLocked ? getCurrentGameState() : null, // Only provide sync data if game started
-            onInitialSync: (syncData) => { // Handle receiving sync data when joining
-                if (syncData) {
-                    console.log("Received initial sync data from host.");
-                    // Check if we haven't already started a local game
-                    if (!apiKeyLocked && !currentUiJson) {
-                        console.log("Applying initial sync data to start game.");
-                        // We need the API key to continue! Sync data doesn't contain it.
-                        // This approach needs refinement. Maybe sync only happens *after* local API key entered?
-                        // Or the host needs to trigger a state send *after* client confirms API key?
-                        // For now, let's just log it. A robust sync needs more thought.
-                        // loadGameState(syncData, MPLib.getHostPeerId()); // Load the state
-                        // apiKeyLocked = true; // Assume sync means game is running? Risky without key.
-                        // apiKeySection.style.display = 'none';
-                        showNotification("Received initial state from host. Enter *your* API key to participate fully.", "info", 6000);
-                        // The user still needs their own key to *send* turns.
-                        // Viewing host state might be possible without a local key if designed that way.
-                    } else {
-                        console.log("Already have local game state, ignoring initial sync data for now.");
-                        // Maybe offer to switch to host state?
-                    }
-                } else {
-                    console.log("Connected to host, but no initial sync data received (host game might not have started).");
-                }
-            }
+            onConnectedToHost: (hostId) => {
+                showNotification(`Connected to host ${hostId.slice(-6)}`, 'success');
+                renderLobby();
+            },
+            onBecameHost: () => {
+                showNotification("You are now the host!", 'success');
+                renderLobby();
+            },
         });
     } else {
         console.warn("MPLib not found or initialize function missing.");
+        lobbyContainer.innerHTML = '<p class="error-message">Error: Multiplayer library failed to load. Please refresh.</p>';
     }
 
+    // Show lobby by default
+    renderLobby();
 }
 
 function createInitialMessage() {

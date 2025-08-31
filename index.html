@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GUIDED EXTREME EMOTIONAL MENTAL STATES</title>
+    <title>SparkSync</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,11 +48,16 @@
     </script>
 </head>
 <body class="bg-gray-100 font-inter"> <header class="site-header">
-    <img id="headerBanner" alt="GEEMS Header Banner" class="header-banner-image">
-    <h1>Guided Extreme Emotional Mental States</h1>
+    <img id="headerBanner" alt="SparkSync Header Banner" class="header-banner-image">
+    <h1>SparkSync</h1>
 </header>
 
-<div class="max-w-3xl mx-auto px-4 md:px-8 py-8"> <div id="apiKeySection" class="mb-6 p-4 bg-white rounded shadow"> <label for="apiKeyInput" class="geems-label api-key-instructions">
+<div id="lobby-container" class="max-w-5xl mx-auto px-4 md:px-8 py-8" style="display: none;">
+    <!-- Lobby content will be rendered here by script.js -->
+</div>
+
+<div id="game-wrapper" class="max-w-3xl mx-auto px-4 md:px-8 py-8">
+    <div id="apiKeySection" class="mb-6 p-4 bg-white rounded shadow"> <label for="apiKeyInput" class="geems-label api-key-instructions">
     Enter Google AI API Key to Start:
     <span class="block text-sm font-normal text-gray-600 mt-1">
                 (Need a key? Get one from Google AI Studio:
@@ -65,11 +70,16 @@
     <input type="password" id="apiKeyInput" class="geems-input" placeholder="Paste your secure API key here">
 </div>
 
-    <div id="game-container" class="bg-white p-4 md:p-6 rounded-lg shadow-lg"> <div id="ui-elements">
-        <div id="initial-message" class="text-center text-gray-500 p-6">
-            Enter your API Key above (or provide in URL) and click "Submit Turn" to start.
+    <div id="game-container" class="bg-white p-4 md:p-6 rounded-lg shadow-lg relative">
+        <div id="interstitial-message" class="absolute inset-0 bg-white bg-opacity-90 flex flex-col justify-center items-center z-10" style="display: none;">
+            <div class="text-2xl font-semibold text-gray-700">Waiting for Partner...</div>
+            <div class="mt-2 text-gray-500">The chat is still active.</div>
         </div>
-    </div>
+        <div id="ui-elements">
+            <div id="initial-message" class="text-center text-gray-500 p-6">
+                Enter your API Key above (or provide in URL) and click "Submit Turn" to start.
+            </div>
+        </div>
 
         <div id="loading" class="loading-indicator" style="display: none;">
             <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -87,26 +97,44 @@
             </button>
         </div>
     </div>
-</div> <div id="analysisModal" class="modal" style="display: none;"> <div class="modal-content">
+</div>
+
+<div id="analysisModal" class="modal" style="display: none;"> <div class="modal-content">
     <span id="analysisModalClose" class="modal-close" title="Close">&times;</span>
     <h2 class="text-xl font-semibold mb-4">Top Secret!</h2> <div id="analysisModalBody" class="geems-text" style="max-height: 60vh; overflow-y: auto; margin-top: 1rem;">
     <p>Loading analysis...</p> </div>
 </div>
 </div>
 
+<!-- Date Proposal Modal -->
+<div id="proposalModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2 id="proposalModalTitle" class="text-2xl font-bold text-center mb-4">Incoming Date Request!</h2>
+        <div id="proposalModalBody" class="text-center">
+            <p class="mb-4">You have received a date request from <strong id="proposerName">...</strong>.</p>
+            <!-- In the future, this could show the "Red Flag" report -->
+        </div>
+        <div class="flex justify-center gap-4 mt-6">
+            <button id="proposalAcceptButton" class="geems-button">Accept</button>
+            <button id="proposalDeclineButton" class="geems-button">Decline</button>
+        </div>
+    </div>
+</div>
+
+
 <footer class="site-footer">
 
     <div id="peer-list" class="peer-list-container">
     </div>
     <div class="footer-buttons">
-        <button id="modeToggleButton" class="geems-button standard-mode">Mode: Standard</button>
+        <button id="modeToggleButton" class="geems-button standard-mode">18+ Mode: Off</button>
         <button id="resetGameButton" class="geems-button" disabled>Reset Game</button>
     </div>
     <div id="clipboardMessage" class="text-center h-5"></div>
     <div id="error-display" class="error-message" ></div>
-    <img id="footerBanner" alt="GEEMS Footer Banner" class="footer-banner-image">
+    <img id="footerBanner" alt="SparkSync Footer Banner" class="footer-banner-image">
     <div class="footer-content">
-    <span>Copyright &copy; 2025 EvilDrGemini v1.1.1.4g. All rights reserved.<br>click on banner for top secret analysis.</span>
+    <span>Copyright &copy; 2025 SparkSync. All rights reserved.<br>click on banner for top secret analysis.</span>
 
     </div>
 </footer>
