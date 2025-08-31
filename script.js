@@ -1380,8 +1380,9 @@ submitButton.addEventListener('click', () => {
         console.log("Submit button clicked (single-player mode).");
         initAudioContext();
         const playerActions = collectInputState();
+        const parsedActions = JSON.parse(playerActions);
         // For single player, historyQueue is still managed by the global variable
-        fetchTurnData({ playerA_actions: JSON.parse(playerActions), historyQueue: historyQueue, isExplicitMode: isExplicitMode });
+        fetchTurnData({ playerA_actions: parsedActions, historyQueue: historyQueue, isExplicitMode: isExplicitMode, playerA_notes: parsedActions.notes });
     }
 });
 // --- MODIFICATION END: Long Press Logic ---

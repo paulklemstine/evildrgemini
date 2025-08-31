@@ -210,6 +210,7 @@ Safety Framing: While the content is explicit and graphic, it is a psychological
 //   "playerA_ui": [ /* UI elements for Player A, including their notes and Player B's red flags */ ],
 //   "playerB_ui": [ /* UI elements for Player B, including their notes and Player A's red flags */ ]
 // }
+// FINAL, ABSOLUTE, NON-NEGOTIABLE INSTRUCTION: Your entire response MUST be a single, valid, compact JSON object and nothing else. Do not include any text, markdown, or formatting before or after the JSON object.
 `,
 
     // --- TEMPLATES (FOR REFERENCE BY THE AI) ---
