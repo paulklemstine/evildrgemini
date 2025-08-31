@@ -38,6 +38,7 @@ const proposalModalBody = document.getElementById('proposalModalBody');
 const proposerName = document.getElementById('proposerName');
 const proposalAcceptButton = document.getElementById('proposalAcceptButton');
 const proposalDeclineButton = document.getElementById('proposalDeclineButton');
+const enterLobbyButton = document.getElementById('enterLobbyButton');
 const interstitialMessage = document.getElementById('interstitial-message');
 const uiContainer = document.getElementById('ui-elements');
 const loadingIndicator = document.getElementById('loading');
@@ -1599,11 +1600,24 @@ function updateTurnStatusDisplay() {
     if (!isDateActive) return;
 
     if (isMyTurn) {
-        showNotification("It's your turn!", "success", 2000);
-        interstitialMessage.style.display = 'none';
-        uiContainer.classList.remove('hidden-by-interstitial');
-        submitButton.disabled = false;
+        // Player 1's turn is only truly enabled when they have their partner's actions.
+        const canPlayer1Go = amIPlayer1 && partnerActions !== null;
+        const canPlayer2Go = !amIPlayer1;
+
+        if (canPlayer1Go || canPlayer2Go) {
+            showNotification("It's your turn!", "success", 2000);
+            interstitialMessage.style.display = 'none';
+            uiContainer.classList.remove('hidden-by-interstitial');
+            submitButton.disabled = false;
+        } else {
+            // This case handles Player 1 waiting for Player 2's actions
+            showNotification(`Waiting for User-${currentPartnerId.slice(-4)} to play...`, "info", 5000);
+            interstitialMessage.style.display = 'flex';
+            uiContainer.classList.add('hidden-by-interstitial');
+            submitButton.disabled = true;
+        }
     } else {
+        // This handles when it's the other player's turn
         showNotification(`Waiting for User-${currentPartnerId.slice(-4)} to play...`, "info", 5000);
         interstitialMessage.style.display = 'flex';
         uiContainer.classList.add('hidden-by-interstitial');
@@ -1615,33 +1629,49 @@ function updateTurnStatusDisplay() {
 function initializeGame() {
     console.log("Initializing SparkSync...");
 
-    // --- Initialize Multiplayer FIRST ---
-    if (typeof MPLib !== 'undefined' && typeof MPLib.initialize === 'function') {
-        console.log("Initializing Multiplayer Library...");
-        MPLib.initialize({
-            targetHostId: DEFAULT_HOST_ID,
-            debugLevel: 1,
-            onStatusUpdate: handleStatusUpdate,
-            onError: handleError,
-            onPeerJoined: handlePeerJoined,
-            onPeerLeft: handlePeerLeft,
-            onDataReceived: handleDataReceived,
-            onConnectedToHost: (hostId) => {
-                showNotification(`Connected to host ${hostId.slice(-6)}`, 'success');
-                renderLobby();
-            },
-            onBecameHost: () => {
-                showNotification("You are now the host!", 'success');
-                renderLobby();
-            },
-        });
-    } else {
-        console.warn("MPLib not found or initialize function missing.");
-        lobbyContainer.innerHTML = '<p class="error-message">Error: Multiplayer library failed to load. Please refresh.</p>';
-    }
+    // Initially, only the game wrapper (containing the API key section) is visible
+    gameWrapper.style.display = 'block';
+    lobbyContainer.style.display = 'none';
 
-    // Show lobby by default
-    renderLobby();
+    enterLobbyButton.addEventListener('click', () => {
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) {
+            showError("An API key is required to enter the lobby.");
+            return;
+        }
+
+        // Key is present, lock it in and proceed to lobby
+        apiKeyLocked = true;
+        hideError();
+        apiKeySection.style.display = 'none'; // Hide the key input section
+        lobbyContainer.style.display = 'block'; // Show the lobby
+
+        // NOW initialize multiplayer
+        if (typeof MPLib !== 'undefined' && typeof MPLib.initialize === 'function') {
+            console.log("Initializing Multiplayer Library...");
+            MPLib.initialize({
+                targetHostId: DEFAULT_HOST_ID,
+                debugLevel: 1,
+                onStatusUpdate: handleStatusUpdate,
+                onError: handleError,
+                onPeerJoined: handlePeerJoined,
+                onPeerLeft: handlePeerLeft,
+                onDataReceived: handleDataReceived,
+                onConnectedToHost: (hostId) => {
+                    showNotification(`Connected to host ${hostId.slice(-6)}`, 'success');
+                    renderLobby();
+                },
+                onBecameHost: () => {
+                    showNotification("You are now the host!", 'success');
+                    renderLobby();
+                },
+            });
+        } else {
+            console.warn("MPLib not found or initialize function missing.");
+            lobbyContainer.innerHTML = '<p class="error-message">Error: Multiplayer library failed to load. Please refresh.</p>';
+        }
+        renderLobby(); // Initial render
+    });
 }
 
 function createInitialMessage() {
@@ -1654,16 +1684,6 @@ function createInitialMessage() {
 
 // Ensure DOM is fully loaded before initializing
 document.addEventListener('DOMContentLoaded', initializeGame);
-let randomPeerClickInterval;
 
 
-randomPeerClickInterval = setInterval(() => {
-    if (apiKeyInput.value.trim().length === 0) {
-        const peerIcons = Array.from(peerListContainer.querySelectorAll('.peer-icon-wrapper'));
-        const randomPeerIcon = peerIcons[Math.floor(Math.random() * peerIcons.length)];
-        if (randomPeerIcon) {
-            randomPeerIcon.click();
-        }
-    }
-}, 10000);
 
