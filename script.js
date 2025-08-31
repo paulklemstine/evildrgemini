@@ -555,9 +555,10 @@ function renderSingleElement(element, index) {
             case 'image':
                 renderImage(wrapper, element, adjustedColor);
                 break;
+            case 'header': // Alias for text
             case 'text':
                 renderText(wrapper, element, adjustedColor);
-                break; // Will be skipped for gemini_facing_analysis by the check above
+                break;
             case 'input_text': // Alias for textfield
             case 'textfield':
                 renderTextField(wrapper, element, adjustedColor);
@@ -568,6 +569,8 @@ function renderSingleElement(element, index) {
             case 'slider':
                 renderSlider(wrapper, element, adjustedColor);
                 break;
+            case 'input_dropdown': // Alias for radio
+            case 'input_radio_probe': // Alias for radio
             case 'radio_group': // Alias for radio
             case 'radio':
                 renderRadio(wrapper, element, adjustedColor);

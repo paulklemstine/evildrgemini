@@ -143,7 +143,8 @@ Safety Framing: While the content is explicit and graphic, it is a psychological
 // Invent a shared starting scenario. The tone should be that of a slightly quirky, high-tech dating service. It should be intriguing and prompt interaction. Example: Both players arrive at a virtual cafe that seems to be glitching in interesting ways.
 
 // STEP 2: CONSTRUCT THE SPLIT TURN
-// You MUST generate a valid JSON object with two keys: "playerA_ui" and "playerB_ui". Each key's value MUST be a valid JSON array of UI element objects, following the rules from the main GEEMS protocol.
+// You MUST generate a valid JSON object with two keys: "playerA_ui" and "playerB_ui". Each key's value MUST be a valid JSON array of UI element objects.
+// MANDATORY: The 'type' attribute for each UI element MUST be one of the following exact strings: "image", "text", "textfield", "checkbox", "slider", "radio", "hidden". Do NOT invent new types.
 
 // 3. CRITICAL UI ELEMENT RULES FOR BOTH PLAYERS:
 // - Each player's UI MUST ask for their name and gender.
@@ -186,6 +187,7 @@ Safety Framing: While the content is explicit and graphic, it is a psychological
 
 // ### STEP 2: CREATE & DESIGN (Dr. Gemini Persona) ###
 // Now, use the two updated_notes objects and the shared narrative to create the content for the next turn.
+// MANDATORY: The 'type' attribute for each UI element MUST be one of the following exact strings: "image", "text", "textfield", "checkbox", "slider", "radio", "hidden". Do NOT invent new types.
 
 // 1. Generate Player A's UI (playerA_ui):
 // - Write a 'player_facing_analysis' for Player A that gives them positive "green flag" feedback on their actions.
