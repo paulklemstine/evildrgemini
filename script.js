@@ -27,8 +27,6 @@ let currentModelIndex = 0;
 // --- Configuration ---
 const MIN_CONTRAST_LIGHTNESS = 0.55;
 const LOCAL_STORAGE_KEY = 'geemsGameStateToRestore';
-const DEFAULT_HOST_ID = 'geems-default-game-host'; // Define a host ID for players to connect to
-
 // --- DOM Element References ---
 const lobbyContainer = document.getElementById('lobby-container');
 const gameWrapper = document.getElementById('game-wrapper');
@@ -1475,11 +1473,12 @@ if (analysisModal) {
 
 /** Renders the lobby UI */
 function renderLobby() {
+    console.log("Entering renderLobby. lobbyContainer is:", lobbyContainer);
     if (!lobbyContainer) return;
 
     // Ensure the correct view is shown
-    lobbyContainer.style.display = 'block';
-    gameWrapper.style.display = 'none';
+    lobbyContainer.classList.remove('hidden');
+    gameWrapper.classList.add('hidden');
 
     lobbyContainer.innerHTML = '<h2>Welcome to the Lobby</h2>';
     const grid = document.createElement('div');
@@ -1566,6 +1565,7 @@ function showProposalModal() {
 
     proposalModal.style.display = 'flex';
 }
+window.showProposalModal = showProposalModal; // Expose for testing
 
 /** Transitions from lobby to game view and initializes date state */
 function startNewDate(partnerId, iAmPlayer1) {
@@ -1578,8 +1578,8 @@ function startNewDate(partnerId, iAmPlayer1) {
     partnerActions = null;
 
     // Hide lobby, show game
-    lobbyContainer.style.display = 'none';
-    gameWrapper.style.display = 'block';
+    lobbyContainer.classList.add('hidden');
+    gameWrapper.classList.remove('hidden');
 
     // This will be replaced by the actual first turn UI from the AI
     uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started!</h2></div>`;
@@ -1633,9 +1633,16 @@ function updateTurnStatusDisplay() {
 function initializeGame() {
     console.log("Initializing SparkSync...");
 
+    // Check for a saved API key in localStorage
+    const savedApiKey = localStorage.getItem('sparksync_apiKey');
+    if (savedApiKey) {
+        apiKeyInput.value = savedApiKey;
+        console.log("Loaded API key from localStorage.");
+    }
+
     // Initially, only the game wrapper (containing the API key section) is visible
-    gameWrapper.style.display = 'block';
-    lobbyContainer.style.display = 'none';
+    gameWrapper.classList.remove('hidden');
+    lobbyContainer.classList.add('hidden');
 
     enterLobbyButton.addEventListener('click', () => {
         const apiKey = apiKeyInput.value.trim();
@@ -1643,6 +1650,10 @@ function initializeGame() {
             showError("An API key is required to enter the lobby.");
             return;
         }
+
+        // Save the API key to localStorage
+        localStorage.setItem('sparksync_apiKey', apiKey);
+        console.log("Saved API key to localStorage.");
 
         // Key is present, lock it in and proceed to lobby
         apiKeyLocked = true;
@@ -1654,20 +1665,15 @@ function initializeGame() {
         if (typeof MPLib !== 'undefined' && typeof MPLib.initialize === 'function') {
             console.log("Initializing Multiplayer Library...");
             MPLib.initialize({
-                targetHostId: DEFAULT_HOST_ID,
                 debugLevel: 1,
                 onStatusUpdate: handleStatusUpdate,
                 onError: handleError,
                 onPeerJoined: handlePeerJoined,
                 onPeerLeft: handlePeerLeft,
                 onDataReceived: handleDataReceived,
-                onConnectedToHost: (hostId) => {
-                    showNotification(`Connected to host ${hostId.slice(-6)}`, 'success');
-                    renderLobby();
-                },
-                onBecameHost: () => {
-                    showNotification("You are now the host!", 'success');
-                    renderLobby();
+                onConnected: (localId) => {
+                    console.log(`Connected to signaling server with ID: ${localId}`);
+                    // The lobby is already rendered, but we could update our own status here if needed.
                 },
             });
         } else {
