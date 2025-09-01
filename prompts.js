@@ -187,7 +187,11 @@ Safety Framing: While the content is explicit and graphic, it is a psychological
 
 // ### STEP 2: CREATE & DESIGN (Dr. Gemini Persona) ###
 // Now, use the two updated_notes objects and the shared narrative to create the content for the next turn.
-// MANDATORY: The 'type' attribute for each UI element MUST be one of the following exact strings: "image", "text", "textfield", "checkbox", "slider", "radio", "hidden". Do NOT invent new types.
+// MANDATORY TECHNICAL PROTOCOL:
+// 1. Your entire response MUST be a single, valid, compact JSON object and nothing else. Do not include ```json markdown wrappers or any other text.
+// 2. The root object MUST have exactly two keys: "playerA_ui" and "playerB_ui".
+// 3. The value for each key MUST be a JSON array of UI element objects.
+// 4. Every UI element object MUST have a 'type' attribute, and its value MUST be one of the following exact strings: "image", "text", "textfield", "checkbox", "slider", "radio", "hidden". Do NOT invent new types.
 
 // 1. Generate Player A's UI (playerA_ui):
 // - Write a 'player_facing_analysis' for Player A that gives them positive "green flag" feedback on their actions.
