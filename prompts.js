@@ -105,8 +105,7 @@ dating_first_turn: `// SparkSync First Date Protocol (Turn 1 ONLY)
 // STEP 2: CONSTRUCT THE SPLIT TURN JSON
 // Your entire response MUST be a single, valid JSON object with two keys: "playerA_ui" and "playerB_ui".
 // Each key's value MUST be a valid JSON array of UI element objects.
-// Each UI element object MUST adhere to the strict six-key format: { "type", "name", "label", "value", "color", "voice" }.
-// The 'voice' attribute MUST be one of the following exact strings: "narrator", "gemini", "player", "god", "system".
+// Each UI element object MUST adhere to the strict five-key format: { "type", "name", "label", "value", "color" }.
 
 // STEP 3: CREATE PLAYER UIs
 // For BOTH playerA_ui and playerB_ui, you MUST include:
@@ -166,9 +165,8 @@ dating_first_turn: `// SparkSync First Date Protocol (Turn 1 ONLY)
 
 // **MANDatory TECHNICAL PROTOCOL (NON-NEGOTIABLE):**
 // 1.  Your FINAL output MUST be a single, valid, compact JSON array of UI element objects.
-// 2.  Each UI object MUST have EXACTLY these six string keys: 'type', 'name', 'label', 'value', 'color', 'voice'.
-// 3.  The 'voice' attribute MUST be one of the following exact strings: "narrator", "gemini", "player", "god", "system".
-// 4.  The 'name' attribute MUST be unique within the array.
+// 2.  Each UI object MUST have EXACTLY these five string keys: 'type', 'name', 'label', 'value', 'color'.
+// 3.  The 'name' attribute MUST be unique within the array.
 // 4.  The 'player_facing_analysis' and 'red_flag_report' text elements MUST be the first two elements in the array.
 // 5.  A 'hidden' element named 'notes' containing the player's full updated notes (from the instructions) MUST be included.
 `

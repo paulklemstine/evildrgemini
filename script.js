@@ -508,7 +508,6 @@ function renderUI(uiJsonArray) {
 function renderSingleElement(element, index) {
     const wrapper = document.createElement('div');
     wrapper.className = 'geems-element';
-    if (element.voice) wrapper.classList.add(`voice-${element.voice}`);
     let adjustedColor = null;
     if (element.color && isValidHexColor(element.color)) {
         adjustedColor = adjustColorForContrast(element.color);

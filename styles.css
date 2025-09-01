@@ -62,13 +62,6 @@ body {
     transition: border-color 0.3s ease;
 }
 
-/* Voice-specific styles */
-.voice-narrator { border-color: #6c757d; } /* Gray for narrator */
-.voice-gemini { border-color: #0d6efd; }   /* Blue for Gemini */
-.voice-player { border-color: #fdc500; }   /* Gold for player */
-.voice-god { border-color: #6a11cb; }      /* Purple for god */
-
-
 /* --- Form Elements (Inputs, Labels, etc.) --- */
 .geems-label {
     display: block;
