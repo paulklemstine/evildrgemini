@@ -193,7 +193,7 @@ Safety Framing: While the content is explicit and graphic, it is a psychological
 // 2. The root JSON object MUST have exactly two keys: "playerA_ui" and "playerB_ui".
 // 3. Each UI object within the arrays MUST have EXACTLY the following six string keys: 'type', 'name', 'label', 'value', 'color', 'voice'.
 //    - 'type': MUST be one of ["text", "image", "textfield", "radio", "slider", "checkbox", "hidden"].
-//    - 'name': A unique programmatic ID for the element.
+//    - 'name': A unique programmatic ID for the element. This name MUST be unique within the entire JSON response for this turn. Do not reuse names.
 //    - 'label': The user-facing text. For "image" or "text" types, this acts as a title.
 //    - 'value': The core content.
 //        - For "text", this is the text to display.
