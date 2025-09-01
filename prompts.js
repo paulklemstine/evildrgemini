@@ -106,6 +106,7 @@ dating_first_turn: `// SparkSync First Date Protocol (Turn 1 ONLY)
 // Your entire response MUST be a single, valid JSON object with two keys: "playerA_ui" and "playerB_ui".
 // Each key's value MUST be a valid JSON array of UI element objects.
 // Each UI element object MUST adhere to the strict six-key format: { "type", "name", "label", "value", "color", "voice" }.
+// The 'voice' attribute MUST be one of the following exact strings: "narrator", "gemini", "player", "god", "system".
 
 // STEP 3: CREATE PLAYER UIs
 // For BOTH playerA_ui and playerB_ui, you MUST include:
@@ -163,10 +164,11 @@ dating_first_turn: `// SparkSync First Date Protocol (Turn 1 ONLY)
 // 3.  **Design Probes:** Create new interactive probes (textfield, radio, etc.) based on the 'Next Probe Focus'. You MUST check the 'ProbeHistory' in the player's notes to avoid asking the same question twice.
 // 4.  **Assemble Final JSON Array:** Construct the array of UI objects, ensuring every object adheres to the strict technical protocol below.
 
-// **MANDATORY TECHNICAL PROTOCOL (NON-NEGOTIABLE):**
+// **MANDatory TECHNICAL PROTOCOL (NON-NEGOTIABLE):**
 // 1.  Your FINAL output MUST be a single, valid, compact JSON array of UI element objects.
 // 2.  Each UI object MUST have EXACTLY these six string keys: 'type', 'name', 'label', 'value', 'color', 'voice'.
-// 3.  The 'name' attribute MUST be unique within the array.
+// 3.  The 'voice' attribute MUST be one of the following exact strings: "narrator", "gemini", "player", "god", "system".
+// 4.  The 'name' attribute MUST be unique within the array.
 // 4.  The 'player_facing_analysis' and 'red_flag_report' text elements MUST be the first two elements in the array.
 // 5.  A 'hidden' element named 'notes' containing the player's full updated notes (from the instructions) MUST be included.
 `

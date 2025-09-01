@@ -1509,11 +1509,6 @@ function startNewDate(partnerId, iAmPlayer1) {
     if (amIPlayer1) {
         console.log("I am Player 1, fetching the first turn.");
         // The first turn doesn't have prior actions, so we call the first_turn prompt
-        const turnData = {
-            playerA_id: MPLib.getLocalPeerId(),
-            playerB_id: currentPartnerId,
-            isExplicit: isDateExplicit
-        };
         // This needs to be adapted to the new 3-call system.
         // For now, let's assume Player 1 initiates a special first turn call.
         fetchFirstTurn({
