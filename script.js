@@ -476,7 +476,6 @@ async function callRealGeminiAPI(apiKey, promptText, modelName) {
 /** Renders the UI elements based on the JSON array. */
 function renderUI(uiJsonArray) {
     console.log("renderUI started.");
-    hiddenAnalysisContent = null; // Reset hidden content before rendering new UI
     const initialMsgElementRef = document.getElementById('initial-message');
     uiContainer.innerHTML = '';
     if (!Array.isArray(uiJsonArray)) {
