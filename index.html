@@ -11,41 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap"
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/Lucide.css">
-    <link rel="stylesheet" href="styles.css"> <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <script type="module">
-        // Firebase Initialization
-        import {initializeApp} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-        import {getAnalytics} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-
-        // Your web app's Firebase configuration
-        // IMPORTANT: Replace with your actual Firebase config.
-        const firebaseConfig = {
-            apiKey: "AIzaSyCl32VbjykZX-k3TNEZrXbZ4IWRSKweq3E", // Note: Use environment variables or secure methods in production
-            authDomain: "geems-60187.firebaseapp.com",
-            projectId: "geems-60187",
-            storageBucket: "geems-60187.appspot.com", // Corrected domain usually ends in .appspot.com
-            messagingSenderId: "353260647182",
-            appId: "1:353260647182:web:6f44d9c68fe379534f5d5f",
-            measurementId: "G-4SB7BD55RY" // Optional
-        };
-
-        // Initialize Firebase
-        try {
-            const app = initializeApp(firebaseConfig);
-            const analytics = getAnalytics(app);
-            console.log("Firebase Initialized.");
-        } catch(e) {
-            console.error("Firebase Initialization Failed. Ensure config is correct and services are enabled.", e);
-            // Optionally display an error to the user
-            const errorDisplayElement = document.getElementById('error-display');
-            if (errorDisplayElement) { // Check if error display exists yet
-                errorDisplayElement.textContent = "Error connecting to backend services.";
-                errorDisplayElement.style.display = 'block';
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body class="bg-gray-100 font-inter"> <header class="site-header">
     <img id="headerBanner" alt="SparkSync Header Banner" class="header-banner-image">
@@ -58,16 +25,17 @@
 
 <div id="game-wrapper" class="max-w-3xl mx-auto px-4 md:px-8 py-8">
     <div id="apiKeySection" class="mb-6 p-4 bg-white rounded shadow">
-        <label for="apiKeyInput" class="geems-label api-key-instructions">
-            Enter Google AI API Key to Start:
-            <span class="block text-sm font-normal text-gray-600 mt-1">
-                (Your key is required to enter the lobby and interact with the AI)
-            </span>
-        </label>
-        <div class="flex gap-2 mt-2">
-            <input type="password" id="apiKeyInput" class="geems-input flex-grow" placeholder="Paste your secure API key here">
-            <button id="enterLobbyButton" class="geems-button">Enter Lobby</button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="lobbyNameInput" class="geems-label">Lobby Name</label>
+                <input type="text" id="lobbyNameInput" class="geems-input" placeholder="Enter a shared lobby name">
+            </div>
+            <div>
+                <label for="apiKeyInput" class="geems-label">API Key</label>
+                <input type="password" id="apiKeyInput" class="geems-input" placeholder="Paste your secure API key">
+            </div>
         </div>
+        <button id="enterLobbyButton" class="geems-button w-full mt-4">Enter Lobby</button>
     </div>
 
     <div id="game-container" class="bg-white p-4 md:p-6 rounded-lg shadow-lg relative">

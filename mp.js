@@ -13,14 +13,6 @@ const MPLib = (() => {
     const knownPeerIds = new Set();
     const API_KEY = 'peerjs'; // Public PeerJS API key
 
-// Define a list of potential seed nodes. In a real-world app, these might
-// be more stable, but for this demo, we'll use arbitrary IDs.
-const SEED_NODES = [
-    'sparksync-seed-1-alpha',
-    'sparksync-seed-2-beta',
-    'sparksync-seed-3-gamma',
-];
-
     let config = {
         debugLevel: 0,
         onStatusUpdate: (msg, type) => console.log(`[MPLib] ${msg}`),
@@ -42,25 +34,29 @@ const SEED_NODES = [
         }
         config = { ...config, ...options };
 
-        try {
-            peer = new Peer(undefined, {
-                debug: config.debugLevel,
-                key: API_KEY
-            });
-            setupPeerListeners(peer);
-        } catch (e) {
-            logMessage(`Fatal PeerJS initialization error: ${e.message}`, 'error');
-            config.onError('init', e);
+        if (!config.lobbyName) {
+            config.onError('init', 'Lobby Name is required.');
+            return;
         }
+
+        // Sanitize lobby name to create a valid PeerJS ID
+        const seedId = `sparksync-lobby-${config.lobbyName.replace(/[^a-zA-Z0-9-]/g, '-')}`;
+
+        // First, try to BECOME the seed node for this lobby
+        logMessage(`Attempting to become seed for lobby '${config.lobbyName}' with ID: ${seedId}`, 'info');
+        peer = new Peer(seedId, { debug: config.debugLevel, key: API_KEY });
+
+        setupPeerListeners(peer, seedId);
     }
 
-    function setupPeerListeners(p) {
+    function setupPeerListeners(p, seedId) {
         p.on('open', (id) => {
+            // This event fires when we successfully register with the signaling server.
+            // If we get here with our desired seedId, it means WE are the seed.
             localPeerId = id;
             knownPeerIds.add(id);
-            logMessage(`PeerJS opened with ID: ${id}`, 'info');
+            logMessage(`Successfully registered as seed node with ID: ${id}`, 'success');
             config.onConnected(id);
-            discoverPeers(); // Start discovery process
         });
 
         p.on('connection', (conn) => {
@@ -68,56 +64,30 @@ const SEED_NODES = [
             setupConnection(conn);
         });
 
-        p.on('disconnected', () => {
-            logMessage("Disconnected from signaling server. Reconnecting...", 'warn');
-            p.reconnect();
-        });
-
-        p.on('close', () => {
-            logMessage("Peer connection closed permanently.", 'error');
-            config.onError('close', 'Peer instance closed');
-        });
-
         p.on('error', (err) => {
-            logMessage(`PeerJS Error: ${err.type}`, 'error');
-            config.onError(err.type, err);
-        });
-    }
+            if (err.type === 'unavailable-id') {
+                // This means the seed ID is already taken, which is GOOD. It means the lobby exists.
+                // We destroy the failed peer object and create a new, anonymous one to connect.
+                logMessage(`Seed ID '${seedId}' is taken. Connecting to existing lobby.`, 'info');
+                p.destroy(); // Clean up the failed peer
 
-    function discoverPeers() {
-        logMessage("Attempting to connect to seed nodes...", 'info');
-        let connectedToSeed = false;
-
-        // Attempt to connect to all known seed nodes
-        SEED_NODES.forEach(seedId => {
-            if (seedId !== localPeerId) {
-                const conn = peer.connect(seedId, { reliable: true });
-                // We don't set up the connection here immediately. We wait for the 'open' event.
-                // This is just to fire off the connection attempts.
-                conn.on('open', () => {
-                    connectedToSeed = true;
-                    logMessage(`Successfully connected to seed node: ${seedId}`, 'success');
-                    setupConnection(conn); // Set up the connection fully
+                peer = new Peer({ debug: config.debugLevel, key: API_KEY }); // Create anonymous peer
+                peer.on('open', (id) => {
+                    localPeerId = id;
+                    knownPeerIds.add(id);
+                    config.onConnected(id);
+                    logMessage(`Connected with anonymous ID: ${id}. Now connecting to seed.`, 'info');
+                    connectToPeer(seedId); // Connect to the seed node
                 });
+                // Set up standard listeners for the new anonymous peer
+                peer.on('connection', (conn) => setupConnection(conn));
+                peer.on('error', (e) => config.onError(e.type, e));
+            } else {
+                // Handle other errors
+                logMessage(`PeerJS Error: ${err.type}`, 'error');
+                config.onError(err.type, err);
             }
         });
-
-        // After a timeout, if we haven't connected to any seeds, we might become one.
-        setTimeout(() => {
-            if (!connectedToSeed && !peer.destroyed) {
-                // If we are one of the designated seed IDs, we just stay online.
-                if (SEED_NODES.includes(localPeerId)) {
-                    logMessage(`Operating as a seed node: ${localPeerId}`, 'info');
-                } else if (connections.size === 0) {
-                    // If we are not a designated seed and connected to no one,
-                    // it means the network is empty. We don't need to do anything
-                    // special, just wait for others to connect to us if they can find us.
-                    // The user's request to "become a seed" is complex. A simpler, more robust
-                    // model is that every peer acts as a mini-hub for the peers it knows about.
-                    logMessage("No seeds found. Waiting for incoming connections.", 'warn');
-                }
-            }
-        }, 7000); // Wait 7 seconds for seed connections to establish.
     }
 
     function connectToPeer(targetPeerId) {

@@ -37,6 +37,7 @@ const proposerName = document.getElementById('proposerName');
 const proposalAcceptButton = document.getElementById('proposalAcceptButton');
 const proposalDeclineButton = document.getElementById('proposalDeclineButton');
 const enterLobbyButton = document.getElementById('enterLobbyButton');
+const lobbyNameInput = document.getElementById('lobbyNameInput');
 const interstitialMessage = document.getElementById('interstitial-message');
 const uiContainer = document.getElementById('ui-elements');
 const loadingIndicator = document.getElementById('loading');
@@ -1646,8 +1647,10 @@ function initializeGame() {
 
     enterLobbyButton.addEventListener('click', () => {
         const apiKey = apiKeyInput.value.trim();
-        if (!apiKey) {
-            showError("An API key is required to enter the lobby.");
+        const lobbyName = lobbyNameInput.value.trim();
+
+        if (!apiKey || !lobbyName) {
+            showError("API Key and Lobby Name are both required.");
             return;
         }
 
@@ -1663,8 +1666,9 @@ function initializeGame() {
 
         // NOW initialize multiplayer
         if (typeof MPLib !== 'undefined' && typeof MPLib.initialize === 'function') {
-            console.log("Initializing Multiplayer Library...");
+            console.log(`Initializing Multiplayer Library for lobby: ${lobbyName}...`);
             MPLib.initialize({
+                lobbyName: lobbyName, // Pass lobby name to the library
                 debugLevel: 1,
                 onStatusUpdate: handleStatusUpdate,
                 onError: handleError,
