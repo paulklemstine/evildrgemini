@@ -1220,8 +1220,18 @@ function handleDataReceived(senderId, data) {
                 }
             }
             break;
+        case 'new_turn_ui':
+             // This is Player 2 receiving their UI for the FIRST turn
+             console.log(`Received new turn UI from ${senderId}`);
+             if (isDateActive && !amIPlayer1) {
+                 currentUiJson = data.payload;
+                 renderUI(currentUiJson);
+                 playTurnAlertSound();
+                 submitButton.disabled = false;
+             }
+             break;
         case 'turn_instructions':
-            // This is Player 2 receiving instructions from Player 1
+            // This is Player 2 receiving instructions from Player 1 for subsequent turns
             console.log(`Received turn instructions from ${senderId}`);
             if (isDateActive && !amIPlayer1) {
                 fetchUiForPlayer(data.payload);
@@ -1486,7 +1496,7 @@ function startNewDate(partnerId, iAmPlayer1) {
     isDateActive = true;
     currentPartnerId = partnerId;
     amIPlayer1 = iAmPlayer1;
-    isMyTurn = iAmPlayer1; // Player 1 goes first
+    myActions = null;
     partnerActions = null;
 
     // Hide lobby, show game
@@ -1496,48 +1506,51 @@ function startNewDate(partnerId, iAmPlayer1) {
     // This will be replaced by the actual first turn UI from the AI
     uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started!</h2></div>`;
 
-    updateTurnStatusDisplay();
-
     // Player 1 is responsible for fetching the first turn
     if (amIPlayer1) {
         console.log("I am Player 1, fetching the first turn.");
+        // The first turn doesn't have prior actions, so we call the first_turn prompt
         const turnData = {
-            isFirstTurn: true,
             playerA_id: MPLib.getLocalPeerId(),
             playerB_id: currentPartnerId,
             isExplicit: isDateExplicit
         };
-        fetchTurnData(turnData);
+        // This needs to be adapted to the new 3-call system.
+        // For now, let's assume Player 1 initiates a special first turn call.
+        fetchFirstTurn({
+            playerA_id: MPLib.getLocalPeerId(),
+            playerB_id: currentPartnerId,
+            isExplicit: isDateExplicit
+        });
     }
 }
 
-/** Updates the UI to show whose turn it is and manages the interstitial screen */
-function updateTurnStatusDisplay() {
-    if (!isDateActive) return;
+async function fetchFirstTurn(turnData) {
+    console.log("Fetching first turn from AI...");
+    setLoading(true);
+    try {
+        const prompt = constructPrompt('dating_first_turn', turnData);
+        const responseJson = await callGeminiApiWithRetry(prompt);
+        const splitUi = JSON.parse(responseJson);
 
-    if (isMyTurn) {
-        // Player 1's turn is only truly enabled when they have their partner's actions.
-        const canPlayer1Go = amIPlayer1 && partnerActions !== null;
-        const canPlayer2Go = !amIPlayer1;
-
-        if (canPlayer1Go || canPlayer2Go) {
-            showNotification("It's your turn!", "success", 2000);
-            interstitialMessage.style.display = 'none';
-            uiContainer.classList.remove('hidden-by-interstitial');
-            submitButton.disabled = false;
-        } else {
-            // This case handles Player 1 waiting for Player 2's actions
-            showNotification(`Waiting for User-${currentPartnerId.slice(-4)} to play...`, "info", 5000);
-            interstitialMessage.style.display = 'flex';
-            uiContainer.classList.add('hidden-by-interstitial');
-            submitButton.disabled = true;
+        if (!splitUi.playerA_ui || !splitUi.playerB_ui) {
+            throw new Error("Invalid split UI response for first turn.");
         }
-    } else {
-        // This handles when it's the other player's turn
-        showNotification(`Waiting for User-${currentPartnerId.slice(-4)} to play...`, "info", 5000);
-        interstitialMessage.style.display = 'flex';
-        uiContainer.classList.add('hidden-by-interstitial');
-        submitButton.disabled = true;
+
+        // Player 1 renders their UI
+        currentUiJson = splitUi.playerA_ui;
+        renderUI(currentUiJson);
+        playTurnAlertSound();
+        submitButton.disabled = false;
+
+        // Player 1 sends Player 2 their UI
+        MPLib.sendDirect(currentPartnerId, { type: 'new_turn_ui', payload: splitUi.playerB_ui });
+
+    } catch (error) {
+        console.error("Error fetching first turn:", error);
+        showError("Could not start the date. Please try again.");
+    } finally {
+        setLoading(false);
     }
 }
 
