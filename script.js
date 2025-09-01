@@ -14,9 +14,6 @@ let isExplicitMode = false; // Default mode
 let isLoading = false;
 let apiKeyLocked = false;
 let localGameStateSnapshot = null; // To store local state when viewing remote state
-let hiddenAnalysisContent = null; // To store content of gemini_facing_analysis for modal
-let hiddenAnalysisContentTweet = null; // To store content of gemini_facing_analysis for modal
-let hiddenAnalysisContentNotes = null; // To store content of gemini_facing_analysis for modal
 
 // --- Model Switching State ---
 const AVAILABLE_MODELS = [
@@ -54,10 +51,6 @@ const footerBanner = document.getElementById('footerBanner');
 const footerElement = document.querySelector('.site-footer');
 const h1 = document.querySelector('h1');
 let peerListContainer = null; // Will be created dynamically
-// Add references for the modal (assuming HTML structure exists)
-const analysisModal = document.getElementById('analysisModal'); // e.g., <div id="analysisModal" class="modal" style="display:none;">...</div>
-const analysisModalBody = document.getElementById('analysisModalBody'); // e.g., <div id="analysisModalBody"></div> inside the modal
-const analysisModalClose = document.getElementById('analysisModalClose'); // e.g., <button id="analysisModalClose">Close</button> inside the modal
 
 // --- Web Audio API Context ---
 let audioCtx = null;
@@ -66,7 +59,8 @@ let audioCtx = null;
 let isDateActive = false;
 let currentPartnerId = null;
 let amIPlayer1 = false;
-let isMyTurn = false;
+let isMyTurn = false; // This is no longer used for turn-taking, but can be used to disable UI if needed.
+let myActions = null; // To store P1's own actions while waiting for P2
 let partnerActions = null; // To store actions from the other player
 let incomingProposal = null; // To store details of a proposal
 let isDateExplicit = false; // Is the current date in explicit mode?
@@ -99,39 +93,53 @@ function decodeApiKey(encodedKey) {
         return null;
     }
 }
-/** Constructs the full prompt for the Gemini API call. */
-function constructPrompt(turnData) {
+/** Constructs the full prompt for the Gemini API call based on the prompt type. */
+function constructPrompt(promptType, turnData) {
     const {
-        isFirstTurn = false,
-        playerA_id = null,
-        playerB_id = null,
-        playerA_actions = null,
-        playerB_actions = null,
-        playerA_notes = null,
-        playerB_notes = null,
+        playerA_id,
+        playerB_id,
+        playerA_actions,
+        playerB_actions,
+        playerA_notes,
+        playerB_notes,
+        instructions, // For ui_generator
         isExplicit = false
     } = turnData;
 
     const activeAddendum = isExplicit ? `\n\n---\n${geemsPrompts.masturbationModeAddendum}\n---\n` : "";
+    let prompt;
 
-    if (isFirstTurn) {
-        let prompt = geemsPrompts.dating_first_turn;
-        prompt = prompt.replace('{{playerA_id}}', playerA_id);
-        prompt = prompt.replace('{{playerB_id}}', playerB_id);
-        console.log("Generated Dating First Turn Prompt.");
-        return prompt;
+    switch (promptType) {
+        case 'dating_first_turn':
+            prompt = geemsPrompts.dating_first_turn;
+            prompt = prompt.replace('{{playerA_id}}', playerA_id);
+            prompt = prompt.replace('{{playerB_id}}', playerB_id);
+            console.log("Generated Dating First Turn Prompt.");
+            break;
+
+        case 'orchestrator':
+            prompt = geemsPrompts.orchestrator;
+            prompt += `\n\n---\nPREVIOUS STATE & ACTIONS\n---\n`;
+            prompt += `player_input_A: ${JSON.stringify(playerA_actions)}\n`;
+            prompt += `previous_notes_A: \`\`\`markdown\n${playerA_notes}\n\`\`\`\n\n`;
+            prompt += `player_input_B: ${JSON.stringify(playerB_actions)}\n`;
+            prompt += `previous_notes_B: \`\`\`markdown\n${playerB_notes}\n\`\`\`\n`;
+            prompt += activeAddendum;
+            prompt += `\n--- Generate instructions for both players based on the above. ---`;
+            console.log("Generated Orchestrator Prompt.");
+            break;
+
+        case 'ui_generator':
+            prompt = geemsPrompts.ui_generator;
+            prompt += `\n\n---\nDIRECTOR'S INSTRUCTIONS\n---\n${instructions}`;
+            prompt += activeAddendum;
+            console.log("Generated UI Generator Prompt.");
+            break;
+
+        default:
+            throw new Error(`Unknown prompt type: ${promptType}`);
     }
 
-    // For subsequent turns
-    let prompt = geemsPrompts.dating_main;
-    prompt += `\n\n---\nPREVIOUS STATE & ACTIONS\n---\n`;
-    prompt += `player_input_A: ${JSON.stringify(playerA_actions)}\n`;
-    prompt += `previous_notes_A: \`\`\`markdown\n${playerA_notes}\n\`\`\`\n\n`;
-    prompt += `player_input_B: ${JSON.stringify(playerB_actions)}\n`;
-    prompt += `previous_notes_B: \`\`\`markdown\n${playerB_notes}\n\`\`\`\n`;
-    prompt += activeAddendum;
-    prompt += `\n--- Generate JSON UI for the next turn for both players ---`;
-    console.log("Generated Subsequent Dating Turn Prompt.");
     return prompt;
 }
 
@@ -299,123 +307,103 @@ function restoreLocalState() {
 }
 
 
-/** Processes the successful response from the Gemini API. */
-function processSuccessfulResponse(responseJson, turnData) {
-    if (!apiKeyLocked) {
-        apiKeyLocked = true;
-        if (apiKeySection) apiKeySection.style.display = 'none';
-        resetGameButton.disabled = false;
+/**
+ * Kicks off the turn generation process. Called only by Player 1.
+ * This function makes the 'orchestrator' call to get instructions for both players.
+ */
+async function initiateTurnAsPlayer1(turnData) {
+    console.log("Player 1 is initiating the turn by calling the orchestrator...");
+    setLoading(true);
+
+    try {
+        const orchestratorPrompt = constructPrompt('orchestrator', turnData);
+        const instructionsJson = await callGeminiApiWithRetry(orchestratorPrompt);
+        const instructions = JSON.parse(instructionsJson);
+
+        // Process own turn with the received instructions
+        await fetchUiForPlayer(instructions.instructions_for_player_A);
+
+        // Send instructions to Player 2
+        MPLib.sendDirect(currentPartnerId, {
+            type: 'turn_instructions',
+            payload: instructions.instructions_for_player_B
+        });
+
+    } catch (error) {
+        console.error("Error during orchestrator call:", error);
+        showError("Failed to get turn instructions from AI. Please try again.");
+        // Re-enable button so P1 can retry
+        submitButton.disabled = false;
     }
+    // Note: setLoading(false) is handled within fetchUiForPlayer
+}
 
-    if (isDateActive) {
-        // Two-player date response
-        const { playerA_ui, playerB_ui } = responseJson;
+/**
+ * Fetches the UI for a single player using instructions from the orchestrator.
+ * Called by both Player 1 (immediately) and Player 2 (on message receipt).
+ */
+async function fetchUiForPlayer(instructions) {
+    console.log("Fetching UI from generator AI...");
+    setLoading(true);
 
-        if (!playerA_ui || !playerB_ui) {
-            showError("Received invalid split-UI response from AI.");
-            isMyTurn = true; // Allow P1 to try again
-            updateTurnStatusDisplay();
-            return;
-        }
+    try {
+        const uiPrompt = constructPrompt('ui_generator', { instructions, isExplicit: isDateExplicit });
+        const uiJsonString = await callGeminiApiWithRetry(uiPrompt);
+        const uiJson = JSON.parse(uiJsonString);
 
-        // Player 1 renders their UI and sends Player 2's UI to them
-        currentUiJson = playerA_ui;
-        renderUI(playerA_ui);
-        playTurnAlertSound();
-
-        MPLib.sendDirect(currentPartnerId, { type: 'new_turn_ui', payload: playerB_ui });
-
-    } else {
-        // Single-player response
-        currentUiJson = responseJson;
+        currentUiJson = uiJson;
         renderUI(currentUiJson);
         playTurnAlertSound();
-        autoSaveGameState(); // Only autosave single-player games for now
-    }
 
-    // This is a good place for a potential broadcast, but the logic needs to be
-    // adapted for the dating sim context (e.g., broadcasting profiles/status)
-    // broadcastGameState();
+        // Reset turn state
+        myActions = null;
+        partnerActions = null;
+        submitButton.disabled = false; // Re-enable submit for the next turn
+
+    } catch (error) {
+        console.error("Error during UI generator call:", error);
+        showError("Failed to generate player UI. Please try again.");
+    } finally {
+        setLoading(false);
+    }
 }
 
-/** Broadcasts the current game state to all connected peers */
-function broadcastGameState() {
-    if (!MPLib || MPLib.getConnections().size === 0) return; // Check if MPLib is available and peers connected
 
-    const stateToSend = getCurrentGameState();
-    console.log("Broadcasting game state update to peers.");
-    MPLib.broadcast({
-        type: 'game_state_update',
-        payload: stateToSend
-    });
-}
-
-/** Fetches the next turn's UI data from the Gemini API. */
-async function fetchTurnData(turnData) {
-    // For single-player mode, maintain history queue. For dates, state is passed explicitly.
-    if (!isDateActive) {
-        updateHistoryQueue(turnData.playerA_actions);
-    }
-
-    console.log("fetchTurnData called with turnData:", turnData);
-    initAudioContext();
+/**
+ * A wrapper for the Gemini API call that includes retry logic.
+ */
+async function callGeminiApiWithRetry(prompt) {
     const apiKey = apiKeyInput.value.trim();
     if (!apiKey) {
-        showError("Please enter API Key");
-        setLoading(false);
-        if (apiKeySection.style.display === 'none') apiKeySection.style.display = 'block';
-        return;
+        throw new Error("API Key is missing.");
     }
-
-    setLoading(true);
-    hideError();
-    const initialMsgEl = document.getElementById('initial-message');
-    if (initialMsgEl) initialMsgEl.style.display = 'none';
 
     let success = false;
     let attempts = 0;
-    const maxAttempts = AVAILABLE_MODELS.length * 2 + 1;
-    let currentAttemptConsecutiveErrors = 0;
+    const maxAttempts = 3;
+    let lastError = null;
 
     while (!success && attempts < maxAttempts) {
         attempts++;
         const currentModel = AVAILABLE_MODELS[currentModelIndex];
         console.log(`Attempt ${attempts}/${maxAttempts}: Trying model ${currentModel}`);
         try {
-            const fullPrompt = constructPrompt(turnData);
-            console.log(`Sending Prompt to ${currentModel}`);
-            const jsonStringResponse = await callRealGeminiAPI(apiKey, fullPrompt, currentModel);
-            const responseJson = JSON.parse(jsonStringResponse);
-            console.log(`Parsed API response from ${currentModel}.`);
-            processSuccessfulResponse(responseJson, turnData);
-            success = true;
-            currentAttemptConsecutiveErrors = 0;
+            const jsonStringResponse = await callRealGeminiAPI(apiKey, prompt, currentModel);
+            // Quick validation
+            JSON.parse(jsonStringResponse);
+            return jsonStringResponse; // Success
         } catch (error) {
             console.error(`Error with model ${currentModel} (Attempt ${attempts}):`, error);
-            currentAttemptConsecutiveErrors++;
-            const isQuotaError = error.message.includes('429') || /quota exceeded|resource.*exhausted/i.test(error.message);
-            const shouldSwitch = isQuotaError || currentAttemptConsecutiveErrors >= 2;
-            if (shouldSwitch && AVAILABLE_MODELS.length > 1) {
-                const oldModel = AVAILABLE_MODELS[currentModelIndex];
-                currentModelIndex = (currentModelIndex + 1) % AVAILABLE_MODELS.length;
-                const newModel = AVAILABLE_MODELS[currentModelIndex];
-                console.warn(`Switching model from ${oldModel} to ${newModel} due to ${isQuotaError ? 'quota/resource error' : '2 errors'}.`);
-                showError(`Experiencing issues with ${oldModel}. Trying ${newModel}... (Attempt ${attempts + 1})`);
-                currentAttemptConsecutiveErrors = 0;
-            } else if (attempts < maxAttempts) {
-                showError(`Temporary issue with ${currentModel}. Retrying... (Attempt ${attempts + 1})`);
+            lastError = error;
+            // Simplified retry logic: just try again on any error.
+            if (attempts < maxAttempts) {
+                showError(`AI Error (Attempt ${attempts}). Retrying...`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
-            if (!success && attempts < maxAttempts) await new Promise(resolve => setTimeout(resolve, 750));
         }
     }
-    if (!success) {
-        console.error(`Failed after ${maxAttempts} attempts.`);
-        showError(`Failed to get response after ${maxAttempts} attempts. Check API key, network, or try later.`);
-    } else {
-        hideError();
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-    setLoading(false);
+
+    throw new Error(`Failed to get valid response from AI after ${maxAttempts} attempts. Last error: ${lastError?.message}`);
 }
 
 /** Calls the real Google AI (Gemini) API. */
@@ -519,25 +507,6 @@ function renderUI(uiJsonArray) {
 
 /** Renders a single UI element. */
 function renderSingleElement(element, index) {
-    // --- MODIFICATION START: Check for gemini_facing_analysis ---
-    // If it's the gemini_facing_analysis text element, store its content and skip rendering.
-    if (element.type === 'text' && element.name?.includes('gemini_facing_analysis')) {
-        hiddenAnalysisContent = element.text || element.value || '';
-        console.log("Stored hidden 'gemini_facing_analysis' content.");
-        return; // Do not render this element to the main UI
-    }
-    if (element.name?.includes('tweet')) {
-        hiddenAnalysisContentTweet = element.text || element.value || '';
-        console.log("Stored hidden 'tweet' content.");
-        return; // Do not render this element to the main UI
-    }
-    if (element.name?.includes('notes')) {
-        hiddenAnalysisContentNotes = element.value || '';
-        console.log("Stored hidden 'gemini_facing_analysis' content.");
-        return; // Do not render this element to the main UI
-    }
-    // --- MODIFICATION END ---
-
     const wrapper = document.createElement('div');
     wrapper.className = 'geems-element';
     if (element.voice) wrapper.classList.add(`voice-${element.voice}`);
@@ -965,39 +934,6 @@ function setDynamicImages() {
     }
 }
 
-// --- Modal Functions ---
-/** Displays the modal with the hidden analysis content. */
-function showAnalysisModal() {
-    // Check if modal elements exist
-    if (!analysisModal || !analysisModalBody) {
-        console.error("Analysis modal elements not found in the DOM.");
-        showError("Cannot display analysis: Modal elements missing.");
-        return;
-    }
-
-    if (hiddenAnalysisContent) {
-        // Basic HTML rendering (similar to renderText)
-        analysisModalBody.innerHTML = (hiddenAnalysisContentTweet + "\n\n" + hiddenAnalysisContent + "\n\nSystem notes: " + hiddenAnalysisContentNotes)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')       // Italics
-            .replace(/```([\s\S]*?)```/g, (match, p1) => `<pre>${p1.trim()}</pre>`) // Code blocks
-            .replace(/\n/g, '<br>'); // Newlines
-    } else {
-        analysisModalBody.innerHTML = '<p>No analysis content available for this turn.</p>';
-    }
-    analysisModal.style.display = 'block'; // Or 'flex', depending on your CSS
-}
-
-/** Hides the analysis modal. */
-function hideAnalysisModal() {
-    if (analysisModal) {
-        analysisModal.style.display = 'none';
-    }
-}
-
 // --- Multiplayer Functions ---
 
 /** Shows a basic notification */
@@ -1272,20 +1208,23 @@ function handleDataReceived(senderId, data) {
             console.log(`Received turn actions from ${senderId}`);
             if (isDateActive && amIPlayer1) {
                 partnerActions = data.payload;
-                isMyTurn = true;
-                updateTurnStatusDisplay();
-                // Now Player 1 can take their turn.
+                // If P1 has also submitted, initiate the next turn
+                if (myActions) {
+                    initiateTurnAsPlayer1({
+                        playerA_actions: myActions,
+                        playerB_actions: partnerActions,
+                        playerA_notes: myActions.notes,
+                        playerB_notes: partnerActions.notes,
+                        isExplicit: isDateExplicit
+                    });
+                }
             }
             break;
-        case 'new_turn_ui':
-            // This is Player 2 receiving their new UI from Player 1
-            console.log(`Received new turn UI from ${senderId}`);
+        case 'turn_instructions':
+            // This is Player 2 receiving instructions from Player 1
+            console.log(`Received turn instructions from ${senderId}`);
             if (isDateActive && !amIPlayer1) {
-                currentUiJson = data.payload;
-                renderUI(currentUiJson);
-                playTurnAlertSound();
-                isMyTurn = true;
-                updateTurnStatusDisplay();
+                fetchUiForPlayer(data.payload);
             }
             break;
         default:
@@ -1323,65 +1262,52 @@ function handleConnectedToHost(hostId) {
 
 
 // --- Event Listeners ---
-    h1.addEventListener('click', () => {
-        showAnalysisModal()
-    })
-
 
 // Modify the original click listener
 submitButton.addEventListener('click', () => {
     if (isLoading) return;
+    submitButton.disabled = true; // Prevent double-clicks
 
     if (isDateActive) {
-        // --- Two-Player Date Logic ---
-        if (!isMyTurn) {
-            showNotification("Not your turn!", "warn");
-            return;
-        }
-
-        const myActionsString = collectInputState();
+        // --- Two-Player Date Logic (Parallel) ---
+        const actions = collectInputState();
 
         if (amIPlayer1) {
-            // Player 1's turn: They must have received actions from Player 2
-            if (!partnerActions) {
-                showNotification("Waiting for your partner's actions first!", "warn");
-                return;
+            console.log("Player 1 submitted actions.");
+            myActions = JSON.parse(actions);
+            showNotification("Actions submitted. Waiting for partner...", "info");
+            // If we already have partner's actions, initiate the turn
+            if (partnerActions) {
+                initiateTurnAsPlayer1({
+                    playerA_actions: myActions,
+                    playerB_actions: partnerActions,
+                    playerA_notes: myActions.notes,
+                    playerB_notes: partnerActions.notes,
+                    isExplicit: isDateExplicit
+                });
             }
-            console.log("Player 1 is submitting combined turn.");
-
-            const myParsedActions = JSON.parse(myActionsString);
-            const partnerParsedActions = JSON.parse(partnerActions);
-
-            const turnData = {
-                isFirstTurn: false,
-                playerA_actions: myParsedActions,
-                playerB_actions: partnerParsedActions,
-                playerA_notes: myParsedActions.notes,
-                playerB_notes: partnerParsedActions.notes,
-                isExplicit: isDateExplicit
-            };
-
-            fetchTurnData(turnData);
-            isMyTurn = false;
-            partnerActions = null; // Reset for the next turn
-            updateTurnStatusDisplay();
-
         } else {
-            // Player 2's turn: Send actions to Player 1
-            console.log("Player 2 is sending actions to Player 1.");
-            MPLib.sendDirect(currentPartnerId, { type: 'turn_actions', payload: myActionsString });
-            isMyTurn = false;
-            updateTurnStatusDisplay();
+            // Player 2 sends actions to Player 1
+            console.log("Player 2 submitted actions. Sending to Player 1...");
+            MPLib.sendDirect(currentPartnerId, { type: 'turn_actions', payload: actions });
+            showNotification("Actions sent to partner. Waiting for next turn...", "info");
         }
 
     } else {
         // --- Original Single-Player Logic ---
         console.log("Submit button clicked (single-player mode).");
-        initAudioContext();
         const playerActions = collectInputState();
-        const parsedActions = JSON.parse(playerActions);
-        // For single player, historyQueue is still managed by the global variable
-        fetchTurnData({ playerA_actions: parsedActions, historyQueue: historyQueue, isExplicitMode: isExplicitMode, playerA_notes: parsedActions.notes });
+        const turnData = {
+            promptType: 'dating_first_turn', // Or some other single-player prompt
+            playerA_actions: JSON.parse(playerActions),
+            historyQueue: historyQueue,
+            isExplicitMode: isExplicitMode
+        };
+        // This flow is now deprecated, but we can leave a hook.
+        // For now, we'll just log it. A proper implementation would need a single-player orchestrator.
+        console.log("Single player mode is not fully supported in this version.");
+        showError("Single player mode is not currently supported.");
+        submitButton.disabled = false;
     }
 });
 // --- MODIFICATION END: Long Press Logic ---
@@ -1454,21 +1380,6 @@ resetGameButton.addEventListener('click', () => {
         // Let's assume reset means full stop for now. User would refresh/rejoin.
     }
 });
-
-// Add listener for the modal close button (if it exists)
-if (analysisModalClose) {
-    analysisModalClose.addEventListener('click', hideAnalysisModal);
-}
-// Optional: Close modal if clicking outside the content area
-if (analysisModal) {
-    analysisModal.addEventListener('click', (event) => {
-        // Check if the click was directly on the modal background, not the content area
-        if (event.target === analysisModal) {
-            hideAnalysisModal();
-        }
-    });
-}
-
 
 // --- Initial Game Setup ---
 
