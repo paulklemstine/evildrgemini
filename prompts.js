@@ -187,11 +187,24 @@ Safety Framing: While the content is explicit and graphic, it is a psychological
 
 // ### STEP 2: CREATE & DESIGN (Dr. Gemini Persona) ###
 // Now, use the two updated_notes objects and the shared narrative to create the content for the next turn.
-// MANDATORY TECHNICAL PROTOCOL:
-// 1. Your entire response MUST be a single, valid, compact JSON object and nothing else. Do not include markdown wrappers or any other text.
-// 2. The root object MUST have exactly two keys: "playerA_ui" and "playerB_ui".
-// 3. The value for each key MUST be a JSON array of UI element objects.
-// 4. Every UI element object MUST have a 'type' attribute, and its value MUST be one of the following exact strings: "image", "text", "textfield", "checkbox", "slider", "radio", "hidden". Do NOT invent new types.
+
+// MANDATORY TECHNICAL PROTOCOL & UI SPECIFICATION (NON-NEGOTIABLE):
+// 1. Your FINAL output MUST be a single, valid, compact JSON object. No extra text or markdown wrappers.
+// 2. The root JSON object MUST have exactly two keys: "playerA_ui" and "playerB_ui".
+// 3. Each UI object within the arrays MUST have EXACTLY the following six string keys: 'type', 'name', 'label', 'value', 'color', 'voice'.
+//    - 'type': MUST be one of ["text", "image", "textfield", "radio", "slider", "checkbox", "hidden"].
+//    - 'name': A unique programmatic ID for the element.
+//    - 'label': The user-facing text. For "image" or "text" types, this acts as a title.
+//    - 'value': The core content.
+//        - For "text", this is the text to display.
+//        - For "image", this is the descriptive prompt for the image generation AI.
+//        - For "textfield", this is the default text.
+//        - For "slider", this is the default numeric value (e.g., "50").
+//        - For "radio", this is a JSON-escaped array of options, with the predicted choice prefixed with an asterisk (*). Example: "[\\"*Red\\", \\"Blue\\"]"
+//        - For "checkbox", this is "true" or "false".
+//    - 'color': A valid hex color code (e.g., "#FF00FF").
+//    - 'voice': An assigned voice (e.g., "narrator", "gemini").
+// 4. PROHIBITED KEYS: Do NOT use other keys like "content", "url", "alt", "min", "max", or "default". All data must fit into the six specified keys. For sliders, the min/max range (e.g., 0-100) MUST be described in the 'label' text.
 
 // 1. Generate Player A's UI (playerA_ui):
 // - Write a 'player_facing_analysis' for Player A that gives them positive "green flag" feedback on their actions.
