@@ -50,13 +50,10 @@ export const geemsPrompts = {
 //     - The complete 'gemini_facing_analysis' (Red Flag Report) for their PARTNER.
 //     - A high-level description of the narrative for their turn.
 //     - A specific 'Next Probe Focus' to guide the creation of new UI elements.
+//     - **Color Guidance:** A brief description of the mood and a suggested hex color palette for the UI Generator to use.
 
 // ### FINAL JSON OUTPUT ###
-// Your entire response must be a single JSON object like this:
-// {
-//   "instructions_for_player_A": "...",
-//   "instructions_for_player_B": "..."
-// }
+// Your entire response MUST be a single, valid, compact JSON object with exactly two keys: "instructions_for_player_A" and "instructions_for_player_B". Do not add any other text or formatting.
 `,
 
     ui_generator: `// SparkSync UI Generator AI (Pass 2 of 2)
@@ -70,7 +67,7 @@ export const geemsPrompts = {
 // 3. A high-level narrative description and a 'Next Probe Focus'.
 
 // ### YOUR TASK: GENERATE THE UI ###
-// 1.  **Extract Key Information:** Parse the instructions to understand the narrative, the player's psychological state from their notes, and the probe focus.
+// 1.  **Extract Key Information:** Parse the instructions to understand the narrative, the player's psychological state (from their notes), the probe focus, and the **Color Guidance**.
 // 2.  **Write Content:**
 //     - Write the 'player_facing_analysis' (Green Flags): This should be a 'text' element giving positive, encouraging feedback based on the player's notes.
 //     - Write the 'red_flag_report': This should be a 'text' element containing the PARTNER'S Red Flag Report, which was provided in the instructions.
