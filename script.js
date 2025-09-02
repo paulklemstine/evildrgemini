@@ -521,6 +521,7 @@ function renderSingleElement(element, index) {
             case 'image':
                 renderImage(wrapper, element, adjustedColor);
                 break;
+            case 'narrative': // Alias for text
             case 'header': // Alias for text
             case 'text':
                 renderText(wrapper, element, adjustedColor);

@@ -20,6 +20,7 @@ export const geemsPrompts = {
 // Your entire response MUST be a single, valid JSON object with two keys: "playerA_ui" and "playerB_ui".
 // Each key's value MUST be a valid JSON array of UI element objects.
 // Each UI element object MUST adhere to the strict five-key format: { "type", "name", "label", "value", "color" }.
+// - For "radio" type, the 'value' MUST be a JSON-escaped string representing an array of strings. Example: "value": "[\\"*Male\\", \\"Female\\", \\"Non-Binary\\"]"
 
 // STEP 3: CREATE PLAYER UIs
 // For BOTH playerA_ui and playerB_ui, you MUST include:
@@ -83,6 +84,7 @@ export const geemsPrompts = {
 // 3.  The 'name' attribute MUST be unique within the array.
 // 4.  The 'player_facing_analysis' and 'red_flag_report' text elements MUST be the first two elements in the array.
 // 5.  A 'hidden' element named 'notes' containing the player's full updated notes (from the instructions) MUST be included.
+// - For "radio" type, the 'value' MUST be a JSON-escaped string representing an array of strings. Example: "value": "[\\"*Option A\\", \\"Option B\\"]"
 `,
 
     fullNotesTemplate: `
