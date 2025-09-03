@@ -44,7 +44,6 @@ const redFlagReport = document.getElementById('red-flag-report');
 const interstitialContinueButton = document.getElementById('interstitial-continue-button');
 const submitButton = document.getElementById('submit-turn');
 const apiKeyInput = document.getElementById('apiKeyInput');
-const apiKeySection = document.getElementById('apiKeySection');
 const errorDisplay = document.getElementById('error-display');
 const modeToggleButton = document.getElementById('modeToggleButton');
 const resetGameButton = document.getElementById('resetGameButton');
@@ -63,11 +62,10 @@ let audioCtx = null;
 let isDateActive = false;
 let currentPartnerId = null;
 let amIPlayer1 = false;
-let isMyTurn = false; // This is no longer used for turn-taking, but can be used to disable UI if needed.
-let myActions = null; // To store P1's own actions while waiting for P2
-let partnerActions = null; // To store actions from the other player
-let incomingProposal = null; // To store details of a proposal
-let isDateExplicit = false; // Is the current date in explicit mode?
+let myActions = null;
+let partnerActions = null;
+let incomingProposal = null;
+let isDateExplicit = false;
 
 const remoteGameStates = new Map(); // Map<peerId, gameState>
 
@@ -1219,6 +1217,13 @@ function handlePeerJoined(peerId, conn) {
     console.log(`MPLib Event: Peer joined - ${peerId.slice(-6)}`);
     showNotification(`Peer ${peerId.slice(-6)} connected.`, 'success', 2000);
     renderLobby();
+
+    // This is the definitive fix for the race condition.
+    // Re-render the lobby once the data connection is fully open.
+    conn.on('open', () => {
+        console.log(`Data connection opened with ${peerId.slice(-6)}. Re-rendering lobby.`);
+        renderLobby();
+    });
 }
 
 function handlePeerLeft(peerId) {
@@ -1264,10 +1269,19 @@ function handleDataReceived(senderId, data) {
         case 'turn_actions':
             // This is Player 1 receiving actions from Player 2
             console.log(`Received turn actions from ${senderId}`);
-            if (isDateActive && amIPlayer1) {
-                partnerActions = data.payload;
+            if (isDateActive && !amIPlayer1) { // This logic should be for P2
+                partnerActions = myActions; // My actions are P2's actions from P1's perspective
+                myActions = JSON.parse(data.payload); // The incoming actions are P1's actions
+
+                // Now that P2 has both, P2 sends their actions back to P1 so P1 can kick off the orchestrator
+                console.log("Player 2 has received Player 1's actions. Sending own actions back to P1.");
+                MPLib.sendDirect(currentPartnerId, { type: 'final_actions_p2', payload: JSON.stringify(partnerActions) });
+
+            } else if (isDateActive && amIPlayer1) { // This logic is for P1
+                 partnerActions = JSON.parse(data.payload);
                 // If P1 has also submitted, initiate the next turn
                 if (myActions) {
+                    console.log("Player 1 has both sets of actions. Initiating next turn...");
                     initiateTurnAsPlayer1({
                         playerA_actions: myActions,
                         playerB_actions: partnerActions,
@@ -1278,6 +1292,24 @@ function handleDataReceived(senderId, data) {
                 }
             }
             break;
+        case 'final_actions_p2':
+             // This is P1 receiving the final confirmation from P2
+            console.log(`Received final actions from Player 2: ${senderId}`);
+            if (isDateActive && amIPlayer1) {
+                partnerActions = JSON.parse(data.payload);
+                 if (myActions) {
+                    console.log("Player 1 has both sets of actions. Initiating next turn...");
+                    initiateTurnAsPlayer1({
+                        playerA_actions: myActions,
+                        playerB_actions: partnerActions,
+                        playerA_notes: myActions.notes,
+                        playerB_notes: partnerActions.notes,
+                        isExplicit: isDateExplicit
+                    });
+                }
+            }
+            break;
+
         case 'new_turn_ui':
              // This is Player 2 receiving their UI for the FIRST turn
              console.log(`Received new turn UI from ${senderId}`);
@@ -1342,25 +1374,8 @@ submitButton.addEventListener('click', () => {
         myActions = JSON.parse(actions);
         showNotification("Actions submitted. Waiting for partner...", "info");
 
-        if (partnerActions) {
-            // I am the second player to submit this turn.
-            // If I am Player 1, I will kick off the orchestrator.
-            // If I am Player 2, my partner (P1) will kick it off.
-            if (amIPlayer1) {
-                console.log("Player 1 has both sets of actions. Initiating next turn...");
-                initiateTurnAsPlayer1({
-                    playerA_actions: myActions,
-                    playerB_actions: partnerActions,
-                    playerA_notes: myActions.notes, // Assuming notes are part of the collected state
-                    playerB_notes: partnerActions.notes,
-                    isExplicit: isDateExplicit
-                });
-            }
-        } else {
-            // I am the first player to submit. Send my actions to my partner.
-            console.log("First player submitted. Sending actions to partner...");
-            MPLib.sendDirect(currentPartnerId, { type: 'turn_actions', payload: actions });
-        }
+        // Send actions to partner immediately
+        MPLib.sendDirect(currentPartnerId, { type: 'turn_actions', payload: actions });
 
     } else {
         // --- Single-Player Logic ---
@@ -1368,7 +1383,8 @@ submitButton.addEventListener('click', () => {
         // This can be adapted to use the new `main` prompt for a single-player experience
         const playerActions = collectInputState();
         const notes = JSON.parse(playerActions).notes || "";
-        generateLocalTurn(notes, 'player1'); // Simulate a local turn generation
+        // This is a mock flow for single player
+        generateLocalTurn(`This is a test.\n---|||---\n${notes}\n---|||---\n${notes}`, 'player1');
     }
 });
 // --- MODIFICATION END: Long Press Logic ---
@@ -1378,18 +1394,6 @@ apiKeyInput.addEventListener('input', () => {
     const keyPresent = apiKeyInput.value.trim().length > 0;
     submitButton.disabled = isLoading || !(apiKeyLocked || keyPresent);
     resetGameButton.disabled = isLoading || (!apiKeyLocked && !keyPresent);
-    if (apiKeySection.style.display !== 'none') {
-        const currentInitialMessage = document.getElementById('initial-message');
-        if (keyPresent) {
-            hideError();
-            if (currentInitialMessage && currentInitialMessage.style.display !== 'none') currentInitialMessage.textContent = 'API Key entered. Click "Submit Turn" to begin!';
-        } else {
-            if (currentInitialMessage) {
-                currentInitialMessage.innerHTML = 'Enter API Key';
-                currentInitialMessage.style.display = 'block';
-            }
-        }
-    }
 });
 
 modeToggleButton.addEventListener('click', () => {
@@ -1404,41 +1408,15 @@ resetGameButton.addEventListener('click', () => {
     if (isLoading || resetGameButton.disabled) return;
     if (confirm('Reset game? This will clear local progress. Are you sure?')) {
         console.log("Resetting game state...");
-        historyQueue = [];
-        currentUiJson = null;
-        currentNotes = {};
-        currentSubjectId = "";
-        currentModelIndex = 0;
-        apiKeyLocked = false;
-        hiddenAnalysisContent = null; // Clear analysis content
+        // Clear all relevant local storage items
         localStorage.removeItem(LOCAL_STORAGE_KEY);
+        localStorage.removeItem('sparksync_apiKey');
+        localStorage.removeItem('sparksync_hivemind');
+        localStorage.removeItem('sparksync_lastLobby');
         console.log("Cleared localStorage.");
-        uiContainer.innerHTML = '';
-        hideError();
-        if (apiKeySection) apiKeySection.style.display = 'block';
-        let currentInitialMessage = document.getElementById('initial-message') || createInitialMessage();
-        currentInitialMessage.style.display = 'block';
-        currentInitialMessage.innerHTML = 'Enter secure API Key to begin'
-        const keyPresent = apiKeyInput.value.trim().length > 0;
-        setLoading(false);
-        submitButton.disabled = !keyPresent;
-        resetGameButton.disabled = !keyPresent;
-        modeToggleButton.disabled = false;
-        updateModeButtonVisuals();
 
-        // // --- Multiplayer Reset ---
-        // if (MPLib && typeof MPLib.disconnect === 'function') {
-        //     console.log("Disconnecting from multiplayer network.");
-        //     MPLib.disconnect();
-        // } else if (MPLib && MPLib.peer && !MPLib.peer.destroyed) {
-        //     try { MPLib.peer.destroy(); console.log("Destroyed PeerJS object."); } catch (e) { console.error("Error destroying PeerJS object:", e); }
-        // }
-        // remoteGameStates.clear(); // Clear stored remote states
-        // localGameStateSnapshot = null; // Clear local snapshot
-        // if (peerListContainer) peerListContainer.innerHTML = ''; // Clear peer list UI
-        // console.log("Multiplayer state reset.");
-        // Re-initialize multiplayer? Or require manual reconnect?
-        // Let's assume reset means full stop for now. User would refresh/rejoin.
+        // Reload the page to go back to the lobby selection
+        window.location.reload();
     }
 });
 
@@ -1483,20 +1461,22 @@ function renderLobby() {
             button.className = 'geems-button propose-date-button';
             button.textContent = 'Propose Date';
             button.dataset.peerId = peerId; // Store peerId for the handler
-            button.onclick = (event) => {
-                const targetButton = event.target;
-                targetButton.disabled = true;
-                targetButton.textContent = 'Connecting...';
 
-                setTimeout(() => {
+            const conn = MPLib.getConnections().get(peerId);
+            if (conn && conn.open) {
+                button.onclick = (event) => {
                     console.log(`Proposing date to ${peerId}`);
                     const payload = {
                         proposerExplicitMode: isExplicitMode
                     };
                     MPLib.sendDirect(peerId, { type: 'date_proposal', payload: payload });
-                    targetButton.textContent = 'Request Sent';
-                }, 1000); // 1-second delay
-            };
+                    event.target.disabled = true;
+                    event.target.textContent = 'Request Sent';
+                };
+            } else {
+                button.disabled = true;
+                button.textContent = 'Connecting...';
+            }
 
             card.appendChild(avatar);
             card.appendChild(name);
@@ -1565,9 +1545,6 @@ function startNewDate(partnerId, iAmPlayer1) {
     // Player 1 is responsible for fetching the first turn
     if (amIPlayer1) {
         console.log("I am Player 1, fetching the first turn.");
-        // The first turn doesn't have prior actions, so we call the first_turn prompt
-        // This needs to be adapted to the new 3-call system.
-        // For now, let's assume Player 1 initiates a special first turn call.
         fetchFirstTurn({
             playerA_id: MPLib.getLocalPeerId(),
             playerB_id: currentPartnerId,
@@ -1646,20 +1623,16 @@ function saveLobbyToHivemind(lobbyName) {
 }
 
 function connectToLobby(lobbyName, apiKey) {
-    console.log(`[DEBUG] connectToLobby called with lobby: ${lobbyName}`);
     localStorage.setItem('sparksync_apiKey', apiKey);
-    console.log("[DEBUG] Saved API key to localStorage.");
+    console.log("Saved API key to localStorage.");
 
     apiKeyLocked = true;
     hideError();
     if(lobbySelectionScreen) lobbySelectionScreen.style.display = 'none';
-    console.log("[DEBUG] Setting lobbyContainer.style.display = 'block'");
     lobbyContainer.style.display = 'block';
-    console.log(`[DEBUG] lobbyContainer display style is now: ${lobbyContainer.style.display}`);
-
 
     if (typeof MPLib !== 'undefined' && typeof MPLib.initialize === 'function') {
-        console.log(`[DEBUG] Initializing Multiplayer Library for lobby: ${lobbyName}...`);
+        console.log(`Initializing Multiplayer Library for lobby: ${lobbyName}...`);
         MPLib.initialize({
             lobbyName: lobbyName,
             debugLevel: 1,
@@ -1680,21 +1653,19 @@ function connectToLobby(lobbyName, apiKey) {
 }
 
 function initializeGame() {
-    console.log("[DEBUG] Initializing SparkSync with new lobby system...");
-    gameWrapper.classList.remove('hidden');
+    console.log("Initializing SparkSync with new lobby system...");
+    if(gameWrapper) gameWrapper.style.display = 'block';
     lobbyContainer.style.display = 'none';
-    console.log(`[DEBUG] Initial state: lobbyContainer display is ${lobbyContainer.style.display}`);
 
     const savedApiKey = localStorage.getItem('sparksync_apiKey');
-    console.log(`[DEBUG] Found saved API key: ${savedApiKey}`);
 
     if (savedApiKey) {
         const lastLobby = localStorage.getItem('sparksync_lastLobby') || DEFAULT_LOBBY;
         apiKeyInput.value = savedApiKey;
-        console.log(`[DEBUG] Auto-joining lobby: ${lastLobby}...`);
+        console.log(`Saved API key found. Entering last known lobby: ${lastLobby}...`);
         connectToLobby(lastLobby, savedApiKey);
     } else {
-        console.log("[DEBUG] No saved API key. Showing lobby selection screen.");
+        console.log("No saved API key. Showing lobby selection screen.");
         populateLobbySelector();
         if(lobbySelectionScreen) lobbySelectionScreen.style.display = 'block';
     }
@@ -1726,10 +1697,12 @@ function createInitialMessage() {
     return msgDiv;
 }
 
-window.generateLocalTurn = generateLocalTurn; // Expose for testing
+window.hideInterstitial = function() {
+    const screen = document.getElementById('interstitial-screen');
+    if (screen) {
+        screen.style.display = 'none';
+    }
+}
 
 // Ensure DOM is fully loaded before initializing
 document.addEventListener('DOMContentLoaded', initializeGame);
-
-
-
