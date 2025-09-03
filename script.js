@@ -106,7 +106,6 @@ function constructPrompt(promptType, turnData) {
         playerB_actions,
         playerA_notes,
         playerB_notes,
-        instructions, // For ui_generator
         isExplicit = false
     } = turnData;
 
@@ -114,11 +113,10 @@ function constructPrompt(promptType, turnData) {
     let prompt;
 
     switch (promptType) {
-        case 'dating_first_turn':
-            prompt = geemsPrompts.dating_first_turn;
-            prompt = prompt.replace('{{playerA_id}}', playerA_id);
-            prompt = prompt.replace('{{playerB_id}}', playerB_id);
-            console.log("Generated Dating First Turn Prompt.");
+        case 'firstrun':
+            prompt = geemsPrompts.firstrun;
+            // The new firstrun prompt is self-contained and doesn't need replacements
+            console.log("Generated First Run Prompt.");
             break;
 
         case 'orchestrator':
@@ -133,12 +131,7 @@ function constructPrompt(promptType, turnData) {
             console.log("Generated Orchestrator Prompt.");
             break;
 
-        case 'ui_generator':
-            prompt = geemsPrompts.ui_generator;
-            prompt += `\n\n---\nDIRECTOR'S INSTRUCTIONS\n---\n${instructions}`;
-            prompt += activeAddendum;
-            console.log("Generated UI Generator Prompt.");
-            break;
+        // The 'main' prompt is now called directly, so no case is needed here.
 
         default:
             throw new Error(`Unknown prompt type: ${promptType}`);
@@ -312,65 +305,45 @@ function restoreLocalState() {
 
 
 /**
- * Kicks off the turn generation process. Called only by Player 1.
- * This function makes the 'orchestrator' call to get instructions for both players.
+ * Generates the UI for the current player by calling the main UI generator prompt.
+ * This is called by both players after receiving the orchestrator's plan.
+ * @param {string} orchestratorText - The full plain text output from the orchestrator.
+ * @param {string} playerRole - Either 'player1' or 'player2'.
  */
-async function initiateTurnAsPlayer1(turnData) {
-    console.log("Player 1 is initiating the turn by calling the orchestrator...");
-    setLoading(true);
+async function generateLocalTurn(orchestratorText, playerRole) {
+    console.log(`Generating local turn for ${playerRole}...`);
+    setLoading(true); // Show interstitial
 
     try {
-        const orchestratorPrompt = constructPrompt('orchestrator', turnData);
-        const instructionsJson = await callGeminiApiWithRetry(orchestratorPrompt);
-        const instructions = JSON.parse(instructionsJson);
+        const parts = orchestratorText.split('---|||---');
+        if (parts.length !== 3) {
+            throw new Error("Invalid orchestrator output format. Full text: " + orchestratorText);
+        }
 
-        // Process own turn with the received instructions
-        await fetchUiForPlayer(instructions.instructions_for_player_A);
+        const playerNumber = (playerRole === 'player1') ? 1 : 2;
+        const instructions = parts[playerNumber]; // 1 for P1, 2 for P2
 
-        // Send instructions to Player 2
-        MPLib.sendDirect(currentPartnerId, {
-            type: 'turn_instructions',
-            payload: instructions.instructions_for_player_B
-        });
-
-    } catch (error) {
-        console.error("Error during orchestrator call:", error);
-        showError("Failed to get turn instructions from AI. Please try again.");
-        // Re-enable button so P1 can retry
-        submitButton.disabled = false;
-    }
-    // Note: setLoading(false) is handled within fetchUiForPlayer
-}
-
-/**
- * Fetches the UI for a single player using instructions from the orchestrator.
- * Called by both Player 1 (immediately) and Player 2 (on message receipt).
- */
-async function fetchUiForPlayer(instructions) {
-    console.log("Fetching UI from generator AI (Turn 2+)...");
-    setLoading(true); // This will show the interstitial screen
-
-    try {
-        const uiPrompt = constructPrompt('ui_generator', { instructions, isExplicit: isDateExplicit });
-        const uiJsonString = await callGeminiApiWithRetry(uiPrompt);
+        // The new "main" prompt is a self-contained UI generator.
+        // We just need to pass it the right instructions.
+        const uiJsonString = await callGeminiApiWithRetry(instructions);
         const uiJson = JSON.parse(uiJsonString);
 
         currentUiJson = uiJson;
 
         // --- Interstitial Logic ---
         const greenFlags = uiJson.find(el => el.name === 'player_facing_analysis');
-        const redFlags = uiJson.find(el => el.name === 'red_flag_report');
+        const redFlags = uiJson.find(el => el.name === 'gemini_facing_analysis');
 
         if (greenFlags && greenFlags.value) {
-            greenFlagReport.innerHTML = greenFlags.value.replace(/\n/g, '<br>');
+            greenFlagReport.innerHTML = greenFlags.value.replace(/\\n/g, '<br>');
         } else {
             greenFlagReport.innerHTML = '<em>No specific green flags noted this turn.</em>';
         }
 
         if (redFlags && redFlags.value) {
-            redFlagReport.innerHTML = redFlags.value.replace(/\n/g, '<br>');
+            redFlagReport.innerHTML = redFlags.value.replace(/\\n/g, '<br>');
         } else {
-            redFlagReport.innerHTML = '<em>No specific red flags noted for your partner this turn.</em>';
+            redFlagReport.innerHTML = '<em>No clinical analysis available for your partner this turn.</em>';
         }
 
         interstitialSpinner.style.display = 'none';
@@ -378,29 +351,57 @@ async function fetchUiForPlayer(instructions) {
         interstitialContinueButton.disabled = false;
         // --- End Interstitial Logic ---
 
-        renderUI(currentUiJson); // Render the main UI behind the interstitial
+        renderUI(currentUiJson);
         playTurnAlertSound();
 
-        // Reset turn state
         myActions = null;
         partnerActions = null;
 
     } catch (error) {
-        console.error("Error during UI generator call:", error);
-        showError("Failed to generate player UI. Please try again.");
-        interstitialScreen.style.display = 'none'; // Hide interstitial on error
+        console.error(`Error during local turn generation for ${playerRole}:`, error);
+        showError("Failed to generate your turn. Please try again.");
+        interstitialScreen.style.display = 'none';
     } finally {
-        // setLoading(false) is only responsible for re-enabling main UI buttons.
-        // The interstitial remains visible until the user clicks continue.
         setLoading(false);
     }
 }
 
 
 /**
+ * Kicks off the turn generation process. Called only by Player 1.
+ * This function makes the 'orchestrator' call and distributes the plain text plan.
+ */
+async function initiateTurnAsPlayer1(turnData) {
+    console.log("Player 1 is initiating the turn by calling the orchestrator...");
+    setLoading(true, true); // Use simple spinner for this phase
+
+    try {
+        const orchestratorPrompt = constructPrompt('orchestrator', turnData);
+        // The orchestrator now returns a single plain text block
+        const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
+
+        // Send the entire text block to Player 2
+        MPLib.sendDirect(currentPartnerId, {
+            type: 'orchestrator_output',
+            payload: orchestratorText
+        });
+
+        // Player 1 generates their own turn locally from the text block
+        await generateLocalTurn(orchestratorText, 'player1');
+
+    } catch (error) {
+        console.error("Error during orchestrator call:", error);
+        showError("Failed to get turn instructions from AI. Please try again.");
+        setLoading(false); // Hide spinner on error
+    }
+}
+
+
+
+/**
  * A wrapper for the Gemini API call that includes retry logic.
  */
-async function callGeminiApiWithRetry(prompt) {
+async function callGeminiApiWithRetry(prompt, responseMimeType = "application/json") {
     const apiKey = apiKeyInput.value.trim();
     if (!apiKey) {
         throw new Error("API Key is missing.");
@@ -416,10 +417,12 @@ async function callGeminiApiWithRetry(prompt) {
         const currentModel = AVAILABLE_MODELS[currentModelIndex];
         console.log(`Attempt ${attempts}/${maxAttempts}: Trying model ${currentModel}`);
         try {
-            const jsonStringResponse = await callRealGeminiAPI(apiKey, prompt, currentModel);
-            // Quick validation
-            JSON.parse(jsonStringResponse);
-            return jsonStringResponse; // Success
+            const responseText = await callRealGeminiAPI(apiKey, prompt, currentModel, responseMimeType);
+            // Quick validation for JSON responses
+            if (responseMimeType === "application/json") {
+                JSON.parse(responseText);
+            }
+            return responseText; // Success
         } catch (error) {
             console.error(`Error with model ${currentModel} (Attempt ${attempts}):`, error);
             lastError = error;
@@ -435,11 +438,11 @@ async function callGeminiApiWithRetry(prompt) {
 }
 
 /** Calls the real Google AI (Gemini) API. */
-async function callRealGeminiAPI(apiKey, promptText, modelName) {
+async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType = "application/json") {
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
     const requestBody = {
         contents: [{parts: [{text: promptText}]}],
-        generationConfig: {temperature: 1.0, response_mime_type: "application/json"},
+        generationConfig: {temperature: 1.0, response_mime_type: responseMimeType},
         safetySettings: [{
             "category": "HARM_CATEGORY_HARASSMENT",
             "threshold": "BLOCK_NONE"
@@ -489,14 +492,23 @@ async function callRealGeminiAPI(apiKey, promptText, modelName) {
     }
     if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
         let generatedText = candidate.content.parts[0].text;
-        const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-        if (jsonMatch && jsonMatch[1]) generatedText = jsonMatch[1];
-        let trimmedText = generatedText.trim();
-        try {
-            JSON.parse(trimmedText);
-            return trimmedText;
-        } catch (e) {
-            throw new Error(`Invalid JSON from API. Snippet: ${trimmedText.substring(0, 200)}...`);
+
+        // If we expect JSON, clean and validate it
+        if (responseMimeType === "application/json") {
+            const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+            if (jsonMatch && jsonMatch[1]) {
+                generatedText = jsonMatch[1];
+            }
+            let trimmedText = generatedText.trim();
+            try {
+                JSON.parse(trimmedText);
+                return trimmedText;
+            } catch (e) {
+                throw new Error(`Invalid JSON from API. Snippet: ${trimmedText.substring(0, 200)}...`);
+            }
+        } else {
+            // Otherwise, return the raw text
+            return generatedText;
         }
     } else throw new Error('API candidate generated but no content parts.');
 }
@@ -1276,11 +1288,11 @@ function handleDataReceived(senderId, data) {
                  submitButton.disabled = false;
              }
              break;
-        case 'turn_instructions':
-            // This is Player 2 receiving instructions from Player 1 for subsequent turns
-            console.log(`Received turn instructions from ${senderId}`);
+        case 'orchestrator_output':
+            // This is Player 2 receiving the text block from Player 1
+            console.log(`Received orchestrator output from ${senderId}`);
             if (isDateActive && !amIPlayer1) {
-                fetchUiForPlayer(data.payload);
+                generateLocalTurn(data.payload, 'player2');
             }
             break;
         default:
@@ -1325,45 +1337,38 @@ submitButton.addEventListener('click', () => {
     submitButton.disabled = true; // Prevent double-clicks
 
     if (isDateActive) {
-        // --- Two-Player Date Logic (Parallel) ---
+        // --- New Two-Player Date Logic ---
         const actions = collectInputState();
+        myActions = JSON.parse(actions);
+        showNotification("Actions submitted. Waiting for partner...", "info");
 
-        if (amIPlayer1) {
-            console.log("Player 1 submitted actions.");
-            myActions = JSON.parse(actions);
-            showNotification("Actions submitted. Waiting for partner...", "info");
-            // If we already have partner's actions, initiate the turn
-            if (partnerActions) {
+        if (partnerActions) {
+            // I am the second player to submit this turn.
+            // If I am Player 1, I will kick off the orchestrator.
+            // If I am Player 2, my partner (P1) will kick it off.
+            if (amIPlayer1) {
+                console.log("Player 1 has both sets of actions. Initiating next turn...");
                 initiateTurnAsPlayer1({
                     playerA_actions: myActions,
                     playerB_actions: partnerActions,
-                    playerA_notes: myActions.notes,
+                    playerA_notes: myActions.notes, // Assuming notes are part of the collected state
                     playerB_notes: partnerActions.notes,
                     isExplicit: isDateExplicit
                 });
             }
         } else {
-            // Player 2 sends actions to Player 1
-            console.log("Player 2 submitted actions. Sending to Player 1...");
+            // I am the first player to submit. Send my actions to my partner.
+            console.log("First player submitted. Sending actions to partner...");
             MPLib.sendDirect(currentPartnerId, { type: 'turn_actions', payload: actions });
-            showNotification("Actions sent to partner. Waiting for next turn...", "info");
         }
 
     } else {
-        // --- Original Single-Player Logic ---
+        // --- Single-Player Logic ---
         console.log("Submit button clicked (single-player mode).");
+        // This can be adapted to use the new `main` prompt for a single-player experience
         const playerActions = collectInputState();
-        const turnData = {
-            promptType: 'dating_first_turn', // Or some other single-player prompt
-            playerA_actions: JSON.parse(playerActions),
-            historyQueue: historyQueue,
-            isExplicitMode: isExplicitMode
-        };
-        // This flow is now deprecated, but we can leave a hook.
-        // For now, we'll just log it. A proper implementation would need a single-player orchestrator.
-        console.log("Single player mode is not fully supported in this version.");
-        showError("Single player mode is not currently supported.");
-        submitButton.disabled = false;
+        const notes = JSON.parse(playerActions).notes || "";
+        generateLocalTurn(notes, 'player1'); // Simulate a local turn generation
     }
 });
 // --- MODIFICATION END: Long Press Logic ---
@@ -1570,22 +1575,18 @@ async function fetchFirstTurn(turnData) {
     console.log("Fetching first turn from AI...");
     setLoading(true, true); // Use the simple spinner for the first turn
     try {
-        const prompt = constructPrompt('dating_first_turn', turnData);
-        const responseJson = await callGeminiApiWithRetry(prompt);
-        const splitUi = JSON.parse(responseJson);
+        const prompt = constructPrompt('firstrun', turnData);
+        const uiJsonString = await callGeminiApiWithRetry(prompt);
+        const uiJson = JSON.parse(uiJsonString);
 
-        if (!splitUi.playerA_ui || !splitUi.playerB_ui) {
-            throw new Error("Invalid split UI response for first turn.");
-        }
-
-        // Player 1 renders their UI
-        currentUiJson = splitUi.playerA_ui;
+        // Both players get the same UI on the first turn now
+        currentUiJson = uiJson;
         renderUI(currentUiJson);
         playTurnAlertSound();
         submitButton.disabled = false;
 
-        // Player 1 sends Player 2 their UI
-        MPLib.sendDirect(currentPartnerId, { type: 'new_turn_ui', payload: splitUi.playerB_ui });
+        // Send the generated UI to the other player so they are in sync
+        MPLib.sendDirect(currentPartnerId, { type: 'new_turn_ui', payload: currentUiJson });
 
     } catch (error) {
         console.error("Error fetching first turn:", error);
@@ -1719,6 +1720,8 @@ function createInitialMessage() {
     uiContainer.appendChild(msgDiv);
     return msgDiv;
 }
+
+window.generateLocalTurn = generateLocalTurn; // Expose for testing
 
 // Ensure DOM is fully loaded before initializing
 document.addEventListener('DOMContentLoaded', initializeGame);
