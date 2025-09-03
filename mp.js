@@ -114,7 +114,7 @@ const MPLib = (() => {
         const remotePeerId = conn.peer;
         connections.set(remotePeerId, conn);
         knownPeerIds.add(remotePeerId);
-        config.onPeerJoined(remotePeerId);
+    config.onPeerJoined(remotePeerId, conn);
 
         // When a connection is first established, ask the other peer for their list of peers.
         conn.on('open', () => {
