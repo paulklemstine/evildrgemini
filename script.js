@@ -349,8 +349,8 @@ async function initiateTurnAsPlayer1(turnData) {
  * Called by both Player 1 (immediately) and Player 2 (on message receipt).
  */
 async function fetchUiForPlayer(instructions) {
-    console.log("Fetching UI from generator AI...");
-    setLoading(true); // This will now show the interstitial
+    console.log("Fetching UI from generator AI (Turn 2+)...");
+    setLoading(true); // This will show the interstitial screen
 
     try {
         const uiPrompt = constructPrompt('ui_generator', { instructions, isExplicit: isDateExplicit });
@@ -360,7 +360,6 @@ async function fetchUiForPlayer(instructions) {
         currentUiJson = uiJson;
 
         // --- Interstitial Logic ---
-        // Extract reports - they should be the first two elements
         const greenFlags = uiJson.find(el => el.name === 'player_facing_analysis');
         const redFlags = uiJson.find(el => el.name === 'red_flag_report');
 
@@ -376,28 +375,25 @@ async function fetchUiForPlayer(instructions) {
             redFlagReport.innerHTML = '<em>No specific red flags noted for your partner this turn.</em>';
         }
 
-        // Hide spinner, show reports, and enable continue button
         interstitialSpinner.style.display = 'none';
         interstitialReports.classList.remove('hidden');
         interstitialContinueButton.disabled = false;
         // --- End Interstitial Logic ---
 
-        renderUI(currentUiJson); // Render the main UI in the background
+        renderUI(currentUiJson); // Render the main UI behind the interstitial
         playTurnAlertSound();
 
         // Reset turn state
         myActions = null;
         partnerActions = null;
-        submitButton.disabled = false; // Re-enable submit for the next turn
 
     } catch (error) {
         console.error("Error during UI generator call:", error);
         showError("Failed to generate player UI. Please try again.");
-        // If there's an error, hide the interstitial and go back to the game
-        interstitialScreen.style.display = 'none';
+        interstitialScreen.style.display = 'none'; // Hide interstitial on error
     } finally {
-        // This will re-enable the main UI buttons, but the interstitial will remain visible
-        // until the user clicks "Continue".
+        // setLoading(false) is only responsible for re-enabling main UI buttons.
+        // The interstitial remains visible until the user clicks continue.
         setLoading(false);
     }
 }
@@ -850,21 +846,27 @@ function collectInputState() {
     return JSON.stringify(inputs);
 }
 
-function setLoading(loading) {
+function setLoading(loading, isFirstTurn = false) {
     isLoading = loading;
-    loadingIndicator.style.display = 'none'; // The old indicator is no longer used for this flow.
 
-    if (loading) {
-        // Reset and show the interstitial screen
-        interstitialSpinner.style.display = 'flex';
-        interstitialReports.classList.add('hidden');
-        interstitialContinueButton.disabled = true;
-        greenFlagReport.innerHTML = 'Generating...';
-        redFlagReport.innerHTML = 'Generating...';
-        interstitialScreen.style.display = 'flex';
+    if (isFirstTurn) {
+        // For the first turn, use the old, simple loading spinner
+        loadingIndicator.style.display = loading ? 'flex' : 'none';
+        interstitialScreen.style.display = 'none';
+    } else {
+        // For subsequent turns, use the new interstitial screen
+        loadingIndicator.style.display = 'none';
+        if (loading) {
+            // Reset and show the interstitial screen
+            interstitialSpinner.style.display = 'flex';
+            interstitialReports.classList.add('hidden');
+            interstitialContinueButton.disabled = true;
+            greenFlagReport.innerHTML = 'Generating...';
+            redFlagReport.innerHTML = 'Generating...';
+            interstitialScreen.style.display = 'flex';
+        }
+        // When loading is false, the interstitial is hidden by the continue button, not here.
     }
-    // Note: We no longer hide the interstitial when loading is false.
-    // The continue button is now responsible for that.
 
     const keyPresent = apiKeyInput.value.trim().length > 0;
     submitButton.disabled = loading || !(apiKeyLocked || keyPresent);
@@ -1568,7 +1570,7 @@ function startNewDate(partnerId, iAmPlayer1) {
 
 async function fetchFirstTurn(turnData) {
     console.log("Fetching first turn from AI...");
-    setLoading(true);
+    setLoading(true, true); // Use the simple spinner for the first turn
     try {
         const prompt = constructPrompt('dating_first_turn', turnData);
         const responseJson = await callGeminiApiWithRetry(prompt);
@@ -1591,7 +1593,7 @@ async function fetchFirstTurn(turnData) {
         console.error("Error fetching first turn:", error);
         showError("Could not start the date. Please try again.");
     } finally {
-        setLoading(false);
+        setLoading(false, true);
     }
 }
 
@@ -1660,8 +1662,6 @@ function createInitialMessage() {
     uiContainer.appendChild(msgDiv);
     return msgDiv;
 }
-
-window.setLoading = setLoading; // Expose for testing
 
 // Ensure DOM is fully loaded before initializing
 document.addEventListener('DOMContentLoaded', initializeGame);
