@@ -17,7 +17,7 @@ let localGameStateSnapshot = null; // To store local state when viewing remote s
 
 // --- Model Switching State ---
 const AVAILABLE_MODELS = [
-    "gemini-1.5-pro-latest"
+    "gemini-2.5-pro"
 ];
 let currentModelIndex = 0;
 
