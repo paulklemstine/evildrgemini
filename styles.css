@@ -1,612 +1,397 @@
-/* Base body styling */
+/* SparkSync - Modern Dating Theme */
+
+/* --- Fonts and Body --- */
 body {
     font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-    color: #1f2937;
+    background-color: #f8f9fa; /* Light gray background */
+    color: #212529; /* Dark gray text */
     margin: 0;
-    padding: 0;
+    line-height: 1.6;
 }
 
-/* Header Styling */
+/* --- Header --- */
 .site-header {
-    padding: 0;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+    color: white;
+    padding: 1rem 2rem;
     text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.header-banner-image {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    display: block;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-bottom: 4px solid #fdc500; /* Gold accent */
 }
 
 .site-header h1 {
     font-family: 'Playfair Display', serif;
-    font-size: 3rem;
-    color: white;
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    font-size: 2.5rem;
     margin: 0;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    padding: 0 1rem;
-    box-sizing: border-box;
-    background: rgba(0, 0, 0, 0.4);
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
 }
 
-
-/* Footer Styling */
-.site-footer {
-    margin-top: 3rem;
-    padding: 0;
-    text-align: center;
-    font-size: 0.875rem;
-    color: #6b7280;
-    border-top: 1px solid #d1d5db;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    overflow: hidden;
+/* --- Main Container --- */
+.max-w-3xl {
+    max-width: 48rem; /* 768px */
 }
 
-.footer-banner-image {
-    width: 100%;
-    height: 100px;
-    object-fit: cover;
-    display: block;
-    margin-bottom: 1.5rem;
+/* --- API Key Section --- */
+#apiKeySection {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+    border: 1px solid #e9ecef;
 }
 
-.footer-buttons {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-#modeToggleButton, #resetGameButton { /* Added reset button */
-    margin-top: 0;
-}
-
-.footer-content { /* Copyright section */
-    display: flex;
-    align-items: center;
-    justify-content: center; /* Center footer content */
-    gap: 0.75rem;
-    margin-top: 0;
-    padding-bottom: 1.5rem;
-}
-
-.footer-copyright-image { /* Specific class for the small icon */
-    height: 30px; /* Adjusted size */
-    width: 30px; /* Adjusted size */
-    border-radius: 0.375rem;
-    object-fit: cover;
-}
-
-#clipboardMessage {
-    font-size: 0.8rem;
-    color: #16a34a;
-    height: 1.2em;
-    margin-top: -0.5rem;
-    margin-bottom: 1rem;
+.api-key-instructions {
     font-weight: 500;
-    padding: 0 1rem;
+    color: #495057;
 }
 
+/* --- Game Container --- */
+#game-container {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+}
 
-/* Custom styles for GEEMS UI elements */
+/* --- UI Elements --- */
 .geems-element {
     margin-bottom: 1.5rem;
-    padding: 1.25rem;
-    background-color: white !important;
-    color: #1f2937 !important;
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.08), 0 2px 6px 0 rgba(0, 0, 0, 0.05);
-    border-left: 5px solid transparent;
-    position: relative;
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.3s ease;
+    padding-left: 1rem;
+    border-left: 4px solid #dee2e6; /* Default border color */
+    transition: border-color 0.3s ease;
 }
 
-.geems-element:hover {
-    box-shadow: 0 8px 15px 0 rgba(0, 0, 0, 0.1), 0 4px 8px 0 rgba(0, 0, 0, 0.07);
-}
-
+/* --- Form Elements (Inputs, Labels, etc.) --- */
 .geems-label {
     display: block;
-    margin-bottom: 0.6rem;
-    font-weight: 600;
-    color: #4f46e5;
-    font-size: 0.9rem;
-    transition: color 0.3s ease;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #495057;
 }
 
-.geems-text {
-    color: inherit;
-    line-height: 1.7;
-    word-wrap: break-word;
-    font-size: 1rem;
-}
-
-.geems-text strong {
-    color: #7c3aed;
-}
-
-.geems-text em {
-    color: #db2777;
-    font-style: italic;
-}
-
-.geems-text pre {
-    background-color: #1f2937; /* Dark background for code */
-    padding: 1rem;
-    border-radius: 0.5rem;
-    overflow-x: auto;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.9rem;
-    color: #d1d5db; /* Light text on dark background */
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid #374151;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-
-/* Input and Textarea styles */
 .geems-input, .geems-textarea {
     width: 100%;
-    padding: 0.85rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    color: #1f2937;
-    background-color: #f9fafb;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    box-sizing: border-box; /* Include padding and border in width */
-}
-
-.geems-input::placeholder, .geems-textarea::placeholder {
-    color: #9ca3af;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .geems-input:focus, .geems-textarea:focus {
     outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
-    background-color: white;
+    border-color: #2575fc;
+    box-shadow: 0 0 0 3px rgba(37, 117, 252, 0.15);
 }
 
-/* Radio and Checkbox option styling */
-.geems-radio-option, .geems-checkbox-option {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-    border: 1px solid #e5e7eb;
-    color: inherit;
-}
-
-.geems-radio-option:hover, .geems-checkbox-option:hover {
-    background-color: #f0f9ff;
-    border-color: #a5b4fc;
-}
-
-.geems-radio-option:active, .geems-checkbox-option:active {
-    transform: scale(0.98);
-}
-
-.geems-radio-option input[type="radio"], .geems-checkbox-option input[type="checkbox"] {
-    margin-right: 0.85rem;
-    cursor: pointer;
-    accent-color: #6366f1;
-    width: 1.1rem;
-    height: 1.1rem;
-}
-
-.geems-radio-option label, .geems-checkbox-option label {
-    color: inherit;
-    flex-grow: 1;
-    cursor: pointer;
-}
-
-/* Slider styling */
-.geems-slider {
-    width: 100%;
-    cursor: pointer;
-    accent-color: #6366f1;
-    height: 0.6rem;
-    background: #e5e7eb;
-    border-radius: 9999px;
-    appearance: none;
-    -webkit-appearance: none;
-}
-
-.geems-slider::-webkit-slider-thumb {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 1.25rem;
-    height: 1.25rem;
-    background: var(--slider-thumb-color, #4f46e5); /* Use CSS variable */
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.geems-slider::-moz-range-thumb {
-    width: 1.25rem;
-    height: 1.25rem;
-    background: var(--slider-thumb-color, #4f46e5); /* Use CSS variable */
-    border-radius: 50%;
-    cursor: pointer;
+/* --- Buttons --- */
+.geems-button {
+    background-color: #0d6efd;
+    color: white;
+    padding: 0.75rem 1.5rem;
     border: none;
-    transition: background-color 0.3s ease;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
-.geems-slider-value-display {
-    color: #4f46e5;
-    font-weight: 600;
-    min-width: 2.5rem;
-    transition: color 0.3s ease;
-    width: auto; /* Allow width to adjust */
-    text-align: right;
+.geems-button:hover:not(:disabled) {
+    background-color: #0b5ed7;
+    transform: translateY(-1px);
 }
 
-/* Image container and styling */
+.geems-button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+#modeToggleButton.standard-mode {
+    background-color: #198754; /* Green for standard */
+}
+#modeToggleButton {
+    background-color: #dc3545; /* Red for explicit */
+}
+
+
+/* --- Specific UI Components --- */
 .geems-image-container {
     text-align: center;
+    margin-bottom: 1.5rem;
 }
 
 .geems-image {
     max-width: 100%;
     height: auto;
-    border-radius: 0.75rem;
-    margin-bottom: 1rem;
-    background-color: #e5e7eb;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    border: 1px solid #d1d5db;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
 }
 
 .geems-image-prompt {
-    font-size: 0.8rem;
-    color: #6b7280;
-    opacity: 0.8;
-    font-style: italic;
+    font-size: 0.875rem;
+    color: #6c757d;
     margin-top: 0.5rem;
-    word-wrap: break-word;
-    padding: 0 1rem;
-    padding-bottom: 1em;
+    font-style: italic;
 }
 
-/* Button styling */
-.geems-button {
-    padding: 0.85rem 2rem;
-    background: linear-gradient(to right, #4f46e5, #7c3aed);
-    color: white;
-    border: none;
-    border-radius: 0.5rem;
-    font-weight: 600;
+.geems-text {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    color: #495057;
+}
+
+/* Checkbox and Radio Styles */
+.geems-checkbox-option, .geems-radio-option {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    white-space: nowrap;
+    transition: background-color 0.2s ease;
+}
+.geems-checkbox-option:hover, .geems-radio-option:hover {
+    background-color: #e9ecef;
+}
+.geems-checkbox-option input, .geems-radio-option input {
+    margin-right: 0.75rem;
+    width: 1.25em;
+    height: 1.25em;
 }
 
-.geems-button:hover {
-    background: linear-gradient(to right, #4338ca, #6d28d9);
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
+/* Slider Styles */
+.geems-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    background: #dee2e6;
+    border-radius: 5px;
+    outline: none;
+    opacity: 0.9;
+    transition: opacity .2s;
+}
+.geems-slider:hover {
+    opacity: 1;
+}
+.geems-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #0d6efd;
+    cursor: pointer;
+    border-radius: 50%;
+}
+.geems-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #0d6efd;
+    cursor: pointer;
+    border-radius: 50%;
 }
 
-.geems-button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
-}
-
-.geems-button:disabled {
-    background: #a5b4fc;
-    cursor: not-allowed;
-    opacity: 0.7;
-    box-shadow: none;
-    transform: none;
-}
-
-/* Specific style for Mode Toggle Button */
-#modeToggleButton {
-    background: linear-gradient(to right, #be185d, #9d174d); /* Pink/Red gradient for Explicit */
-    min-width: 150px;
-}
-
-#modeToggleButton.standard-mode {
-    background: linear-gradient(to right, #059669, #047857); /* Green gradient for Standard */
-}
-
-#modeToggleButton:hover {
-    background: linear-gradient(to right, #9d174d, #831843); /* Darker Pink/Red */
-}
-
-#modeToggleButton.standard-mode:hover {
-    background: linear-gradient(to right, #047857, #065f46); /* Darker Green */
-}
-
-/* Specific style for Reset Button */
-#resetGameButton {
-    background: linear-gradient(to right, #f97316, #ea580c); /* Orange gradient */
-}
-
-#resetGameButton:hover {
-    background: linear-gradient(to right, #ea580c, #c2410c); /* Darker Orange gradient */
-}
-
-
-/* Loading and Error message styling */
-.loading-indicator, .error-message {
+/* --- Loading Indicator --- */
+.loading-indicator {
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 2rem;
-    font-size: 1.125rem;
-    border-radius: 0.75rem;
-    margin-top: 1rem;
+    font-size: 1.1rem;
+    color: #495057;
 }
 
-.loading-indicator {
-    color: #4f46e5;
-    background-color: #e0e7ff;
-    border: 1px solid #c7d2fe;
-}
-
-.loading-indicator svg {
-    width: 1.5rem;
-    height: 1.5rem;
-}
-
-.error-message {
-    color: #991b1b;
-    background-color: #fef2f2;
-    border: 1px solid #fecaca;
-    text-align: center;
-    white-space: pre-wrap;
-    font-weight: 500;
-}
-
-/* API Key Input Section */
-#apiKeySection {
-    margin-bottom: 1.5rem;
-    background: white;
-    padding: 1.5rem;
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.08);
-    border-left: 5px solid #fbbf24;
-}
-
-#apiKeySection .geems-label {
-    color: #ca8a04;
-}
-
-#apiKeyInput {
-    width: 100%;
-}
-
-#apiKeySection .api-key-instructions a {
-    color: #4f46e5;
-    text-decoration: underline;
-}
-
-#apiKeySection .api-key-instructions a:hover {
-    color: #3730a3;
-}
-
-/* Analysis Toggle Styles */
-.analysis-toggle-container {
-    cursor: pointer;
-    position: relative;
-    padding-right: 3.5rem; /* Space for icon */
-    /* Border applied via JS based on Gemini analysis color */
-    border-left-width: 5px;
-    border-right-width: 1px;
-    border-top-width: 1px;
-    border-bottom-width: 1px;
-    border-style: solid;
-    border-color: transparent; /* Default */
-}
-
-.analysis-toggle-icon {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    right: 1rem;
-    width: 1.5rem;
-    height: 1.5rem;
-    color: #9ca3af;
-    opacity: 0.8;
-    transition: transform 0.3s ease-in-out, opacity 0.2s, color 0.2s;
-}
-
-.analysis-toggle-container:hover .analysis-toggle-icon {
-    opacity: 1;
-    color: var(--toggle-hover-color, #4f46e5); /* Use CSS variable for hover color */
-}
-
-.analysis-content {
-    color: inherit; /* Inherit color from parent */
-}
-
-.analysis-content pre {
-    background-color: #1f2937; /* Dark background for code */
-    padding: 1rem;
-    border-radius: 0.5rem;
-    overflow-x: auto;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.9rem;
-    color: #d1d5db; /* Light text on dark background */
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid #374151;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-/* Analysis specific label styling inside the toggle */
-.analysis-content .geems-label {
-    font-size: 1rem; /* Slightly larger label */
-    color: inherit; /* Inherit color from parent (set by border color) */
-    margin-bottom: 0.4rem;
-    border-bottom: 1px dashed currentColor; /* Use parent color */
-    display: inline-block;
-    padding-bottom: 2px;
-    transition: color 0.3s ease, border-color 0.3s ease;
-}
-
-/* Tweet Element Styling */
-#tweet-element-wrapper {
-    border-left-color: #0ea5e9 !important; /* Specific blue color for tweet */
-    font-style: italic;
-    color: #374151; /* Darker gray text */
-    background-color: #f0f9ff !important; /* Light blue background */
-    padding: 1rem 1.25rem; /* Standard padding */
-}
-
-#tweet-element-wrapper .geems-label {
-    font-weight: bold;
-    color: #0284c7 !important; /* Slightly darker blue for label */
-    margin-bottom: 0.25rem;
-    font-style: normal; /* Non-italic label */
-    border-bottom: none; /* No border on tweet label */
-}
-
-/* --- Added Multiplayer Peer List Styles --- */
-
-.peer-list-container {
-    display: flex;
-    gap: 0.75rem; /* 12px */
-    padding: 0.5rem 1rem; /* 8px 16px */
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent background */
-    border-top: 1px solid rgba(209, 213, 219, 0.5); /* Light border */
-    margin-top: 1rem; /* Space above peer list */
-    flex-wrap: wrap; /* Allow wrapping on small screens */
-}
-.peer-icon-wrapper {
-    position: relative;
-    display: inline-block;
-}
-.peer-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem; /* 40px */
-    height: 2.5rem; /* 40px */
-    border-radius: 50%;
-    color: white;
-    font-weight: bold;
-    font-size: 1rem; /* 16px */
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    box-sizing: border-box; /* Include border in size */
-}
-.peer-icon-wrapper:hover .peer-icon {
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-.peer-icon-wrapper.viewing .peer-icon {
-    box-shadow: 0 0 0 3px #a78bfa; /* Purple ring when viewing */
-    transform: scale(1.05);
-}
-/* Tooltip styles */
-.tooltip .tooltiptext {
-    visibility: hidden;
-    width: max-content; /* Adjust width based on content */
-    max-width: 200px; /* Max width */
-    background-color: #555;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px 8px;
-    position: absolute;
-    z-index: 10;
-    bottom: 135%; /* Position above the icon */
-    left: 50%;
-    transform: translateX(-50%); /* Center the tooltip */
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 0.75rem; /* 12px */
-    word-wrap: break-word; /* Prevent long IDs from breaking layout */
-}
-.tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
-}
-.tooltip .tooltiptext::after { /* Tooltip arrow */
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #555 transparent transparent transparent;
-}
-/* --- End Multiplayer Styles --- */
+/* --- Modal --- */
 .modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 1000; /* Sit on top */
+    position: fixed;
+    z-index: 100;
     left: 0;
     top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
-    /* Use flexbox for centering */
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
 }
 
 .modal-content {
-    background-color: #fefefe;
-    padding: 25px;
-    border: 1px solid #888;
-    width: 80%; /* Responsive width */
-    max-width: 700px; /* Maximum width */
-    border-radius: 8px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    color: #333; /* Ensure text is readable */
+    background-color: #fff;
+    margin: auto;
+    padding: 2rem;
+    border: 1px solid #dee2e6;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
 }
+
 .modal-close {
     color: #aaa;
     position: absolute;
-    top: 10px;
-    right: 20px;
+    top: 1rem;
+    right: 1.5rem;
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
-    line-height: 1;
 }
-.modal-close:hover,
-.modal-close:focus {
-    color: black;
-    text-decoration: none;
+.modal-close:hover, .modal-close:focus {
+    color: #333;
+}
+
+
+/* --- Footer --- */
+.site-footer {
+    text-align: center;
+    padding: 2rem;
+    margin-top: 2rem;
+    background: #343a40;
+    color: #adb5bd;
+    font-size: 0.875rem;
+}
+
+.footer-buttons {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.error-message {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+/* --- Lobby Styles --- */
+#lobby-container {
+    padding: 2rem;
+}
+
+#lobby-container h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    text-align: center;
+    color: #343a40;
+    margin-bottom: 2rem;
+}
+
+.lobby-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.profile-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    color: #adb5bd;
+    overflow: hidden;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.profile-id {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+    font-family: monospace;
+}
+
+.propose-date-button {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    background: linear-gradient(90deg, #198754 0%, #20c997 100%);
+}
+.propose-date-button:hover:not(:disabled) {
+    background: linear-gradient(90deg, #157347 0%, #17a278 100%);
+}
+
+.hidden-by-interstitial > * {
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+#proposalAcceptButton {
+    background-color: #198754; /* Green */
+}
+#proposalAcceptButton:hover:not(:disabled) {
+    background-color: #157347;
+}
+
+#proposalDeclineButton {
+    background-color: #dc3545; /* Red */
+}
+#proposalDeclineButton:hover:not(:disabled) {
+    background-color: #b02a37;
+}
+
+/* --- Interstitial Screen --- */
+#interstitial-reports.hidden {
+    display: none;
+}
+
+#interstitial-spinner {
+    justify-content: center;
+    align-items: center;
+    font-size: 1.1rem;
+    color: #495057;
+    margin: 1.5rem 0;
+}
+
+.report-content {
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 0.75rem;
 }
