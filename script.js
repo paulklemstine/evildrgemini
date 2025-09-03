@@ -1484,13 +1484,18 @@ function renderLobby() {
             button.textContent = 'Propose Date';
             button.dataset.peerId = peerId; // Store peerId for the handler
             button.onclick = (event) => {
-                console.log(`Proposing date to ${peerId}`);
-                const payload = {
-                    proposerExplicitMode: isExplicitMode
-                };
-                MPLib.sendDirect(peerId, { type: 'date_proposal', payload: payload });
-                event.target.disabled = true;
-                event.target.textContent = 'Request Sent';
+                const targetButton = event.target;
+                targetButton.disabled = true;
+                targetButton.textContent = 'Connecting...';
+
+                setTimeout(() => {
+                    console.log(`Proposing date to ${peerId}`);
+                    const payload = {
+                        proposerExplicitMode: isExplicitMode
+                    };
+                    MPLib.sendDirect(peerId, { type: 'date_proposal', payload: payload });
+                    targetButton.textContent = 'Request Sent';
+                }, 1000); // 1-second delay
             };
 
             card.appendChild(avatar);
