@@ -33,8 +33,6 @@ const proposalModalBody = document.getElementById('proposalModalBody');
 const proposerName = document.getElementById('proposerName');
 const proposalAcceptButton = document.getElementById('proposalAcceptButton');
 const proposalDeclineButton = document.getElementById('proposalDeclineButton');
-const enterLobbyButton = document.getElementById('enterLobbyButton');
-const lobbyNameInput = document.getElementById('lobbyNameInput');
 const interstitialMessage = document.getElementById('interstitial-message');
 const uiContainer = document.getElementById('ui-elements');
 const loadingIndicator = document.getElementById('loading');
@@ -1447,8 +1445,8 @@ function renderLobby() {
     if (!lobbyContainer) return;
 
     // Ensure the correct view is shown
-    lobbyContainer.classList.remove('hidden');
-    gameWrapper.classList.add('hidden');
+    lobbyContainer.style.display = 'block';
+    if(gameWrapper) gameWrapper.style.display = 'none';
 
     lobbyContainer.innerHTML = '<h2>Welcome to the Lobby</h2>';
     const grid = document.createElement('div');
@@ -1548,8 +1546,8 @@ function startNewDate(partnerId, iAmPlayer1) {
     partnerActions = null;
 
     // Hide lobby, show game
-    lobbyContainer.classList.add('hidden');
-    gameWrapper.classList.remove('hidden');
+    lobbyContainer.style.display = 'none';
+    if(gameWrapper) gameWrapper.style.display = 'block';
 
     // This will be replaced by the actual first turn UI from the AI
     uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started!</h2></div>`;
@@ -1598,61 +1596,120 @@ async function fetchFirstTurn(turnData) {
 }
 
 
-function initializeGame() {
-    console.log("Initializing SparkSync...");
+// --- New Lobby System ---
+const DEFAULT_LOBBY = "The Hive";
+const PRESET_LOBBIES = ["The Abattoir", "The Dollhouse", "The Asylum"];
+const HIVEMIND_STORAGE_KEY = 'sparksync_hivemind';
 
-    // Check for a saved API key in localStorage
+const lobbySelectionScreen = document.getElementById('lobby-selection-screen');
+const lobbySelect = document.getElementById('lobby-select');
+const customLobbyInput = document.getElementById('custom-lobby-input');
+const joinLobbyButton = document.getElementById('join-lobby-button');
+
+function populateLobbySelector() {
+    const savedLobbies = JSON.parse(localStorage.getItem(HIVEMIND_STORAGE_KEY) || '[]');
+    const allLobbies = [...new Set([...PRESET_LOBBIES, ...savedLobbies])];
+
+    lobbySelect.innerHTML = '';
+
+    const defaultOption = document.createElement('option');
+    defaultOption.value = DEFAULT_LOBBY;
+    defaultOption.textContent = DEFAULT_LOBBY;
+    lobbySelect.appendChild(defaultOption);
+
+    allLobbies.forEach(lobbyName => {
+        if (lobbyName !== DEFAULT_LOBBY) {
+            const option = document.createElement('option');
+            option.value = lobbyName;
+            option.textContent = lobbyName;
+            lobbySelect.appendChild(option);
+        }
+    });
+}
+
+function saveLobbyToHivemind(lobbyName) {
+    if (!lobbyName || PRESET_LOBBIES.includes(lobbyName) || lobbyName === DEFAULT_LOBBY) {
+        return;
+    }
+    const savedLobbies = JSON.parse(localStorage.getItem(HIVEMIND_STORAGE_KEY) || '[]');
+    if (!savedLobbies.includes(lobbyName)) {
+        savedLobbies.push(lobbyName);
+        localStorage.setItem(HIVEMIND_STORAGE_KEY, JSON.stringify(savedLobbies));
+        console.log(`Saved lobby "${lobbyName}" to hivemind.`);
+    }
+}
+
+function connectToLobby(lobbyName, apiKey) {
+    console.log(`[DEBUG] connectToLobby called with lobby: ${lobbyName}`);
+    localStorage.setItem('sparksync_apiKey', apiKey);
+    console.log("[DEBUG] Saved API key to localStorage.");
+
+    apiKeyLocked = true;
+    hideError();
+    if(lobbySelectionScreen) lobbySelectionScreen.style.display = 'none';
+    console.log("[DEBUG] Setting lobbyContainer.style.display = 'block'");
+    lobbyContainer.style.display = 'block';
+    console.log(`[DEBUG] lobbyContainer display style is now: ${lobbyContainer.style.display}`);
+
+
+    if (typeof MPLib !== 'undefined' && typeof MPLib.initialize === 'function') {
+        console.log(`[DEBUG] Initializing Multiplayer Library for lobby: ${lobbyName}...`);
+        MPLib.initialize({
+            lobbyName: lobbyName,
+            debugLevel: 1,
+            onStatusUpdate: handleStatusUpdate,
+            onError: handleError,
+            onPeerJoined: handlePeerJoined,
+            onPeerLeft: handlePeerLeft,
+            onDataReceived: handleDataReceived,
+            onConnected: (localId) => {
+                console.log(`Connected to signaling server with ID: ${localId}`);
+            },
+        });
+    } else {
+        console.warn("MPLib not found or initialize function missing.");
+        lobbyContainer.innerHTML = '<p class="error-message">Error: Multiplayer library failed to load. Please refresh.</p>';
+    }
+    renderLobby();
+}
+
+function initializeGame() {
+    console.log("[DEBUG] Initializing SparkSync with new lobby system...");
+    gameWrapper.classList.remove('hidden');
+    lobbyContainer.style.display = 'none';
+    console.log(`[DEBUG] Initial state: lobbyContainer display is ${lobbyContainer.style.display}`);
+
     const savedApiKey = localStorage.getItem('sparksync_apiKey');
+    console.log(`[DEBUG] Found saved API key: ${savedApiKey}`);
+
     if (savedApiKey) {
+        const lastLobby = localStorage.getItem('sparksync_lastLobby') || DEFAULT_LOBBY;
         apiKeyInput.value = savedApiKey;
-        console.log("Loaded API key from localStorage.");
+        console.log(`[DEBUG] Auto-joining lobby: ${lastLobby}...`);
+        connectToLobby(lastLobby, savedApiKey);
+    } else {
+        console.log("[DEBUG] No saved API key. Showing lobby selection screen.");
+        populateLobbySelector();
+        if(lobbySelectionScreen) lobbySelectionScreen.style.display = 'block';
     }
 
-    // Initially, only the game wrapper (containing the API key section) is visible
-    gameWrapper.classList.remove('hidden');
-    lobbyContainer.classList.add('hidden');
+    if(joinLobbyButton) {
+        joinLobbyButton.addEventListener('click', () => {
+            const apiKey = apiKeyInput.value.trim();
+            const customLobby = customLobbyInput.value.trim();
+            const selectedLobby = lobbySelect.value;
+            const lobbyToJoin = customLobby || selectedLobby;
 
-    enterLobbyButton.addEventListener('click', () => {
-        const apiKey = apiKeyInput.value.trim();
-        const lobbyName = lobbyNameInput.value.trim();
+            if (!apiKey || !lobbyToJoin) {
+                showError("API Key and a Lobby selection are required.");
+                return;
+            }
 
-        if (!apiKey || !lobbyName) {
-            showError("API Key and Lobby Name are both required.");
-            return;
-        }
-
-        // Save the API key to localStorage
-        localStorage.setItem('sparksync_apiKey', apiKey);
-        console.log("Saved API key to localStorage.");
-
-        // Key is present, lock it in and proceed to lobby
-        apiKeyLocked = true;
-        hideError();
-        apiKeySection.style.display = 'none'; // Hide the key input section
-        lobbyContainer.style.display = 'block'; // Show the lobby
-
-        // NOW initialize multiplayer
-        if (typeof MPLib !== 'undefined' && typeof MPLib.initialize === 'function') {
-            console.log(`Initializing Multiplayer Library for lobby: ${lobbyName}...`);
-            MPLib.initialize({
-                lobbyName: lobbyName, // Pass lobby name to the library
-                debugLevel: 1,
-                onStatusUpdate: handleStatusUpdate,
-                onError: handleError,
-                onPeerJoined: handlePeerJoined,
-                onPeerLeft: handlePeerLeft,
-                onDataReceived: handleDataReceived,
-                onConnected: (localId) => {
-                    console.log(`Connected to signaling server with ID: ${localId}`);
-                    // The lobby is already rendered, but we could update our own status here if needed.
-                },
-            });
-        } else {
-            console.warn("MPLib not found or initialize function missing.");
-            lobbyContainer.innerHTML = '<p class="error-message">Error: Multiplayer library failed to load. Please refresh.</p>';
-        }
-        renderLobby(); // Initial render
-    });
+            saveLobbyToHivemind(lobbyToJoin);
+            localStorage.setItem('sparksync_lastLobby', lobbyToJoin); // Save last lobby
+            connectToLobby(lobbyToJoin, apiKey);
+        });
+    }
 }
 
 function createInitialMessage() {
