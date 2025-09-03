@@ -78,6 +78,40 @@
     </div>
 </div>
 
+<!-- Interstitial Loading Screen -->
+<div id="interstitial-screen" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2 class="text-2xl font-bold text-center mb-4">Generating Turn...</h2>
+
+        <div id="interstitial-spinner" class="loading-indicator" style="display: flex;">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Please wait.
+        </div>
+
+        <div id="interstitial-reports" class="hidden mt-4 space-y-4">
+            <div>
+                <h3 class="text-lg font-semibold text-green-600">Your Green Flags (What you're doing right):</h3>
+                <div id="green-flag-report" class="report-content p-2 border border-green-200 rounded bg-green-50">
+                    <!-- Green flags will be populated here -->
+                </div>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-red-600">Your Partner's Red Flags (What to watch out for):</h3>
+                <div id="red-flag-report" class="report-content p-2 border border-red-200 rounded bg-red-50">
+                    <!-- Red flags will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 text-center">
+            <button id="interstitial-continue-button" class="geems-button" disabled onclick="document.getElementById('interstitial-screen').style.display = 'none'">Continue</button>
+        </div>
+    </div>
+</div>
+
 
 <footer class="site-footer">
 

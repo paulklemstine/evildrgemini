@@ -38,6 +38,12 @@ const lobbyNameInput = document.getElementById('lobbyNameInput');
 const interstitialMessage = document.getElementById('interstitial-message');
 const uiContainer = document.getElementById('ui-elements');
 const loadingIndicator = document.getElementById('loading');
+const interstitialScreen = document.getElementById('interstitial-screen');
+const interstitialSpinner = document.getElementById('interstitial-spinner');
+const interstitialReports = document.getElementById('interstitial-reports');
+const greenFlagReport = document.getElementById('green-flag-report');
+const redFlagReport = document.getElementById('red-flag-report');
+const interstitialContinueButton = document.getElementById('interstitial-continue-button');
 const submitButton = document.getElementById('submit-turn');
 const apiKeyInput = document.getElementById('apiKeyInput');
 const apiKeySection = document.getElementById('apiKeySection');
@@ -344,7 +350,7 @@ async function initiateTurnAsPlayer1(turnData) {
  */
 async function fetchUiForPlayer(instructions) {
     console.log("Fetching UI from generator AI...");
-    setLoading(true);
+    setLoading(true); // This will now show the interstitial
 
     try {
         const uiPrompt = constructPrompt('ui_generator', { instructions, isExplicit: isDateExplicit });
@@ -352,7 +358,31 @@ async function fetchUiForPlayer(instructions) {
         const uiJson = JSON.parse(uiJsonString);
 
         currentUiJson = uiJson;
-        renderUI(currentUiJson);
+
+        // --- Interstitial Logic ---
+        // Extract reports - they should be the first two elements
+        const greenFlags = uiJson.find(el => el.name === 'player_facing_analysis');
+        const redFlags = uiJson.find(el => el.name === 'red_flag_report');
+
+        if (greenFlags && greenFlags.value) {
+            greenFlagReport.innerHTML = greenFlags.value.replace(/\n/g, '<br>');
+        } else {
+            greenFlagReport.innerHTML = '<em>No specific green flags noted this turn.</em>';
+        }
+
+        if (redFlags && redFlags.value) {
+            redFlagReport.innerHTML = redFlags.value.replace(/\n/g, '<br>');
+        } else {
+            redFlagReport.innerHTML = '<em>No specific red flags noted for your partner this turn.</em>';
+        }
+
+        // Hide spinner, show reports, and enable continue button
+        interstitialSpinner.style.display = 'none';
+        interstitialReports.classList.remove('hidden');
+        interstitialContinueButton.disabled = false;
+        // --- End Interstitial Logic ---
+
+        renderUI(currentUiJson); // Render the main UI in the background
         playTurnAlertSound();
 
         // Reset turn state
@@ -363,7 +393,11 @@ async function fetchUiForPlayer(instructions) {
     } catch (error) {
         console.error("Error during UI generator call:", error);
         showError("Failed to generate player UI. Please try again.");
+        // If there's an error, hide the interstitial and go back to the game
+        interstitialScreen.style.display = 'none';
     } finally {
+        // This will re-enable the main UI buttons, but the interstitial will remain visible
+        // until the user clicks "Continue".
         setLoading(false);
     }
 }
@@ -818,7 +852,20 @@ function collectInputState() {
 
 function setLoading(loading) {
     isLoading = loading;
-    loadingIndicator.style.display = loading ? 'flex' : 'none';
+    loadingIndicator.style.display = 'none'; // The old indicator is no longer used for this flow.
+
+    if (loading) {
+        // Reset and show the interstitial screen
+        interstitialSpinner.style.display = 'flex';
+        interstitialReports.classList.add('hidden');
+        interstitialContinueButton.disabled = true;
+        greenFlagReport.innerHTML = 'Generating...';
+        redFlagReport.innerHTML = 'Generating...';
+        interstitialScreen.style.display = 'flex';
+    }
+    // Note: We no longer hide the interstitial when loading is false.
+    // The continue button is now responsible for that.
+
     const keyPresent = apiKeyInput.value.trim().length > 0;
     submitButton.disabled = loading || !(apiKeyLocked || keyPresent);
     modeToggleButton.disabled = loading;
@@ -1613,6 +1660,8 @@ function createInitialMessage() {
     uiContainer.appendChild(msgDiv);
     return msgDiv;
 }
+
+window.setLoading = setLoading; // Expose for testing
 
 // Ensure DOM is fully loaded before initializing
 document.addEventListener('DOMContentLoaded', initializeGame);
