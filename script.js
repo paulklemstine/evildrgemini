@@ -331,7 +331,20 @@ async function generateLocalTurn(orchestratorText, playerRole) {
             const arrayKey = Object.keys(uiJson).find(key => Array.isArray(uiJson[key]));
             if (arrayKey) {
                 console.warn(`API returned an object. Using the array found at key: '${arrayKey}'`);
-                uiJson = uiJson[arrayKey]; // Correct the variable to be the array itself
+                // Handle the specific, malformed 'suggested_actions' case
+                if (arrayKey === 'suggested_actions') {
+                    console.warn(`Transforming 'suggested_actions' to conform to UI schema.`);
+                    uiJson = uiJson[arrayKey].map(action => ({
+                        type: 'radio',
+                        name: 'main_action',
+                        label: action.action_id || 'Action',
+                        value: action.description || 'No description available.',
+                        color: '#FFFFFF', // Default color
+                        voice: 'player'
+                    }));
+                } else {
+                    uiJson = uiJson[arrayKey]; // Correct the variable to be the array itself
+                }
             }
         }
 
@@ -642,20 +655,24 @@ function renderImage(wrapper, element, adjustedColor) {
     const randomSeed = Math.floor(Math.random() * 65536);
     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?nologo=true&safe=false&seed=${randomSeed}`;
     img.src = imageUrl;
-    img.alt = element.label || `Image: ${imagePrompt.substring(0, 50)}...`;
+    img.alt = element.caption || element.label || `Image: ${imagePrompt.substring(0, 50)}...`;
     img.onerror = () => {
         console.warn(`Failed to load image: ${imageUrl}`);
         img.src = `https://placehold.co/600x400/e0e7ff/4f46e5?text=Image+Load+Error`;
         img.alt = `Error loading image: ${imagePrompt.substring(0, 50)}...`;
     };
     wrapper.appendChild(img);
-    if (element.label) {
-        const labelDiv = document.createElement('div');
-        labelDiv.className = 'geems-label text-center font-semibold mt-2';
-        if (adjustedColor) labelDiv.style.color = adjustedColor;
-        labelDiv.textContent = element.label;
-        wrapper.appendChild(labelDiv);
+
+    // Prioritize the new 'caption' field, but fall back to 'label' for compatibility.
+    const captionText = element.caption || element.label;
+    if (captionText) {
+        const captionDiv = document.createElement('div');
+        captionDiv.className = 'geems-label text-center font-semibold mt-2'; // Re-use existing style
+        if (adjustedColor) captionDiv.style.color = adjustedColor;
+        captionDiv.textContent = captionText;
+        wrapper.appendChild(captionDiv);
     }
+
     const promptText = document.createElement('p');
     promptText.className = 'geems-image-prompt';
     promptText.textContent = imagePrompt;
