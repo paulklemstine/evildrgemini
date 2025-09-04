@@ -1678,7 +1678,7 @@ function startNewDate(partnerId, iAmPlayer1) {
     if (amIPlayer1) {
         console.log("I am Player 1, fetching the first turn.");
         fetchFirstTurn({
-            playerA_id: MPLib.getLocalPeerId(),
+            playerA_id: MPLib.getLocalMasterId(),
             playerB_id: currentPartnerId,
             isExplicit: isDateExplicit
         });
