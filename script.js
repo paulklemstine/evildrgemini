@@ -329,20 +329,27 @@ async function generateLocalTurn(orchestratorText, playerRole) {
         currentUiJson = uiJson;
 
         // --- Interstitial Logic ---
-        const greenFlags = uiJson.find(el => el.name === 'player_facing_analysis');
-        const redFlags = uiJson.find(el => el.name === 'gemini_facing_analysis');
+        if (Array.isArray(uiJson)) {
+            const greenFlags = uiJson.find(el => el.name === 'player_facing_analysis');
+            const redFlags = uiJson.find(el => el.name === 'gemini_facing_analysis');
 
-        if (greenFlags && greenFlags.value) {
-            greenFlagReport.innerHTML = greenFlags.value.replace(/\\n/g, '<br>');
+            if (greenFlags && greenFlags.value) {
+                greenFlagReport.innerHTML = greenFlags.value.replace(/\\n/g, '<br>');
+            } else {
+                greenFlagReport.innerHTML = '<em>No specific green flags noted this turn.</em>';
+            }
+
+            if (redFlags && redFlags.value) {
+                redFlagReport.innerHTML = redFlags.value.replace(/\\n/g, '<br>');
+            } else {
+                redFlagReport.innerHTML = '<em>No clinical analysis available for your partner this turn.</em>';
+            }
         } else {
-            greenFlagReport.innerHTML = '<em>No specific green flags noted this turn.</em>';
+            console.warn("API response for UI is not an array, skipping interstitial report generation.", uiJson);
+            greenFlagReport.innerHTML = '<em>Could not parse analysis from AI response.</em>';
+            redFlagReport.innerHTML = '<em>Could not parse analysis from AI response.</em>';
         }
 
-        if (redFlags && redFlags.value) {
-            redFlagReport.innerHTML = redFlags.value.replace(/\\n/g, '<br>');
-        } else {
-            redFlagReport.innerHTML = '<em>No clinical analysis available for your partner this turn.</em>';
-        }
 
         interstitialSpinner.style.display = 'none';
         interstitialReports.classList.remove('hidden');
@@ -437,6 +444,12 @@ async function callGeminiApiWithRetry(prompt, responseMimeType = "application/js
 
 /** Calls the real Google AI (Gemini) API. */
 async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType = "application/json") {
+    console.log("--- LLM Query ---", {
+        modelName,
+        promptText,
+        responseMimeType
+    });
+
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
     const requestBody = {
         contents: [{parts: [{text: promptText}]}],
@@ -472,6 +485,7 @@ async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType
         throw new Error(errorBody);
     }
     const responseData = await response.json();
+    console.log("--- LLM Response ---", responseData);
     if (responseData.promptFeedback && responseData.promptFeedback.blockReason) throw new Error(`Request blocked by API. Reason: ${responseData.promptFeedback.blockReason}. Details: ${JSON.stringify(responseData.promptFeedback.safetyRatings || 'N/A')}`);
     if (!responseData.candidates || responseData.candidates.length === 0) {
         if (typeof responseData === 'string') {
