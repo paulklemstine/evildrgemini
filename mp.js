@@ -188,6 +188,7 @@ const MPLib = (() => {
         sendDirect,
         getLocalPeerId: () => localPeerId,
         getConnections: () => new Map(connections),
+        getKnownPeerIds: () => new Set(knownPeerIds), // Expose the set of all known peers
     };
 
     return publicApi;

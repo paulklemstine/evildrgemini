@@ -1482,7 +1482,7 @@ resetGameButton.addEventListener('click', () => {
 
 /** Renders the lobby UI */
 function renderLobby() {
-    console.log("Entering renderLobby. lobbyContainer is:", lobbyContainer);
+    console.log("Entering renderLobby.");
     if (!lobbyContainer) return;
 
     // Ensure the correct view is shown
@@ -1493,12 +1493,17 @@ function renderLobby() {
     const grid = document.createElement('div');
     grid.className = 'lobby-grid';
 
-    const peers = MPLib.getConnections ? Array.from(MPLib.getConnections().keys()) : [];
+    // Get all known peers and the local ID from MPLib
+    const allKnownPeers = MPLib.getKnownPeerIds ? Array.from(MPLib.getKnownPeerIds()) : [];
+    const localId = MPLib.getLocalPeerId ? MPLib.getLocalPeerId() : null;
 
-    if (peers.length === 0) {
+    // Filter out the local client's ID to get a list of only remote peers
+    const remotePeers = allKnownPeers.filter(peerId => peerId !== localId);
+
+    if (remotePeers.length === 0) {
         grid.innerHTML = '<p>No other users are currently online. Please wait for someone to connect.</p>';
     } else {
-        peers.forEach(peerId => {
+        remotePeers.forEach(peerId => {
             const card = document.createElement('div');
             card.className = 'profile-card';
 
@@ -1517,11 +1522,13 @@ function renderLobby() {
 
             const button = document.createElement('button');
             button.className = 'geems-button propose-date-button';
-            button.textContent = 'Propose Date';
             button.dataset.peerId = peerId; // Store peerId for the handler
 
+            // Check the actual connection status for this specific peer
             const conn = MPLib.getConnections().get(peerId);
             if (conn && conn.open) {
+                button.textContent = 'Propose Date';
+                button.disabled = false;
                 button.onclick = (event) => {
                     console.log(`Proposing date to ${peerId}`);
                     const payload = {
@@ -1532,8 +1539,8 @@ function renderLobby() {
                     event.target.textContent = 'Request Sent';
                 };
             } else {
-                button.disabled = true;
                 button.textContent = 'Connecting...';
+                button.disabled = true;
             }
 
             card.appendChild(avatar);
