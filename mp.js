@@ -25,6 +25,7 @@ const MPLib = (() => {
     // --- Room Connection State ---
     let roomPeer = null;
     let localRoomId = null;
+    let gossipInterval = null;
     const roomConnections = new Map();
     const pendingRoomConnections = new Set();
     const roomKnownPeerIds = new Set();
@@ -243,9 +244,27 @@ const MPLib = (() => {
         logMessage(`Attempting to join room '${roomName}' with seed ID: ${seedId}`, 'info');
         roomPeer = new Peer(seedId, { debug: config.debugLevel, key: API_KEY });
         setupRoomPeerListeners(seedId);
+
+        // Start the proactive gossip interval
+        if (gossipInterval) clearInterval(gossipInterval);
+        gossipInterval = setInterval(() => {
+            const peers = Array.from(roomConnections.keys());
+            if (peers.length > 0) {
+                const randomPeerId = peers[Math.floor(Math.random() * peers.length)];
+                const conn = roomConnections.get(randomPeerId);
+                if (conn && conn.open) {
+                    logMessage(`Proactive gossip: requesting peer list from ${randomPeerId.slice(-6)}`, 'info');
+                    conn.send({ type: 'request-peer-list' });
+                }
+            }
+        }, 7500); // Gossip every 7.5 seconds
     }
 
     function leaveRoom() {
+        if (gossipInterval) {
+            clearInterval(gossipInterval);
+            gossipInterval = null;
+        }
         if(roomPeer) {
             roomPeer.destroy();
             roomPeer = null;
