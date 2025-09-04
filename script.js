@@ -407,6 +407,13 @@ async function generateLocalTurn(orchestratorText, playerRole) {
  */
 async function initiateTurnAsPlayer1(turnData) {
     console.log("Player 1 is initiating the turn by calling the orchestrator...");
+    const loadingDiv = document.getElementById('loading');
+    if (loadingDiv) {
+        const textNode = Array.from(loadingDiv.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+        if (textNode) {
+            textNode.textContent = ' Generating next turn... Please wait.';
+        }
+    }
     setLoading(true, true); // Use simple spinner for this phase
 
     try {
@@ -623,6 +630,7 @@ function renderSingleElement(element, index) {
             case 'radio':
                 renderRadio(wrapper, element, adjustedColor);
                 break;
+            case 'notes': // Fallthrough to handle 'notes' as a type of hidden field
             case 'hidden':
                 if (element.name === 'notes') {
                     // Create a hidden input to store the notes value in the DOM
@@ -1424,13 +1432,16 @@ submitButton.addEventListener('click', () => {
         const actions = collectInputState();
         myActions = JSON.parse(actions);
 
-        // Show a waiting screen
-        setLoading(true, false);
-        const interstitialTitle = document.querySelector('#interstitial-screen h2');
-        if (interstitialTitle) interstitialTitle.textContent = 'Waiting for Partner...';
-        greenFlagReport.innerHTML = '<em>Your actions have been submitted.</em>';
-        redFlagReport.innerHTML = '<em>Waiting for the other player to submit their turn.</em>';
-        interstitialContinueButton.disabled = true; // Ensure continue is disabled
+        // Show a waiting screen using the standard spinner
+        const loadingDiv = document.getElementById('loading');
+        if (loadingDiv) {
+            // Find the text node to change, being careful not to remove the SVG
+            const textNode = Array.from(loadingDiv.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+            if (textNode) {
+                textNode.textContent = ' Waiting for partner...';
+            }
+        }
+        setLoading(true, true); // Use the standard spinner
 
         showNotification("Actions submitted. Waiting for partner...", "info");
 
@@ -1619,6 +1630,13 @@ function startNewDate(partnerId, iAmPlayer1) {
 
 async function fetchFirstTurn(turnData) {
     console.log("Fetching first turn from AI...");
+    const loadingDiv = document.getElementById('loading');
+    if (loadingDiv) {
+        const textNode = Array.from(loadingDiv.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+        if (textNode) {
+            textNode.textContent = ' Generating next turn... Please wait.';
+        }
+    }
     setLoading(true, true); // Use the simple spinner for the first turn
     try {
         const prompt = constructPrompt('firstrun', turnData);
