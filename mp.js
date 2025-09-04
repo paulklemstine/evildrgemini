@@ -1,194 +1,363 @@
 /**
- * Multiplayer Library using PeerJS for a Mesh Network
+ * Multiplayer Library using PeerJS for a Mesh Network and Master/Client Directory
  *
- * Provides core functionality for establishing P2P connections in a mesh,
- * managing peers, and broadcasting/handling messages.
+ * Manages two parallel PeerJS connections:
+ * 1. Master Connection: Connects to a central "master directory" peer to get
+ *    a list of all public rooms and users. The user's permanent ID is their
+ *    ID on this connection.
+ * 2. Room Connection: Connects to a P2P mesh for the user's current room,
+ *    allowing for direct communication with others in the same room.
  */
 const MPLib = (() => {
-
-    let peer = null;
-    let localPeerId = null;
-    const connections = new Map();
-    const pendingConnections = new Set();
-    const knownPeerIds = new Set();
+    // --- Overall State ---
     const API_KEY = 'peerjs'; // Public PeerJS API key
+    const MASTER_DIRECTORY_ID = 'sparksync-master-directory-v2';
+    let localMasterId = null; // This is the user's "permanent" ID
+    let config = {};
 
-    let config = {
+    // --- Master Connection State ---
+    let masterPeer = null;
+    let masterConnection = null; // For clients, the connection to the master
+    let isMasterDirectory = false; // Is this client THE master?
+    const masterClientConnections = new Map(); // For the master, connections to all clients
+    const globalDirectory = { rooms: {}, peers: {} }; // The master's source of truth
+
+    // --- Room Connection State ---
+    let roomPeer = null;
+    let localRoomId = null;
+    const roomConnections = new Map();
+    const pendingRoomConnections = new Set();
+    const roomKnownPeerIds = new Set();
+
+    // --- Callbacks & Config ---
+    const defaultConfig = {
         debugLevel: 0,
         onStatusUpdate: (msg, type) => console.log(`[MPLib] ${msg}`),
         onError: (type, err) => console.error(`[MPLib] Error (${type}):`, err),
-        onPeerJoined: (peerId) => {},
-        onPeerLeft: (peerId) => {},
-        onDataReceived: (peerId, data) => {},
-        onConnected: (id) => {},
+        onMasterConnected: (id) => {},
+        onMasterDisconnected: () => {},
+        onDirectoryUpdate: (directory) => {},
+        onRoomPeerJoined: (peerId) => {},
+        onRoomPeerLeft: (peerId) => {},
+        onRoomDataReceived: (peerId, data) => {},
+        onRoomConnected: (id) => {},
     };
 
     function logMessage(message, type = 'info') {
         config.onStatusUpdate(message, type);
     }
 
+    // --- Initialization ---
+
+    /**
+     * Initializes the entire library, starting the connection to the master directory.
+     */
     function initialize(options = {}) {
-        if (peer && !peer.destroyed) {
-            logMessage("Peer already initialized.", 'warn');
-            return;
-        }
-        config = { ...config, ...options };
-
-        if (!config.lobbyName) {
-            config.onError('init', 'Lobby Name is required.');
-            return;
-        }
-
-        // Sanitize lobby name to create a valid PeerJS ID
-        const seedId = `sparksync-lobby-${config.lobbyName.replace(/[^a-zA-Z0-9-]/g, '-')}`;
-
-        // First, try to BECOME the seed node for this lobby
-        logMessage(`Attempting to become seed for lobby '${config.lobbyName}' with ID: ${seedId}`, 'info');
-        peer = new Peer(seedId, { debug: config.debugLevel, key: API_KEY });
-
-        setupPeerListeners(peer, seedId);
+        config = { ...defaultConfig, ...options };
+        logMessage("Initializing MPLib and connecting to Master Directory...", 'info');
+        connectToMasterDirectory();
     }
 
-    function setupPeerListeners(p, seedId) {
-        p.on('open', (id) => {
-            // This event fires when we successfully register with the signaling server.
-            // If we get here with our desired seedId, it means WE are the seed.
-            localPeerId = id;
-            knownPeerIds.add(id);
-            logMessage(`Successfully registered as seed node with ID: ${id}`, 'success');
-            config.onConnected(id);
+    // --- Master Directory Functions ---
+
+    function connectToMasterDirectory() {
+        // First, try to BECOME the master directory
+        logMessage(`Attempting to become Master Directory with ID: ${MASTER_DIRECTORY_ID}`, 'info');
+        masterPeer = new Peer(MASTER_DIRECTORY_ID, { debug: config.debugLevel, key: API_KEY });
+        setupMasterPeerListeners();
+
+        masterPeer.on('open', (id) => {
+            // If we get here with the master ID, we ARE the master directory
+            localMasterId = id;
+            isMasterDirectory = true;
+            logMessage(`*** THIS CLIENT IS THE MASTER DIRECTORY (ID: ${id}) ***`, 'success');
+            config.onMasterConnected(id);
         });
 
-        p.on('connection', (conn) => {
-            logMessage(`Incoming connection from ${conn.peer}`, 'info');
-            setupConnection(conn);
-        });
-
-        p.on('error', (err) => {
+        masterPeer.on('error', (err) => {
             if (err.type === 'unavailable-id') {
-                // This means the seed ID is already taken, which is GOOD. It means the lobby exists.
-                // We destroy the failed peer object and create a new, anonymous one to connect.
-                logMessage(`Seed ID '${seedId}' is taken. Connecting to existing lobby.`, 'info');
-                p.destroy(); // Clean up the failed peer
+                // The master directory already exists. Destroy this peer and create an anonymous one.
+                logMessage(`Master Directory already exists. Connecting as client.`, 'info');
+                masterPeer.destroy();
+                isMasterDirectory = false;
 
-                peer = new Peer({ debug: config.debugLevel, key: API_KEY }); // Create anonymous peer
-                peer.on('open', (id) => {
-                    localPeerId = id;
-                    knownPeerIds.add(id);
-                    config.onConnected(id);
-                    logMessage(`Connected with anonymous ID: ${id}. Now connecting to seed.`, 'info');
-                    connectToPeer(seedId); // Connect to the seed node
+                masterPeer = new Peer({ debug: config.debugLevel, key: API_KEY });
+                setupMasterPeerListeners();
+
+                masterPeer.on('open', (id) => {
+                    localMasterId = id;
+                    logMessage(`Connected to signaling server with client master ID: ${id}`, 'info');
+                    config.onMasterConnected(id);
+                    // Now, connect to the actual master directory
+                    masterConnection = masterPeer.connect(MASTER_DIRECTORY_ID, { reliable: true });
+                    setupMasterClientConnection(masterConnection);
                 });
-                // Set up standard listeners for the new anonymous peer
-                peer.on('connection', (conn) => setupConnection(conn));
-                peer.on('error', (e) => config.onError(e.type, e));
             } else {
-                // Handle other errors
-                logMessage(`PeerJS Error: ${err.type}`, 'error');
-                config.onError(err.type, err);
+                config.onError('master-peer', err);
             }
         });
     }
 
-    function connectToPeer(targetPeerId) {
-        if (!peer || peer.destroyed || targetPeerId === localPeerId || connections.has(targetPeerId) || pendingConnections.has(targetPeerId)) {
-            return;
-        }
-
-        logMessage(`Attempting to connect to ${targetPeerId}`, 'info');
-        pendingConnections.add(targetPeerId);
-
-        const conn = peer.connect(targetPeerId, { reliable: true });
-        conn.on('open', () => {
-            logMessage(`Connection opened with ${targetPeerId}`, 'info');
-            pendingConnections.delete(targetPeerId);
-            setupConnection(conn);
-        });
-        conn.on('error', (err) => {
-            logMessage(`Connection error with ${targetPeerId}: ${err.message}`, 'error');
-            pendingConnections.delete(targetPeerId);
+    function broadcastDirectoryUpdate() {
+        if (!isMasterDirectory) return;
+        logMessage(`Broadcasting directory update to ${masterClientConnections.size} clients.`, 'info');
+        const payload = { type: 'directory-update', payload: globalDirectory };
+        masterClientConnections.forEach(conn => {
+            if (conn && conn.open) {
+                conn.send(payload);
+            }
         });
     }
 
-    function setupConnection(conn) {
-        const remotePeerId = conn.peer;
-        connections.set(remotePeerId, conn);
-        knownPeerIds.add(remotePeerId);
-    config.onPeerJoined(remotePeerId, conn);
+    function setupMasterPeerListeners() {
+        masterPeer.on('connection', (conn) => {
+            if (isMasterDirectory) {
+                logMessage(`Master Directory: New client connected ${conn.peer}`, 'info');
+                masterClientConnections.set(conn.peer, conn);
 
-        // When a connection is first established, ask the other peer for their list of peers.
-        conn.on('open', () => {
-            conn.send({ type: 'request-peer-list' });
+                // When the connection is established, send the new client the current directory
+                conn.on('open', () => {
+                    if (conn.open) {
+                        conn.send({ type: 'directory-update', payload: globalDirectory });
+                    }
+                });
+
+                conn.on('data', (data) => {
+                    if (!isMasterDirectory) return;
+                    const peerId = conn.peer;
+
+                    if (data.type === 'update_status') {
+                        const { newRoom, isPublic } = data.payload;
+
+                        // 1. Remove peer from their old room in the directory
+                        const oldRoomName = globalDirectory.peers[peerId]?.currentRoom;
+                        if (oldRoomName && globalDirectory.rooms[oldRoomName]) {
+                            globalDirectory.rooms[oldRoomName].occupants =
+                                globalDirectory.rooms[oldRoomName].occupants.filter(p => p !== peerId);
+                            // Clean up the room if it's now empty
+                            if (globalDirectory.rooms[oldRoomName].occupants.length === 0) {
+                                delete globalDirectory.rooms[oldRoomName];
+                            }
+                        }
+
+                        // 2. Add peer to their new room if it's public
+                        if (newRoom && isPublic) {
+                            if (!globalDirectory.rooms[newRoom]) {
+                                globalDirectory.rooms[newRoom] = { occupants: [] };
+                            }
+                            // Avoid duplicate entries
+                            if (!globalDirectory.rooms[newRoom].occupants.includes(peerId)) {
+                                globalDirectory.rooms[newRoom].occupants.push(peerId);
+                            }
+                            globalDirectory.peers[peerId] = { currentRoom: newRoom };
+                        } else {
+                            // If the room is private or the user is leaving, just remove their entry
+                            delete globalDirectory.peers[peerId];
+                        }
+
+                        logMessage(`Updated directory for peer ${peerId}, now in room: ${newRoom || 'none'}`);
+                        broadcastDirectoryUpdate(); // Inform everyone of the change
+                    }
+                });
+
+                conn.on('close', () => {
+                    logMessage(`Master Directory: Client disconnected ${conn.peer}`, 'warn');
+                    const peerId = conn.peer;
+                    masterClientConnections.delete(peerId);
+
+                    // Clean up directory
+                    const oldRoomName = globalDirectory.peers[peerId]?.currentRoom;
+                    if (oldRoomName && globalDirectory.rooms[oldRoomName]) {
+                        globalDirectory.rooms[oldRoomName].occupants =
+                            globalDirectory.rooms[oldRoomName].occupants.filter(p => p !== peerId);
+                        if (globalDirectory.rooms[oldRoomName].occupants.length === 0) {
+                            delete globalDirectory.rooms[oldRoomName];
+                        }
+                    }
+                    delete globalDirectory.peers[peerId];
+
+                    logMessage(`Cleaned up directory for disconnected peer ${peerId}`);
+                    broadcastDirectoryUpdate(); // Inform everyone
+                });
+
+            } else {
+                logMessage(`Client received unexpected connection from ${conn.peer}`, 'warn');
+                conn.close();
+            }
         });
 
+        masterPeer.on('disconnected', () => {
+            logMessage('Disconnected from master signaling server. Attempting to reconnect...', 'warn');
+            masterPeer.reconnect();
+        });
+
+        masterPeer.on('close', () => {
+             logMessage('Master peer connection fully closed.', 'error');
+             config.onMasterDisconnected();
+        });
+    }
+
+    function setupMasterClientConnection(conn) {
         conn.on('data', (data) => {
-            // --- Gossip Protocol Logic ---
+            // This is where a client receives data FROM the master
+            if (data.type === 'directory-update') {
+                config.onDirectoryUpdate(data.payload);
+            } else {
+                 config.onRoomDataReceived(conn.peer, data); // Fallback for now
+            }
+        });
+        conn.on('close', () => {
+            logMessage('Connection to master directory closed.', 'error');
+            masterConnection = null;
+            config.onMasterDisconnected();
+        });
+         conn.on('error', (err) => {
+            logMessage(`Error with master directory connection: ${err.message}`, 'error');
+        });
+    }
+
+    // --- Room Functions ---
+
+    function joinRoom(roomName) {
+        if (!roomName) {
+            config.onError('join-room', 'Room Name is required.');
+            return;
+        }
+        if (roomPeer && !roomPeer.destroyed) {
+            logMessage(`Already in a room. Disconnecting from previous room first.`, 'warn');
+            leaveRoom();
+        }
+
+        const seedId = `sparksync-lobby-${roomName.replace(/[^a-zA-Z0-9-]/g, '-')}`;
+        logMessage(`Attempting to join room '${roomName}' with seed ID: ${seedId}`, 'info');
+        roomPeer = new Peer(seedId, { debug: config.debugLevel, key: API_KEY });
+        setupRoomPeerListeners(seedId);
+    }
+
+    function leaveRoom() {
+        if(roomPeer) {
+            roomPeer.destroy();
+            roomPeer = null;
+            localRoomId = null;
+            roomConnections.clear();
+            pendingRoomConnections.clear();
+            roomKnownPeerIds.clear();
+            logMessage("Left room and cleaned up connections.", 'info');
+        }
+    }
+
+    function setupRoomPeerListeners(seedId) {
+        roomPeer.on('open', (id) => {
+            localRoomId = id;
+            roomKnownPeerIds.add(id);
+            config.onRoomConnected(id);
+            // If our ID is the seedId, we are the seed. Otherwise, connect to the seed.
+            if (id !== seedId) {
+                logMessage(`Connected to room with anonymous ID: ${id}. Now connecting to seed.`, 'info');
+                connectToRoomPeer(seedId);
+            } else {
+                 logMessage(`Successfully registered as room seed with ID: ${id}`, 'success');
+            }
+        });
+
+        roomPeer.on('connection', (conn) => {
+            logMessage(`Incoming room connection from ${conn.peer}`, 'info');
+            setupRoomConnection(conn);
+        });
+
+        roomPeer.on('error', (err) => {
+            if (err.type === 'unavailable-id') {
+                // This is expected. It means the room exists. Destroy the failed peer and make an anonymous one.
+                roomPeer.destroy();
+                roomPeer = new Peer({ debug: config.debugLevel, key: API_KEY });
+                setupRoomPeerListeners(seedId); // Re-run setup with the same seed target
+            } else {
+                config.onError('room-peer', err);
+            }
+        });
+    }
+
+    function connectToRoomPeer(targetPeerId) {
+        if (!roomPeer || roomPeer.destroyed || targetPeerId === localRoomId || roomConnections.has(targetPeerId) || pendingRoomConnections.has(targetPeerId)) {
+            return;
+        }
+        logMessage(`Attempting to connect to room peer ${targetPeerId}`, 'info');
+        pendingRoomConnections.add(targetPeerId);
+
+        const conn = roomPeer.connect(targetPeerId, { reliable: true });
+        conn.on('open', () => {
+            logMessage(`Room connection opened with ${targetPeerId}`, 'info');
+            pendingRoomConnections.delete(targetPeerId);
+            setupRoomConnection(conn);
+        });
+        conn.on('error', (err) => {
+            logMessage(`Room connection error with ${targetPeerId}: ${err.message}`, 'error');
+            pendingRoomConnections.delete(targetPeerId);
+        });
+    }
+
+    function setupRoomConnection(conn) {
+        const remotePeerId = conn.peer;
+        roomConnections.set(remotePeerId, conn);
+        roomKnownPeerIds.add(remotePeerId);
+        config.onRoomPeerJoined(remotePeerId, conn);
+
+        conn.on('open', () => conn.send({ type: 'request-peer-list' }));
+
+        conn.on('data', (data) => {
             if (data.type === 'request-peer-list') {
-                // They want our list. Send it to them.
-                const peerList = Array.from(knownPeerIds);
-                conn.send({ type: 'peer-list-update', list: peerList });
-                logMessage(`Sent peer list to ${remotePeerId}`, 'info');
+                conn.send({ type: 'peer-list-update', list: Array.from(roomKnownPeerIds) });
             } else if (data.type === 'peer-list-update') {
-                // We received a list. Connect to any new peers.
-                logMessage(`Received peer list from ${remotePeerId}: ${data.list.join(', ')}`, 'info');
                 data.list.forEach(id => {
-                    if (id !== localPeerId && !connections.has(id) && !pendingConnections.has(id)) {
-                        connectToPeer(id);
+                    if (id !== localRoomId && !roomConnections.has(id) && !pendingRoomConnections.has(id)) {
+                        connectToRoomPeer(id);
                     }
                 });
             } else {
-                // It's a regular game message, pass it to the main app
-                config.onDataReceived(remotePeerId, data);
+                config.onRoomDataReceived(remotePeerId, data);
             }
         });
 
         conn.on('close', () => {
-            logMessage(`Connection closed with ${remotePeerId}`, 'warn');
-            removeConnection(remotePeerId);
+            logMessage(`Room connection closed with ${remotePeerId}`, 'warn');
+            removeRoomConnection(remotePeerId);
         });
     }
 
-    function removeConnection(peerId) {
-        if (connections.has(peerId)) {
-            connections.delete(peerId);
-            knownPeerIds.delete(peerId);
-            logMessage(`Removed connection for ${peerId}`, 'info');
-            config.onPeerLeft(peerId);
+    function removeRoomConnection(peerId) {
+        if (roomConnections.has(peerId)) {
+            roomConnections.delete(peerId);
+            roomKnownPeerIds.delete(peerId);
+            logMessage(`Removed room connection for ${peerId}`, 'info');
+            config.onRoomPeerLeft(peerId);
         }
     }
 
-    function broadcast(payload) {
-        connections.forEach((conn, peerId) => {
-            if (conn.open) {
-                try {
-                    conn.send(payload);
-                } catch (e) {
-                    logMessage(`Error broadcasting to ${peerId}: ${e.message}`, 'error');
-                }
-            }
+    function broadcastToRoom(payload) {
+        roomConnections.forEach((conn) => {
+            if (conn.open) conn.send(payload);
         });
     }
 
-    function sendDirect(targetPeerId, payload) {
-        const conn = connections.get(targetPeerId);
-        if (conn && conn.open) {
-            try {
-                conn.send(payload);
-            } catch (e) {
-                logMessage(`Error sending direct message to ${targetPeerId}: ${e.message}`, 'error');
-            }
+    function sendToMaster(payload) {
+        if (masterConnection && masterConnection.open) {
+            masterConnection.send(payload);
         } else {
-            logMessage(`No open connection to ${targetPeerId} for direct message.`, 'warn');
+            logMessage("Cannot send to master: No open connection.", 'warn');
         }
     }
 
+    // --- Public API ---
     const publicApi = {
         initialize,
-        broadcast,
-        sendDirect,
-        getLocalPeerId: () => localPeerId,
-        getConnections: () => new Map(connections),
-        getKnownPeerIds: () => new Set(knownPeerIds), // Expose the set of all known peers
+        joinRoom,
+        leaveRoom,
+        broadcastToRoom,
+        sendToMaster,
+        getLocalMasterId: () => localMasterId,
+        getLocalRoomId: () => localRoomId,
+        getRoomConnections: () => new Map(roomConnections),
+        getRoomKnownPeerIds: () => new Set(roomKnownPeerIds),
     };
 
     return publicApi;

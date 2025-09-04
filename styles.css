@@ -286,6 +286,53 @@ body {
     margin-bottom: 2rem;
 }
 
+.room-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.room-card {
+    background-color: #f9fafb; /* bg-gray-50 */
+    border: 1px solid #e5e7eb; /* border-gray-200 */
+    border-radius: 0.5rem; /* rounded-lg */
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease-in-out;
+}
+
+.room-card:hover {
+    border-color: #d1d5db; /* border-gray-300 */
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.room-card.current-room {
+    background-color: #eef2ff; /* bg-indigo-50 */
+    border-color: #818cf8; /* border-indigo-300 */
+}
+
+.room-card h3 {
+    font-weight: 600;
+    font-size: 1.125rem; /* text-lg */
+}
+
+.room-card p {
+    color: #6b7280; /* text-gray-500 */
+    font-size: 0.875rem; /* text-sm */
+}
+
+.room-card .join-room-btn {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.create-room-section .geems-input {
+    min-width: 200px;
+}
+
+
 .lobby-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

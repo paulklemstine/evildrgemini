@@ -18,6 +18,23 @@
     <h1>SparkSync</h1>
 </header>
 
+<div id="global-directory-container" class="max-w-5xl mx-auto px-4 md:px-8 py-8" style="display: none;">
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold mb-4">Room Directory</h2>
+        <div id="room-list" class="room-grid">
+            <!-- Rooms will be populated here by script.js -->
+        </div>
+        <div class="create-room-section mt-6 pt-4 border-t">
+            <h3 class="text-xl font-semibold mb-2">Create a New Room</h3>
+            <div class="flex flex-col md:flex-row gap-2">
+                <input type="text" id="new-room-name-input" placeholder="Enter new room name" class="geems-input flex-grow">
+                <button id="create-public-room-btn" class="geems-button">Create Public</button>
+                <button id="create-private-room-btn" class="geems-button">Create Private</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="lobby-container" class="max-w-5xl mx-auto px-4 md:px-8 py-8" style="display: none;">
     <!-- Lobby content will be rendered here by script.js -->
 </div>
