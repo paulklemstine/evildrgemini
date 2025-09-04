@@ -310,6 +310,11 @@ function restoreLocalState() {
  */
 async function generateLocalTurn(orchestratorText, playerRole) {
     console.log(`Generating local turn for ${playerRole}...`);
+
+    // Reset interstitial title for turn generation
+    const interstitialTitle = document.querySelector('#interstitial-screen h2');
+    if (interstitialTitle) interstitialTitle.textContent = 'Generating Turn...';
+
     setLoading(true); // Show interstitial
 
     try {
@@ -1337,7 +1342,7 @@ function handleDataReceived(senderId, data) {
             console.log(`Received final actions from Player 2: ${senderId}`);
             if (isDateActive && amIPlayer1) {
                 partnerActions = JSON.parse(data.payload);
-                 if (myActions) {
+                if (myActions && partnerActions) {
                     console.log("Player 1 has both sets of actions. Initiating next turn...");
                     initiateTurnAsPlayer1({
                         playerA_actions: myActions,
@@ -1346,6 +1351,9 @@ function handleDataReceived(senderId, data) {
                         playerB_notes: partnerActions.notes,
                         isExplicit: isDateExplicit
                     });
+                } else if (!partnerActions) {
+                    showError("Received invalid (null) actions from partner. Cannot proceed.");
+                    setLoading(false); // Hide any spinners
                 }
             }
             break;
@@ -1413,6 +1421,15 @@ submitButton.addEventListener('click', () => {
         // --- New Two-Player Date Logic ---
         const actions = collectInputState();
         myActions = JSON.parse(actions);
+
+        // Show a waiting screen
+        setLoading(true, false);
+        const interstitialTitle = document.querySelector('#interstitial-screen h2');
+        if (interstitialTitle) interstitialTitle.textContent = 'Waiting for Partner...';
+        greenFlagReport.innerHTML = '<em>Your actions have been submitted.</em>';
+        redFlagReport.innerHTML = '<em>Waiting for the other player to submit their turn.</em>';
+        interstitialContinueButton.disabled = true; // Ensure continue is disabled
+
         showNotification("Actions submitted. Waiting for partner...", "info");
 
         // Send actions to partner immediately
