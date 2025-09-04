@@ -358,12 +358,26 @@ const MPLib = (() => {
         }
     }
 
+    function sendDirectToRoomPeer(targetPeerId, payload) {
+        const conn = roomConnections.get(targetPeerId);
+        if (conn && conn.open) {
+            try {
+                conn.send(payload);
+            } catch (e) {
+                logMessage(`Error sending direct message to room peer ${targetPeerId}: ${e.message}`, 'error');
+            }
+        } else {
+            logMessage(`No open room connection to ${targetPeerId} for direct message.`, 'warn');
+        }
+    }
+
     // --- Public API ---
     const publicApi = {
         initialize,
         joinRoom,
         leaveRoom,
         broadcastToRoom,
+        sendDirectToRoomPeer,
         sendToMaster,
         getLocalMasterId: () => localMasterId,
         getLocalRoomId: () => localRoomId,

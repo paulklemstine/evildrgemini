@@ -1089,7 +1089,7 @@ function updatePeerListUI() {
                     console.log(`Clicked remote peer icon: ${peerId.slice(-6)}`);
                     // Request game state from this peer
                     console.log(`Requesting game state from ${peerId.slice(-6)}...`);
-                    MPLib.sendDirect(peerId, {type: 'request_game_state'});
+                    MPLib.sendDirectToRoomPeer(peerId, {type: 'request_game_state'});
                     showNotification(`Requesting state from ${peerId.slice(-6)}...`, 'info', 2000);
                     // Highlight this peer (will be updated fully when state arrives)
                     highlightPeerIcon(peerId); // Indicate attempt to view
@@ -1148,8 +1148,8 @@ function highlightPeerIcon(peerIdToHighlight) {
         if (icon.dataset.peerId === peerIdToHighlight) {
             icon.classList.add('viewing');
             // Ensure self icon isn't highlighted if viewing remote
-            if (peerIdToHighlight !== MPLib.getLocalPeerId()) {
-                const selfIcon = peerListContainer.querySelector(`.peer-icon-wrapper[data-peer-id="${MPLib.getLocalPeerId()}"]`);
+            if (peerIdToHighlight !== MPLib.getLocalMasterId()) {
+                const selfIcon = peerListContainer.querySelector(`.peer-icon-wrapper[data-peer-id="${MPLib.getLocalMasterId()}"]`);
                 if (selfIcon) selfIcon.classList.remove('viewing');
             }
         } else {
@@ -1157,8 +1157,8 @@ function highlightPeerIcon(peerIdToHighlight) {
         }
     });
     // Ensure local icon is highlighted if no remote peer is specified (i.e., back to local view)
-    if (peerIdToHighlight === null && MPLib.getLocalPeerId()) {
-        const selfIcon = peerListContainer.querySelector(`.peer-icon-wrapper[data-peer-id="${MPLib.getLocalPeerId()}"]`);
+    if (peerIdToHighlight === null && MPLib.getLocalMasterId()) {
+        const selfIcon = peerListContainer.querySelector(`.peer-icon-wrapper[data-peer-id="${MPLib.getLocalMasterId()}"]`);
         if (selfIcon) selfIcon.classList.add('viewing');
     }
 }
@@ -1363,7 +1363,7 @@ function handleRoomDataReceived(senderId, data) {
                 partnerActions = myActions;
                 myActions = JSON.parse(data.payload);
                 console.log("Player 2 has received Player 1's actions. Sending own actions back to P1.");
-                MPLib.sendDirect(currentPartnerId, { type: 'final_actions_p2', payload: JSON.stringify(partnerActions) });
+                MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'final_actions_p2', payload: JSON.stringify(partnerActions) });
             } else if (isDateActive && amIPlayer1) {
                 partnerActions = JSON.parse(data.payload);
                 if (myActions) {
@@ -1500,7 +1500,7 @@ submitButton.addEventListener('click', () => {
         showNotification("Actions submitted. Waiting for partner...", "info");
 
         // Send actions to partner immediately
-        MPLib.sendDirect(currentPartnerId, { type: 'turn_actions', payload: actions });
+        MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'turn_actions', payload: actions });
 
     } else {
         // --- Single-Player Logic ---
@@ -1601,7 +1601,7 @@ function renderLobby() {
                     const payload = {
                         proposerExplicitMode: isExplicitMode
                     };
-                    MPLib.sendDirect(peerId, { type: 'date_proposal', payload: payload });
+                    MPLib.sendDirectToRoomPeer(peerId, { type: 'date_proposal', payload: payload });
                     event.target.disabled = true;
                     event.target.textContent = 'Request Sent';
                 };
@@ -1634,7 +1634,7 @@ function showProposalModal() {
         const payload = {
             accepterExplicitMode: isExplicitMode
         };
-        MPLib.sendDirect(incomingProposal.proposerId, { type: 'date_accepted', payload: payload });
+        MPLib.sendDirectToRoomPeer(incomingProposal.proposerId, { type: 'date_accepted', payload: payload });
         proposalModal.style.display = 'none';
 
         // Determine if the date is explicit
@@ -1648,7 +1648,7 @@ function showProposalModal() {
     proposalDeclineButton.onclick = () => {
         if (!incomingProposal) return;
         console.log(`Declining date from ${incomingProposal.proposerId}`);
-        MPLib.sendDirect(incomingProposal.proposerId, { type: 'date_declined' });
+        MPLib.sendDirectToRoomPeer(incomingProposal.proposerId, { type: 'date_declined' });
         proposalModal.style.display = 'none';
         incomingProposal = null; // Clear the stored proposal
     };
@@ -1709,7 +1709,7 @@ async function fetchFirstTurn(turnData) {
         submitButton.disabled = false;
 
         // Send the generated UI to the other player so they are in sync
-        MPLib.sendDirect(currentPartnerId, { type: 'new_turn_ui', payload: currentUiJson });
+        MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'new_turn_ui', payload: currentUiJson });
 
     } catch (error) {
         console.error("Error fetching first turn:", error);
