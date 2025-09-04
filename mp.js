@@ -36,6 +36,7 @@ const MPLib = (() => {
         onError: (type, err) => console.error(`[MPLib] Error (${type}):`, err),
         onMasterConnected: (id) => {},
         onMasterDisconnected: () => {},
+        onNewMasterEstablished: () => {}, // Called when connection to a master is opened
         onDirectoryUpdate: (directory) => {},
         onRoomPeerJoined: (peerId) => {},
         onRoomPeerLeft: (peerId) => {},
@@ -198,6 +199,12 @@ const MPLib = (() => {
     }
 
     function setupMasterClientConnection(conn) {
+        conn.on('open', () => {
+            logMessage(`Connection to master peer ${conn.peer} is open.`, 'success');
+            // Notify the main script that we have a master and it should report its status.
+            config.onNewMasterEstablished();
+        });
+
         conn.on('data', (data) => {
             // This is where a client receives data FROM the master
             if (data.type === 'directory-update') {
@@ -207,9 +214,13 @@ const MPLib = (() => {
             }
         });
         conn.on('close', () => {
-            logMessage('Connection to master directory closed.', 'error');
+            logMessage('Connection to master directory closed. Triggering re-election...', 'error');
             masterConnection = null;
             config.onMasterDisconnected();
+            // Wait a short, random amount of time to prevent all clients from trying to reconnect at the exact same moment
+            setTimeout(() => {
+                connectToMasterDirectory();
+            }, Math.random() * 1500 + 500); // Random delay between 0.5s and 2s
         });
          conn.on('error', (err) => {
             logMessage(`Error with master directory connection: ${err.message}`, 'error');

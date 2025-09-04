@@ -68,6 +68,7 @@ let incomingProposal = null;
 let isDateExplicit = false;
 let globalRoomDirectory = { rooms: {}, peers: {} }; // Holds the global state
 let currentRoomName = null; // The name of the room the user is currently in
+let currentRoomIsPublic = true; // Whether the current room is public or private
 
 const remoteGameStates = new Map(); // Map<peerId, gameState>
 
@@ -1273,6 +1274,20 @@ function handleMasterDisconnected() {
     showError("Connection to the master directory has been lost. Room list may be outdated.");
 }
 
+function handleNewMasterEstablished() {
+    console.log("Established connection to a new master. Reporting my status.");
+    // Don't report status if we aren't in a room yet
+    if (currentRoomName) {
+        MPLib.sendToMaster({
+            type: 'update_status',
+            payload: {
+                newRoom: currentRoomName,
+                isPublic: currentRoomIsPublic
+            }
+        });
+    }
+}
+
 function handleDirectoryUpdate(directory) {
     console.log("Received global directory update:", directory);
     globalRoomDirectory = directory;
@@ -1286,7 +1301,7 @@ function handleRoomConnected(id) {
         type: 'update_status',
         payload: {
             newRoom: currentRoomName,
-            isPublic: !PRESET_LOBBIES.includes(currentRoomName) // A simple rule for now
+            isPublic: currentRoomIsPublic
         }
     });
 }
@@ -1768,6 +1783,7 @@ function switchToRoom(roomName, isPublic) {
 
     // Set the new room name and join the new network
     currentRoomName = roomName;
+    currentRoomIsPublic = isPublic;
     MPLib.joinRoom(roomName);
 
     // The 'handleRoomConnected' callback will automatically notify the master directory
@@ -1806,6 +1822,7 @@ function initializeGame() {
             onError: handleError,
             onMasterConnected: handleMasterConnected,
             onMasterDisconnected: handleMasterDisconnected,
+            onNewMasterEstablished: handleNewMasterEstablished,
             onDirectoryUpdate: handleDirectoryUpdate,
             onRoomConnected: handleRoomConnected,
             onRoomPeerJoined: handleRoomPeerJoined,
