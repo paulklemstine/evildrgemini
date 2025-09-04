@@ -324,7 +324,16 @@ async function generateLocalTurn(orchestratorText, playerRole) {
         // The new "main" prompt is a self-contained UI generator.
         // We just need to pass it the right instructions.
         const uiJsonString = await callGeminiApiWithRetry(instructions);
-        const uiJson = JSON.parse(uiJsonString);
+        let uiJson = JSON.parse(uiJsonString);
+
+        // Defensively handle cases where the AI returns an object instead of an array
+        if (!Array.isArray(uiJson) && typeof uiJson === 'object' && uiJson !== null) {
+            const arrayKey = Object.keys(uiJson).find(key => Array.isArray(uiJson[key]));
+            if (arrayKey) {
+                console.warn(`API returned an object. Using the array found at key: '${arrayKey}'`);
+                uiJson = uiJson[arrayKey]; // Correct the variable to be the array itself
+            }
+        }
 
         currentUiJson = uiJson;
 
@@ -1332,6 +1341,7 @@ function handleDataReceived(senderId, data) {
                  renderUI(currentUiJson);
                  playTurnAlertSound();
                  submitButton.disabled = false;
+                 setLoading(false, true); // Hide the spinner
              }
              break;
         case 'orchestrator_output':
@@ -1564,6 +1574,10 @@ function startNewDate(partnerId, iAmPlayer1) {
             playerB_id: currentPartnerId,
             isExplicit: isDateExplicit
         });
+    } else {
+        // Player 2 just waits, show a loading indicator.
+        uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started! Waiting for first turn...</h2></div>`;
+        setLoading(true, true); // Use simple spinner
     }
 }
 
