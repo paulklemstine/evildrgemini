@@ -66,6 +66,9 @@ let myActions = null;
 let partnerActions = null;
 let incomingProposal = null;
 let isDateExplicit = false;
+let globalRoomDirectory = { rooms: {}, peers: {} }; // Holds the global state
+let currentRoomName = null; // The name of the room the user is currently in
+let currentRoomIsPublic = true; // Whether the current room is public or private
 
 const remoteGameStates = new Map(); // Map<peerId, gameState>
 
@@ -1054,14 +1057,14 @@ function updatePeerListUI() {
     if (!peerListContainer) return; // Check if container exists
     peerListContainer.innerHTML = ''; // Clear previous icons
 
-    const peers = MPLib.getConnections ? Array.from(MPLib.getConnections().keys()) : [];
-    const localId = MPLib.getLocalPeerId ? MPLib.getLocalPeerId() : null;
-    const hostId = MPLib.getHostPeerId ? MPLib.getHostPeerId() : null;
+    const peers = MPLib.getRoomConnections ? Array.from(MPLib.getRoomConnections().keys()) : [];
+    const localId = MPLib.getLocalMasterId ? MPLib.getLocalMasterId() : null;
+    // const hostId = MPLib.getHostPeerId ? MPLib.getHostPeerId() : null; // This concept is removed
     const isViewingRemote = localGameStateSnapshot !== null;
 
     // Add local player icon
     if (localId) {
-        const localIcon = createPeerIcon(localId, 'You', true, localId === hostId); // isSelf=true, isHost=isHost
+        const localIcon = createPeerIcon(localId, 'You', true, false); // isSelf=true, isHost=false (removed)
         localIcon.onclick = () => {
             if (isViewingRemote) {
                 console.log("Clicked local icon - restoring local state.");
@@ -1078,16 +1081,15 @@ function updatePeerListUI() {
     // Add remote peer icons
     peers.forEach(peerId => {
         if (peerId !== localId) { // Don't add self again
-            const conn = MPLib.getConnections().get(peerId);
+            const conn = MPLib.getRoomConnections().get(peerId);
             // Check for valid connection object (MPLib might store 'connecting' string temporarily)
             if (conn && typeof conn === 'object' && conn.open) { // Ensure it's an open DataConnection
-                const isPeerHost = peerId === hostId;
-                const peerIcon = createPeerIcon(peerId, peerId.slice(-6), false, isPeerHost);
+                const peerIcon = createPeerIcon(peerId, peerId.slice(-6), false, false); // isHost is always false now
                 peerIcon.onclick = () => {
                     console.log(`Clicked remote peer icon: ${peerId.slice(-6)}`);
                     // Request game state from this peer
                     console.log(`Requesting game state from ${peerId.slice(-6)}...`);
-                    MPLib.sendDirect(peerId, {type: 'request_game_state'});
+                    MPLib.sendDirectToRoomPeer(peerId, {type: 'request_game_state'});
                     showNotification(`Requesting state from ${peerId.slice(-6)}...`, 'info', 2000);
                     // Highlight this peer (will be updated fully when state arrives)
                     highlightPeerIcon(peerId); // Indicate attempt to view
@@ -1146,8 +1148,8 @@ function highlightPeerIcon(peerIdToHighlight) {
         if (icon.dataset.peerId === peerIdToHighlight) {
             icon.classList.add('viewing');
             // Ensure self icon isn't highlighted if viewing remote
-            if (peerIdToHighlight !== MPLib.getLocalPeerId()) {
-                const selfIcon = peerListContainer.querySelector(`.peer-icon-wrapper[data-peer-id="${MPLib.getLocalPeerId()}"]`);
+            if (peerIdToHighlight !== MPLib.getLocalMasterId()) {
+                const selfIcon = peerListContainer.querySelector(`.peer-icon-wrapper[data-peer-id="${MPLib.getLocalMasterId()}"]`);
                 if (selfIcon) selfIcon.classList.remove('viewing');
             }
         } else {
@@ -1155,8 +1157,8 @@ function highlightPeerIcon(peerIdToHighlight) {
         }
     });
     // Ensure local icon is highlighted if no remote peer is specified (i.e., back to local view)
-    if (peerIdToHighlight === null && MPLib.getLocalPeerId()) {
-        const selfIcon = peerListContainer.querySelector(`.peer-icon-wrapper[data-peer-id="${MPLib.getLocalPeerId()}"]`);
+    if (peerIdToHighlight === null && MPLib.getLocalMasterId()) {
+        const selfIcon = peerListContainer.querySelector(`.peer-icon-wrapper[data-peer-id="${MPLib.getLocalMasterId()}"]`);
         if (selfIcon) selfIcon.classList.add('viewing');
     }
 }
@@ -1259,36 +1261,78 @@ function addPeerIconStyles() {
 
 // --- Multiplayer Event Handlers (Callbacks for MPLib) ---
 
-function handlePeerJoined(peerId, conn) {
-    console.log(`MPLib Event: Peer joined - ${peerId.slice(-6)}`);
-    showNotification(`Peer ${peerId.slice(-6)} connected.`, 'success', 2000);
+function handleMasterConnected(id) {
+    console.log(`Connection to master directory established. My master ID is ${id.slice(-6)}`);
+    showNotification(`Connected to the network!`, 'success');
+    // Now that we are on the network, join a default room.
+    const defaultRoom = DEFAULT_LOBBY;
+    currentRoomName = defaultRoom; // Track the current room
+    MPLib.joinRoom(defaultRoom);
+}
+
+function handleMasterDisconnected() {
+    showError("Connection to the master directory has been lost. Room list may be outdated.");
+}
+
+function handleNewMasterEstablished() {
+    console.log("Established connection to a new master. Reporting my status.");
+    // Don't report status if we aren't in a room yet
+    if (currentRoomName) {
+        MPLib.sendToMaster({
+            type: 'update_status',
+            payload: {
+                newRoom: currentRoomName,
+                isPublic: currentRoomIsPublic
+            }
+        });
+    }
+}
+
+function handleDirectoryUpdate(directory) {
+    console.log("Received global directory update:", directory);
+    globalRoomDirectory = directory;
+    renderGlobalRoomList();
+}
+
+function handleRoomConnected(id) {
+    console.log(`Successfully joined room '${currentRoomName}' with ID: ${id.slice(-6)}`);
+    // Announce our location to the master directory
+    MPLib.sendToMaster({
+        type: 'update_status',
+        payload: {
+            newRoom: currentRoomName,
+            isPublic: currentRoomIsPublic
+        }
+    });
+}
+
+function handleRoomPeerJoined(peerId, conn) {
+    console.log(`MPLib Event: Peer joined room - ${peerId.slice(-6)}`);
+    showNotification(`Peer ${peerId.slice(-6)} joined the room.`, 'success', 2000);
     renderLobby();
 
-    // This is the definitive fix for the race condition.
-    // Re-render the lobby once the data connection is fully open.
     conn.on('open', () => {
-        console.log(`Data connection opened with ${peerId.slice(-6)}. Re-rendering lobby.`);
+        console.log(`Data connection to room peer ${peerId.slice(-6)} opened. Re-rendering lobby.`);
         renderLobby();
     });
 }
 
-function handlePeerLeft(peerId) {
-    console.log(`MPLib Event: Peer left - ${peerId.slice(-6)}`);
-    showNotification(`Peer ${peerId.slice(-6)} disconnected.`, 'warn', 2000);
+function handleRoomPeerLeft(peerId) {
+    console.log(`MPLib Event: Peer left room - ${peerId.slice(-6)}`);
+    showNotification(`Peer ${peerId.slice(-6)} left the room.`, 'warn', 2000);
     renderLobby();
 }
 
-function handleDataReceived(senderId, data) {
-    console.log(`MPLib Event: Data received from ${senderId.slice(-6)}`, data);
+function handleRoomDataReceived(senderId, data) {
+    console.log(`MPLib Event: Room data received from ${senderId.slice(-6)}`, data);
     if (!data || !data.type) {
-        console.warn("Received data without type from peer:", senderId.slice(-6));
+        console.warn("Received data without type from room peer:", senderId.slice(-6));
         return;
     }
-
+    // This switch statement remains largely the same, as it handles in-room game logic.
     switch (data.type) {
         case 'date_proposal':
             console.log(`Received date proposal from ${senderId}`);
-            // Store proposal details before showing modal
             incomingProposal = {
                 proposerId: senderId,
                 proposerExplicitMode: data.payload?.proposerExplicitMode || false
@@ -1301,7 +1345,7 @@ function handleDataReceived(senderId, data) {
             const accepterExplicitMode = data.payload?.accepterExplicitMode || false;
             isDateExplicit = isExplicitMode && accepterExplicitMode;
             console.log(`Date explicit mode set to: ${isDateExplicit}`);
-            startNewDate(senderId, true); // We are Player 1 (initiator)
+            startNewDate(senderId, true);
             break;
         case 'date_declined':
             console.log(`Date proposal declined by ${senderId}`);
@@ -1312,20 +1356,16 @@ function handleDataReceived(senderId, data) {
                 button.textContent = 'Propose Date';
             }
             break;
+        // The rest of the game logic cases remain unchanged...
         case 'turn_actions':
-            // This is Player 1 receiving actions from Player 2
             console.log(`Received turn actions from ${senderId}`);
-            if (isDateActive && !amIPlayer1) { // This logic should be for P2
-                partnerActions = myActions; // My actions are P2's actions from P1's perspective
-                myActions = JSON.parse(data.payload); // The incoming actions are P1's actions
-
-                // Now that P2 has both, P2 sends their actions back to P1 so P1 can kick off the orchestrator
+            if (isDateActive && !amIPlayer1) {
+                partnerActions = myActions;
+                myActions = JSON.parse(data.payload);
                 console.log("Player 2 has received Player 1's actions. Sending own actions back to P1.");
-                MPLib.sendDirect(currentPartnerId, { type: 'final_actions_p2', payload: JSON.stringify(partnerActions) });
-
-            } else if (isDateActive && amIPlayer1) { // This logic is for P1
-                 partnerActions = JSON.parse(data.payload);
-                // If P1 has also submitted, initiate the next turn
+                MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'final_actions_p2', payload: JSON.stringify(partnerActions) });
+            } else if (isDateActive && amIPlayer1) {
+                partnerActions = JSON.parse(data.payload);
                 if (myActions) {
                     console.log("Player 1 has both sets of actions. Initiating next turn...");
                     initiateTurnAsPlayer1({
@@ -1339,7 +1379,6 @@ function handleDataReceived(senderId, data) {
             }
             break;
         case 'final_actions_p2':
-             // This is P1 receiving the final confirmation from P2
             console.log(`Received final actions from Player 2: ${senderId}`);
             if (isDateActive && amIPlayer1) {
                 partnerActions = JSON.parse(data.payload);
@@ -1354,24 +1393,21 @@ function handleDataReceived(senderId, data) {
                     });
                 } else if (!partnerActions) {
                     showError("Received invalid (null) actions from partner. Cannot proceed.");
-                    setLoading(false); // Hide any spinners
+                    setLoading(false);
                 }
             }
             break;
-
         case 'new_turn_ui':
-             // This is Player 2 receiving their UI for the FIRST turn
-             console.log(`Received new turn UI from ${senderId}`);
-             if (isDateActive && !amIPlayer1) {
-                 currentUiJson = data.payload;
-                 renderUI(currentUiJson);
-                 playTurnAlertSound();
-                 submitButton.disabled = false;
-                 setLoading(false, true); // Hide the spinner
-             }
-             break;
+            console.log(`Received new turn UI from ${senderId}`);
+            if (isDateActive && !amIPlayer1) {
+                currentUiJson = data.payload;
+                renderUI(currentUiJson);
+                playTurnAlertSound();
+                submitButton.disabled = false;
+                setLoading(false, true);
+            }
+            break;
         case 'orchestrator_output':
-            // This is Player 2 receiving the text block from Player 1
             console.log(`Received orchestrator output from ${senderId}`);
             if (isDateActive && !amIPlayer1) {
                 generateLocalTurn(data.payload, 'player2');
@@ -1384,30 +1420,61 @@ function handleDataReceived(senderId, data) {
 
 function handleStatusUpdate(message) {
     console.log(`MPLib Status: ${message}`);
-    // Optionally display less critical status updates somewhere
-    // showNotification(message, 'info', 1500);
 }
 
 function handleError(type, error) {
     console.error(`MPLib Error (${type}):`, error);
-    //showError(`Network Error (${type}): ${error?.message || error || 'Unknown error'}`);
 }
 
-function handleBecameHost() {
-    console.log("This client BECAME THE HOST.");
-    showNotification("You are now the host!", 'success');
-    updatePeerListUI();
-    // Host specific logic might go here
-}
+// --- UI Rendering ---
 
-function handleConnectedToHost(hostId) {
-    console.log(`Successfully connected to HOST: ${hostId}`);
-    showNotification(`Connected to host ${hostId.slice(-6)}`, 'success');
-    updatePeerListUI();
-    // Client specific logic after connecting might go here
-    // Maybe request state from host automatically?
-    // console.log(`Requesting initial game state from host ${hostId.slice(-6)}...`);
-    // MPLib.sendDirect(hostId, { type: 'request_game_state' });
+function renderGlobalRoomList() {
+    const roomListContainer = document.getElementById('room-list');
+    const directoryContainer = document.getElementById('global-directory-container');
+    if (!roomListContainer || !directoryContainer) return;
+
+    directoryContainer.style.display = 'block'; // Make sure the whole section is visible
+    roomListContainer.innerHTML = ''; // Clear old list
+
+    const { rooms } = globalRoomDirectory;
+
+    if (Object.keys(rooms).length === 0) {
+        roomListContainer.innerHTML = '<p class="text-gray-500">No public rooms are active. Why not create one?</p>';
+        return;
+    }
+
+    // Sort rooms by name for a consistent order
+    const sortedRoomNames = Object.keys(rooms).sort();
+
+    sortedRoomNames.forEach(roomName => {
+        const room = rooms[roomName];
+        const card = document.createElement('div');
+        card.className = 'room-card';
+
+        const title = document.createElement('h3');
+        title.textContent = roomName;
+        card.appendChild(title);
+
+        const occupantCount = document.createElement('p');
+        occupantCount.textContent = `(${room.occupants.length} online)`;
+        card.appendChild(occupantCount);
+
+        const joinButton = document.createElement('button');
+        joinButton.className = 'geems-button join-room-btn';
+        joinButton.textContent = 'Join';
+        joinButton.dataset.roomName = roomName;
+
+        if (roomName === currentRoomName) {
+            joinButton.disabled = true;
+            joinButton.textContent = 'Current';
+            card.classList.add('current-room');
+        } else {
+            joinButton.addEventListener('click', () => switchToRoom(roomName, true));
+        }
+        card.appendChild(joinButton);
+
+        roomListContainer.appendChild(card);
+    });
 }
 
 
@@ -1433,7 +1500,7 @@ submitButton.addEventListener('click', () => {
         showNotification("Actions submitted. Waiting for partner...", "info");
 
         // Send actions to partner immediately
-        MPLib.sendDirect(currentPartnerId, { type: 'turn_actions', payload: actions });
+        MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'turn_actions', payload: actions });
 
     } else {
         // --- Single-Player Logic ---
@@ -1482,7 +1549,7 @@ resetGameButton.addEventListener('click', () => {
 
 /** Renders the lobby UI */
 function renderLobby() {
-    console.log("Entering renderLobby. lobbyContainer is:", lobbyContainer);
+    console.log("Entering renderLobby.");
     if (!lobbyContainer) return;
 
     // Ensure the correct view is shown
@@ -1493,12 +1560,17 @@ function renderLobby() {
     const grid = document.createElement('div');
     grid.className = 'lobby-grid';
 
-    const peers = MPLib.getConnections ? Array.from(MPLib.getConnections().keys()) : [];
+    // Get all known peers and the local ID from MPLib for the current room
+    const allKnownPeers = MPLib.getRoomKnownPeerIds ? Array.from(MPLib.getRoomKnownPeerIds()) : [];
+    const localId = MPLib.getLocalRoomId ? MPLib.getLocalRoomId() : null;
 
-    if (peers.length === 0) {
+    // Filter out the local client's ID to get a list of only remote peers
+    const remotePeers = allKnownPeers.filter(peerId => peerId && peerId !== localId);
+
+    if (remotePeers.length === 0) {
         grid.innerHTML = '<p>No other users are currently online. Please wait for someone to connect.</p>';
     } else {
-        peers.forEach(peerId => {
+        remotePeers.forEach(peerId => {
             const card = document.createElement('div');
             card.className = 'profile-card';
 
@@ -1517,23 +1589,25 @@ function renderLobby() {
 
             const button = document.createElement('button');
             button.className = 'geems-button propose-date-button';
-            button.textContent = 'Propose Date';
             button.dataset.peerId = peerId; // Store peerId for the handler
 
-            const conn = MPLib.getConnections().get(peerId);
+            // Check the actual connection status for this specific peer
+            const conn = MPLib.getRoomConnections().get(peerId);
             if (conn && conn.open) {
+                button.textContent = 'Propose Date';
+                button.disabled = false;
                 button.onclick = (event) => {
                     console.log(`Proposing date to ${peerId}`);
                     const payload = {
                         proposerExplicitMode: isExplicitMode
                     };
-                    MPLib.sendDirect(peerId, { type: 'date_proposal', payload: payload });
+                    MPLib.sendDirectToRoomPeer(peerId, { type: 'date_proposal', payload: payload });
                     event.target.disabled = true;
                     event.target.textContent = 'Request Sent';
                 };
             } else {
-                button.disabled = true;
                 button.textContent = 'Connecting...';
+                button.disabled = true;
             }
 
             card.appendChild(avatar);
@@ -1560,7 +1634,7 @@ function showProposalModal() {
         const payload = {
             accepterExplicitMode: isExplicitMode
         };
-        MPLib.sendDirect(incomingProposal.proposerId, { type: 'date_accepted', payload: payload });
+        MPLib.sendDirectToRoomPeer(incomingProposal.proposerId, { type: 'date_accepted', payload: payload });
         proposalModal.style.display = 'none';
 
         // Determine if the date is explicit
@@ -1574,7 +1648,7 @@ function showProposalModal() {
     proposalDeclineButton.onclick = () => {
         if (!incomingProposal) return;
         console.log(`Declining date from ${incomingProposal.proposerId}`);
-        MPLib.sendDirect(incomingProposal.proposerId, { type: 'date_declined' });
+        MPLib.sendDirectToRoomPeer(incomingProposal.proposerId, { type: 'date_declined' });
         proposalModal.style.display = 'none';
         incomingProposal = null; // Clear the stored proposal
     };
@@ -1604,7 +1678,7 @@ function startNewDate(partnerId, iAmPlayer1) {
     if (amIPlayer1) {
         console.log("I am Player 1, fetching the first turn.");
         fetchFirstTurn({
-            playerA_id: MPLib.getLocalPeerId(),
+            playerA_id: MPLib.getLocalMasterId(),
             playerB_id: currentPartnerId,
             isExplicit: isDateExplicit
         });
@@ -1635,7 +1709,7 @@ async function fetchFirstTurn(turnData) {
         submitButton.disabled = false;
 
         // Send the generated UI to the other player so they are in sync
-        MPLib.sendDirect(currentPartnerId, { type: 'new_turn_ui', payload: currentUiJson });
+        MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'new_turn_ui', payload: currentUiJson });
 
     } catch (error) {
         console.error("Error fetching first turn:", error);
@@ -1689,70 +1763,106 @@ function saveLobbyToHivemind(lobbyName) {
     }
 }
 
-function connectToLobby(lobbyName, apiKey) {
-    localStorage.setItem('sparksync_apiKey', apiKey);
-    console.log("Saved API key to localStorage.");
+function switchToRoom(roomName, isPublic) {
+    console.log(`Switching to room: ${roomName} (Public: ${isPublic})`);
 
-    apiKeyLocked = true;
-    hideError();
-    if(lobbySelectionScreen) lobbySelectionScreen.style.display = 'none';
-    lobbyContainer.style.display = 'block';
-
-    if (typeof MPLib !== 'undefined' && typeof MPLib.initialize === 'function') {
-        console.log(`Initializing Multiplayer Library for lobby: ${lobbyName}...`);
-        MPLib.initialize({
-            lobbyName: lobbyName,
-            debugLevel: 1,
-            onStatusUpdate: handleStatusUpdate,
-            onError: handleError,
-            onPeerJoined: handlePeerJoined,
-            onPeerLeft: handlePeerLeft,
-            onDataReceived: handleDataReceived,
-            onConnected: (localId) => {
-                console.log(`Connected to signaling server with ID: ${localId}`);
-            },
-        });
-    } else {
-        console.warn("MPLib not found or initialize function missing.");
-        lobbyContainer.innerHTML = '<p class="error-message">Error: Multiplayer library failed to load. Please refresh.</p>';
+    // Don't do anything if we're already in that room
+    if (roomName === currentRoomName) {
+        showNotification("You are already in this room.", "warn");
+        return;
     }
-    renderLobby();
+
+    // Provide immediate UI feedback
+    const lobby = document.getElementById('lobby-container');
+    if (lobby) {
+        lobby.innerHTML = `<h2>Joining ${roomName}...</h2>`;
+    }
+
+    // Leave the old room's network
+    MPLib.leaveRoom();
+
+    // Set the new room name and join the new network
+    currentRoomName = roomName;
+    currentRoomIsPublic = isPublic;
+    MPLib.joinRoom(roomName);
+
+    // The 'handleRoomConnected' callback will automatically notify the master directory
+    // of our new location once the connection is established.
 }
 
 function initializeGame() {
-    console.log("Initializing SparkSync with new lobby system...");
-    if(gameWrapper) gameWrapper.style.display = 'block';
-    lobbyContainer.style.display = 'none';
+    console.log("Initializing SparkSync with new Master Directory architecture...");
 
-    const savedApiKey = localStorage.getItem('sparksync_apiKey');
+    // Hide the game wrapper and show the lobby selection by default
+    if(gameWrapper) gameWrapper.style.display = 'none';
+    if(lobbyContainer) lobbyContainer.style.display = 'none';
+    if(lobbySelectionScreen) lobbySelectionScreen.style.display = 'block';
 
-    if (savedApiKey) {
-        const lastLobby = localStorage.getItem('sparksync_lastLobby') || DEFAULT_LOBBY;
-        apiKeyInput.value = savedApiKey;
-        console.log(`Saved API key found. Entering last known lobby: ${lastLobby}...`);
-        connectToLobby(lastLobby, savedApiKey);
-    } else {
-        console.log("No saved API key. Showing lobby selection screen.");
-        populateLobbySelector();
-        if(lobbySelectionScreen) lobbySelectionScreen.style.display = 'block';
-    }
+    populateLobbySelector(); // Populate dropdown with any saved/preset lobbies
 
-    if(joinLobbyButton) {
-        joinLobbyButton.addEventListener('click', () => {
-            const apiKey = apiKeyInput.value.trim();
-            const customLobby = customLobbyInput.value.trim();
-            const selectedLobby = lobbySelect.value;
-            const lobbyToJoin = customLobby || selectedLobby;
+    // This listener handles the initial login/API key submission
+    joinLobbyButton.addEventListener('click', () => {
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) {
+            showError("API Key is required to connect.");
+            return;
+        }
 
-            if (!apiKey || !lobbyToJoin) {
-                showError("API Key and a Lobby selection are required.");
+        // Save API key and hide the selection screen
+        localStorage.setItem('sparksync_apiKey', apiKey);
+        apiKeyLocked = true;
+        hideError();
+        if(lobbySelectionScreen) lobbySelectionScreen.style.display = 'none';
+        lobbyContainer.style.display = 'block'; // Show the lobby container (which will initially be empty)
+
+        // The main entrypoint to the multiplayer library
+        MPLib.initialize({
+            debugLevel: 1,
+            onStatusUpdate: handleStatusUpdate,
+            onError: handleError,
+            onMasterConnected: handleMasterConnected,
+            onMasterDisconnected: handleMasterDisconnected,
+            onNewMasterEstablished: handleNewMasterEstablished,
+            onDirectoryUpdate: handleDirectoryUpdate,
+            onRoomConnected: handleRoomConnected,
+            onRoomPeerJoined: handleRoomPeerJoined,
+            onRoomPeerLeft: handleRoomPeerLeft,
+            onRoomDataReceived: handleRoomDataReceived,
+        });
+    });
+
+    // Add listeners for the new room creation buttons
+    const createPublicBtn = document.getElementById('create-public-room-btn');
+    const createPrivateBtn = document.getElementById('create-private-room-btn');
+    const newRoomInput = document.getElementById('new-room-name-input');
+
+    createPublicBtn.addEventListener('click', () => {
+        const roomName = newRoomInput.value.trim();
+        if (roomName) {
+            if (globalRoomDirectory.rooms[roomName]) {
+                showError("A public room with this name already exists.");
                 return;
             }
+            switchToRoom(roomName, true);
+            newRoomInput.value = '';
+        }
+    });
 
-            saveLobbyToHivemind(lobbyToJoin);
-            localStorage.setItem('sparksync_lastLobby', lobbyToJoin); // Save last lobby
-            connectToLobby(lobbyToJoin, apiKey);
-        });
+    createPrivateBtn.addEventListener('click', () => {
+        const roomName = newRoomInput.value.trim();
+        if (roomName) {
+            // No check needed for private rooms as they are not listed
+            switchToRoom(roomName, false);
+            newRoomInput.value = '';
+        }
+    });
+
+
+    // Auto-login if key is already saved
+    const savedApiKey = localStorage.getItem('sparksync_apiKey');
+    if (savedApiKey) {
+        apiKeyInput.value = savedApiKey;
+        joinLobbyButton.click(); // Simulate click to trigger the connection logic
     }
 }
 
