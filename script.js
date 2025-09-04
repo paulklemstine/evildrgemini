@@ -335,20 +335,22 @@ async function generateLocalTurn(orchestratorText, playerRole) {
         if (!Array.isArray(uiJson) && typeof uiJson === 'object' && uiJson !== null) {
             const arrayKey = Object.keys(uiJson).find(key => Array.isArray(uiJson[key]));
             if (arrayKey) {
-                console.warn(`API returned an object. Using the array found at key: '${arrayKey}'`);
-                // Handle the specific, malformed 'suggested_actions' case
-                if (arrayKey === 'suggested_actions') {
-                    console.warn(`Transforming 'suggested_actions' to conform to UI schema.`);
-                    uiJson = uiJson[arrayKey].map(action => ({
+                const potentialArray = uiJson[arrayKey];
+                console.warn(`API returned an object. Found an array at key: '${arrayKey}'`);
+
+                // Check if the elements in the array are malformed (missing 'type')
+                if (potentialArray.length > 0 && potentialArray[0].type === undefined) {
+                    console.warn(`Transforming malformed array elements to conform to UI schema.`);
+                    uiJson = potentialArray.map(action => ({
                         type: 'radio',
                         name: 'main_action',
-                        label: action.action_id || 'Action',
+                        label: action.label || action.action_id || 'Action', // Use label, fallback to action_id
                         value: action.description || 'No description available.',
                         color: '#FFFFFF', // Default color
                         voice: 'player'
                     }));
                 } else {
-                    uiJson = uiJson[arrayKey]; // Correct the variable to be the array itself
+                    uiJson = potentialArray; // The array seems to be in the correct format
                 }
             }
         }
