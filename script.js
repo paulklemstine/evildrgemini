@@ -111,12 +111,6 @@ function constructPrompt(promptType, turnData) {
     let prompt;
 
     switch (promptType) {
-        case 'firstrun':
-            prompt = geemsPrompts.firstrun;
-            // The new firstrun prompt is self-contained and doesn't need replacements
-            console.log("Generated First Run Prompt.");
-            break;
-
         case 'orchestrator':
             prompt = geemsPrompts.orchestrator;
             prompt += `\n\n---\nPREVIOUS STATE & ACTIONS\n---\n`;
@@ -310,6 +304,11 @@ function restoreLocalState() {
  */
 async function generateLocalTurn(orchestratorText, playerRole) {
     console.log(`Generating local turn for ${playerRole}...`);
+
+    // Reset interstitial title for turn generation
+    const interstitialTitle = document.querySelector('#interstitial-screen h2');
+    if (interstitialTitle) interstitialTitle.textContent = 'Generating Turn...';
+
     setLoading(true); // Show interstitial
 
     try {
@@ -321,28 +320,59 @@ async function generateLocalTurn(orchestratorText, playerRole) {
         const playerNumber = (playerRole === 'player1') ? 1 : 2;
         const instructions = parts[playerNumber]; // 1 for P1, 2 for P2
 
-        // The new "main" prompt is a self-contained UI generator.
-        // We just need to pass it the right instructions.
-        const uiJsonString = await callGeminiApiWithRetry(instructions);
-        const uiJson = JSON.parse(uiJsonString);
+        // Combine the master prompt with the turn-specific instructions from the orchestrator.
+        const prompt = geemsPrompts.master_ui_prompt + "\n\n" + instructions;
+        const uiJsonString = await callGeminiApiWithRetry(prompt);
+        let uiJson = JSON.parse(uiJsonString);
+
+        // Defensively handle cases where the AI returns an object instead of an array
+        if (!Array.isArray(uiJson) && typeof uiJson === 'object' && uiJson !== null) {
+            const arrayKey = Object.keys(uiJson).find(key => Array.isArray(uiJson[key]));
+            if (arrayKey) {
+                const potentialArray = uiJson[arrayKey];
+                console.warn(`API returned an object. Found an array at key: '${arrayKey}'`);
+
+                // Check if the elements in the array are malformed (missing 'type')
+                if (potentialArray.length > 0 && potentialArray[0].type === undefined) {
+                    console.warn(`Transforming malformed array elements to conform to UI schema.`);
+                    uiJson = potentialArray.map(action => ({
+                        type: 'radio',
+                        name: 'main_action',
+                        label: action.label || action.action_id || 'Action', // Use label, fallback to action_id
+                        value: action.description || 'No description available.',
+                        color: '#FFFFFF', // Default color
+                        voice: 'player'
+                    }));
+                } else {
+                    uiJson = potentialArray; // The array seems to be in the correct format
+                }
+            }
+        }
 
         currentUiJson = uiJson;
 
         // --- Interstitial Logic ---
-        const greenFlags = uiJson.find(el => el.name === 'player_facing_analysis');
-        const redFlags = uiJson.find(el => el.name === 'gemini_facing_analysis');
+        if (Array.isArray(uiJson)) {
+            const greenFlags = uiJson.find(el => el.name === 'player_facing_analysis');
+            const redFlags = uiJson.find(el => el.name === 'gemini_facing_analysis');
 
-        if (greenFlags && greenFlags.value) {
-            greenFlagReport.innerHTML = greenFlags.value.replace(/\\n/g, '<br>');
+            if (greenFlags && greenFlags.value) {
+                greenFlagReport.innerHTML = greenFlags.value.replace(/\\n/g, '<br>');
+            } else {
+                greenFlagReport.innerHTML = '<em>No specific green flags noted this turn.</em>';
+            }
+
+            if (redFlags && redFlags.value) {
+                redFlagReport.innerHTML = redFlags.value.replace(/\\n/g, '<br>');
+            } else {
+                redFlagReport.innerHTML = '<em>No clinical analysis available for your partner this turn.</em>';
+            }
         } else {
-            greenFlagReport.innerHTML = '<em>No specific green flags noted this turn.</em>';
+            console.warn("API response for UI is not an array, skipping interstitial report generation.", uiJson);
+            greenFlagReport.innerHTML = '<em>Could not parse analysis from AI response.</em>';
+            redFlagReport.innerHTML = '<em>Could not parse analysis from AI response.</em>';
         }
 
-        if (redFlags && redFlags.value) {
-            redFlagReport.innerHTML = redFlags.value.replace(/\\n/g, '<br>');
-        } else {
-            redFlagReport.innerHTML = '<em>No clinical analysis available for your partner this turn.</em>';
-        }
 
         interstitialSpinner.style.display = 'none';
         interstitialReports.classList.remove('hidden');
@@ -371,6 +401,13 @@ async function generateLocalTurn(orchestratorText, playerRole) {
  */
 async function initiateTurnAsPlayer1(turnData) {
     console.log("Player 1 is initiating the turn by calling the orchestrator...");
+    const loadingDiv = document.getElementById('loading');
+    if (loadingDiv) {
+        const textNode = Array.from(loadingDiv.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+        if (textNode) {
+            textNode.textContent = ' Generating next turn... Please wait.';
+        }
+    }
     setLoading(true, true); // Use simple spinner for this phase
 
     try {
@@ -437,6 +474,12 @@ async function callGeminiApiWithRetry(prompt, responseMimeType = "application/js
 
 /** Calls the real Google AI (Gemini) API. */
 async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType = "application/json") {
+    console.log("--- LLM Query ---", {
+        modelName,
+        promptText,
+        responseMimeType
+    });
+
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
     const requestBody = {
         contents: [{parts: [{text: promptText}]}],
@@ -472,6 +515,7 @@ async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType
         throw new Error(errorBody);
     }
     const responseData = await response.json();
+    console.log("--- LLM Response ---", responseData);
     if (responseData.promptFeedback && responseData.promptFeedback.blockReason) throw new Error(`Request blocked by API. Reason: ${responseData.promptFeedback.blockReason}. Details: ${JSON.stringify(responseData.promptFeedback.safetyRatings || 'N/A')}`);
     if (!responseData.candidates || responseData.candidates.length === 0) {
         if (typeof responseData === 'string') {
@@ -580,6 +624,7 @@ function renderSingleElement(element, index) {
             case 'radio':
                 renderRadio(wrapper, element, adjustedColor);
                 break;
+            case 'notes': // Fallthrough to handle 'notes' as a type of hidden field
             case 'hidden':
                 if (element.name === 'notes') {
                     // Create a hidden input to store the notes value in the DOM
@@ -619,20 +664,24 @@ function renderImage(wrapper, element, adjustedColor) {
     const randomSeed = Math.floor(Math.random() * 65536);
     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?nologo=true&safe=false&seed=${randomSeed}`;
     img.src = imageUrl;
-    img.alt = element.label || `Image: ${imagePrompt.substring(0, 50)}...`;
+    img.alt = element.caption || element.label || `Image: ${imagePrompt.substring(0, 50)}...`;
     img.onerror = () => {
         console.warn(`Failed to load image: ${imageUrl}`);
         img.src = `https://placehold.co/600x400/e0e7ff/4f46e5?text=Image+Load+Error`;
         img.alt = `Error loading image: ${imagePrompt.substring(0, 50)}...`;
     };
     wrapper.appendChild(img);
-    if (element.label) {
-        const labelDiv = document.createElement('div');
-        labelDiv.className = 'geems-label text-center font-semibold mt-2';
-        if (adjustedColor) labelDiv.style.color = adjustedColor;
-        labelDiv.textContent = element.label;
-        wrapper.appendChild(labelDiv);
+
+    // Prioritize the new 'caption' field, but fall back to 'label' for compatibility.
+    const captionText = element.caption || element.label;
+    if (captionText) {
+        const captionDiv = document.createElement('div');
+        captionDiv.className = 'geems-label text-center font-semibold mt-2'; // Re-use existing style
+        if (adjustedColor) captionDiv.style.color = adjustedColor;
+        captionDiv.textContent = captionText;
+        wrapper.appendChild(captionDiv);
     }
+
     const promptText = document.createElement('p');
     promptText.className = 'geems-image-prompt';
     promptText.textContent = imagePrompt;
@@ -1297,7 +1346,7 @@ function handleDataReceived(senderId, data) {
             console.log(`Received final actions from Player 2: ${senderId}`);
             if (isDateActive && amIPlayer1) {
                 partnerActions = JSON.parse(data.payload);
-                 if (myActions) {
+                if (myActions && partnerActions) {
                     console.log("Player 1 has both sets of actions. Initiating next turn...");
                     initiateTurnAsPlayer1({
                         playerA_actions: myActions,
@@ -1306,6 +1355,9 @@ function handleDataReceived(senderId, data) {
                         playerB_notes: partnerActions.notes,
                         isExplicit: isDateExplicit
                     });
+                } else if (!partnerActions) {
+                    showError("Received invalid (null) actions from partner. Cannot proceed.");
+                    setLoading(false); // Hide any spinners
                 }
             }
             break;
@@ -1318,6 +1370,7 @@ function handleDataReceived(senderId, data) {
                  renderUI(currentUiJson);
                  playTurnAlertSound();
                  submitButton.disabled = false;
+                 setLoading(false, true); // Hide the spinner
              }
              break;
         case 'orchestrator_output':
@@ -1372,6 +1425,18 @@ submitButton.addEventListener('click', () => {
         // --- New Two-Player Date Logic ---
         const actions = collectInputState();
         myActions = JSON.parse(actions);
+
+        // Show a waiting screen using the standard spinner
+        const loadingDiv = document.getElementById('loading');
+        if (loadingDiv) {
+            // Find the text node to change, being careful not to remove the SVG
+            const textNode = Array.from(loadingDiv.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+            if (textNode) {
+                textNode.textContent = ' Waiting for partner...';
+            }
+        }
+        setLoading(true, true); // Use the standard spinner
+
         showNotification("Actions submitted. Waiting for partner...", "info");
 
         // Send actions to partner immediately
@@ -1550,14 +1615,26 @@ function startNewDate(partnerId, iAmPlayer1) {
             playerB_id: currentPartnerId,
             isExplicit: isDateExplicit
         });
+    } else {
+        // Player 2 just waits, show a loading indicator.
+        uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started! Waiting for first turn...</h2></div>`;
+        setLoading(true, true); // Use simple spinner
     }
 }
 
 async function fetchFirstTurn(turnData) {
     console.log("Fetching first turn from AI...");
+    const loadingDiv = document.getElementById('loading');
+    if (loadingDiv) {
+        const textNode = Array.from(loadingDiv.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+        if (textNode) {
+            textNode.textContent = ' Generating next turn... Please wait.';
+        }
+    }
     setLoading(true, true); // Use the simple spinner for the first turn
     try {
-        const prompt = constructPrompt('firstrun', turnData);
+        const prompt = geemsPrompts.master_ui_prompt + geemsPrompts.firstrun_addendum;
+        console.log("Generated First Run Prompt.");
         const uiJsonString = await callGeminiApiWithRetry(prompt);
         const uiJson = JSON.parse(uiJsonString);
 
