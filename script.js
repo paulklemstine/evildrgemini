@@ -111,12 +111,6 @@ function constructPrompt(promptType, turnData) {
     let prompt;
 
     switch (promptType) {
-        case 'firstrun':
-            prompt = geemsPrompts.firstrun;
-            // The new firstrun prompt is self-contained and doesn't need replacements
-            console.log("Generated First Run Prompt.");
-            break;
-
         case 'orchestrator':
             prompt = geemsPrompts.orchestrator;
             prompt += `\n\n---\nPREVIOUS STATE & ACTIONS\n---\n`;
@@ -326,9 +320,9 @@ async function generateLocalTurn(orchestratorText, playerRole) {
         const playerNumber = (playerRole === 'player1') ? 1 : 2;
         const instructions = parts[playerNumber]; // 1 for P1, 2 for P2
 
-        // The new "main" prompt is a self-contained UI generator.
-        // We just need to pass it the right instructions.
-        const uiJsonString = await callGeminiApiWithRetry(instructions);
+        // Combine the master prompt with the turn-specific instructions from the orchestrator.
+        const prompt = geemsPrompts.master_ui_prompt + "\n\n" + instructions;
+        const uiJsonString = await callGeminiApiWithRetry(prompt);
         let uiJson = JSON.parse(uiJsonString);
 
         // Defensively handle cases where the AI returns an object instead of an array
@@ -1639,7 +1633,8 @@ async function fetchFirstTurn(turnData) {
     }
     setLoading(true, true); // Use the simple spinner for the first turn
     try {
-        const prompt = constructPrompt('firstrun', turnData);
+        const prompt = geemsPrompts.master_ui_prompt + geemsPrompts.firstrun_addendum;
+        console.log("Generated First Run Prompt.");
         const uiJsonString = await callGeminiApiWithRetry(prompt);
         const uiJson = JSON.parse(uiJsonString);
 
