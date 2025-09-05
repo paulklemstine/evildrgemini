@@ -14,6 +14,7 @@ let isExplicitMode = false; // Default mode
 let isLoading = false;
 let apiKeyLocked = false;
 let localGameStateSnapshot = null; // To store local state when viewing remote state
+let llmCallHistory = []; // For the debug panel
 
 // --- Model Switching State ---
 const AVAILABLE_MODELS = [
@@ -55,6 +56,12 @@ const footerElement = document.querySelector('.site-footer');
 const h1 = document.querySelector('h1');
 let peerListContainer = null; // Will be created dynamically
 
+// --- Debug Panel Elements ---
+const debugPanel = document.getElementById('debug-panel');
+const toggleDebugPanelButton = document.getElementById('toggle-debug-panel');
+const debugPanelCloseButton = document.getElementById('debug-panel-close-btn');
+const debugLogsContainer = document.getElementById('debug-panel-logs');
+
 // --- Web Audio API Context ---
 let audioCtx = null;
 
@@ -62,8 +69,7 @@ let audioCtx = null;
 let isDateActive = false;
 let currentPartnerId = null;
 let amIPlayer1 = false;
-let myActions = null;
-let partnerActions = null;
+let turnSubmissions = new Map(); // New state for turn aggregation
 let incomingProposal = null;
 let isDateExplicit = false;
 let globalRoomDirectory = { rooms: {}, peers: {} }; // Holds the global state
@@ -391,9 +397,6 @@ async function generateLocalTurn(orchestratorText, playerRole) {
         renderUI(currentUiJson);
         playTurnAlertSound();
 
-        myActions = null;
-        partnerActions = null;
-
     } catch (error) {
         console.error(`Error during local turn generation for ${playerRole}:`, error);
         showError("Failed to generate your turn. Please try again.");
@@ -403,6 +406,34 @@ async function generateLocalTurn(orchestratorText, playerRole) {
     }
 }
 
+
+async function initiateSinglePlayerTurn(turnData) {
+    console.log("Initiating single-player turn...");
+    setLoading(true, true);
+
+    try {
+        // In single player, we can treat the player as both Player A and Player B.
+        // The orchestrator is designed for two sets of inputs, so we provide the same for both.
+        const orchestratorTurnData = {
+            playerA_actions: turnData,
+            playerB_actions: turnData,
+            playerA_notes: turnData.notes,
+            playerB_notes: turnData.notes,
+            isExplicit: isExplicitMode
+        };
+
+        const orchestratorPrompt = constructPrompt('orchestrator', orchestratorTurnData);
+        const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
+
+        // We only care about Player A's output for the single player.
+        await generateLocalTurn(orchestratorText, 'player1');
+
+    } catch (error) {
+        console.error("Error during single-player turn generation:", error);
+        showError("Failed to generate the next turn. Please try again.");
+        setLoading(false);
+    }
+}
 
 /**
  * Kicks off the turn generation process. Called only by Player 1.
@@ -478,87 +509,108 @@ async function callGeminiApiWithRetry(prompt, responseMimeType = "application/js
     throw new Error(`Failed to get valid response from AI after ${maxAttempts} attempts. Last error: ${lastError?.message}`);
 }
 
-/** Calls the real Google AI (Gemini) API. */
+/** Calls the real Google AI (Gemini) API and logs the interaction for the debug panel. */
 async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType = "application/json") {
-    console.log("--- LLM Query ---", {
-        modelName,
-        promptText,
-        responseMimeType
-    });
+    const logEntry = {
+        timestamp: new Date(),
+        model: modelName,
+        prompt: promptText,
+        response: null,
+        error: null,
+        isError: false
+    };
+    // Add to the start of the array so newest logs are first
+    llmCallHistory.unshift(logEntry);
+    // Keep the log from getting too big
+    if (llmCallHistory.length > 50) {
+        llmCallHistory.pop();
+    }
+
+    console.log("--- LLM Query ---", { modelName, promptText, responseMimeType });
 
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
     const requestBody = {
-        contents: [{parts: [{text: promptText}]}],
-        generationConfig: {temperature: 1.0, response_mime_type: responseMimeType},
-        safetySettings: [{
-            "category": "HARM_CATEGORY_HARASSMENT",
-            "threshold": "BLOCK_NONE"
-        }, {
-            "category": "HARM_CATEGORY_HATE_SPEECH",
-            "threshold": "BLOCK_NONE"
-        }, {
-            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            "threshold": "BLOCK_NONE"
-        }, {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}]
+        contents: [{ parts: [{ text: promptText }] }],
+        generationConfig: { temperature: 1.0, response_mime_type: responseMimeType },
+        safetySettings: [
+            { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" }
+        ]
     };
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(requestBody)
-    });
-    if (!response.ok) {
-        let errorBody = `API request failed (${response.status})`;
-        try {
-            const errorJson = await response.json();
-            errorBody += `: ${JSON.stringify(errorJson.error || errorJson)}`;
-        } catch (e) {
-            try {
-                errorBody += `: ${await response.text()}`;
-            } catch (e2) {
-            }
-        }
-        console.error("API Error:", errorBody);
-        throw new Error(errorBody);
-    }
-    const responseData = await response.json();
-    console.log("--- LLM Response ---", responseData);
-    if (responseData.promptFeedback && responseData.promptFeedback.blockReason) throw new Error(`Request blocked by API. Reason: ${responseData.promptFeedback.blockReason}. Details: ${JSON.stringify(responseData.promptFeedback.safetyRatings || 'N/A')}`);
-    if (!responseData.candidates || responseData.candidates.length === 0) {
-        if (typeof responseData === 'string') {
-            try {
-                JSON.parse(responseData);
-                return responseData.trim();
-            } catch (e) {
-                throw new Error('No candidates, response not valid JSON.');
-            }
-        }
-        throw new Error('No candidates or unexpected API response.');
-    }
-    const candidate = responseData.candidates[0];
-    if (candidate.finishReason && candidate.finishReason !== "STOP" && candidate.finishReason !== "MAX_TOKENS") {
-        if (candidate.finishReason === "SAFETY") throw new Error(`API call finished due to SAFETY. Ratings: ${JSON.stringify(candidate.safetyRatings || 'N/A')}`); else if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) throw new Error(`API call finished unexpectedly (${candidate.finishReason}) and no content.`);
-    }
-    if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-        let generatedText = candidate.content.parts[0].text;
 
-        // If we expect JSON, clean and validate it
-        if (responseMimeType === "application/json") {
-            const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-            if (jsonMatch && jsonMatch[1]) {
-                generatedText = jsonMatch[1];
-            }
-            let trimmedText = generatedText.trim();
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            let errorBody = `API request failed (${response.status})`;
             try {
-                JSON.parse(trimmedText);
-                return trimmedText;
+                const errorJson = await response.json();
+                errorBody += `: ${JSON.stringify(errorJson.error || errorJson)}`;
             } catch (e) {
-                throw new Error(`Invalid JSON from API. Snippet: ${trimmedText.substring(0, 200)}...`);
+                try { errorBody += `: ${await response.text()}`; } catch (e2) {}
+            }
+            throw new Error(errorBody);
+        }
+
+        const responseData = await response.json();
+        logEntry.response = responseData; // Log success response
+        console.log("--- LLM Response ---", responseData);
+
+        if (responseData.promptFeedback && responseData.promptFeedback.blockReason) {
+            throw new Error(`Request blocked by API. Reason: ${responseData.promptFeedback.blockReason}. Details: ${JSON.stringify(responseData.promptFeedback.safetyRatings || 'N/A')}`);
+        }
+        if (!responseData.candidates || responseData.candidates.length === 0) {
+             if (typeof responseData === 'string') {
+                try {
+                    JSON.parse(responseData);
+                    return responseData.trim();
+                } catch (e) {
+                    throw new Error('No candidates, response not valid JSON.');
+                }
+            }
+            throw new Error('No candidates or unexpected API response.');
+        }
+
+        const candidate = responseData.candidates[0];
+        if (candidate.finishReason && candidate.finishReason !== "STOP" && candidate.finishReason !== "MAX_TOKENS") {
+            if (candidate.finishReason === "SAFETY") {
+                throw new Error(`API call finished due to SAFETY. Ratings: ${JSON.stringify(candidate.safetyRatings || 'N/A')}`);
+            } else if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+                throw new Error(`API call finished unexpectedly (${candidate.finishReason}) and no content.`);
+            }
+        }
+        if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+            let generatedText = candidate.content.parts[0].text;
+            if (responseMimeType === "application/json") {
+                const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                if (jsonMatch && jsonMatch[1]) {
+                    generatedText = jsonMatch[1];
+                }
+                let trimmedText = generatedText.trim();
+                 try {
+                    JSON.parse(trimmedText);
+                    return trimmedText;
+                } catch (e) {
+                    throw new Error(`Invalid JSON from API. Snippet: ${trimmedText.substring(0, 200)}...`);
+                }
+            } else {
+                return generatedText;
             }
         } else {
-            // Otherwise, return the raw text
-            return generatedText;
+            throw new Error('API candidate generated but no content parts.');
         }
-    } else throw new Error('API candidate generated but no content parts.');
+    } catch (error) {
+        console.error("API Error in callRealGeminiAPI:", error);
+        logEntry.error = error.message;
+        logEntry.isError = true;
+        throw error; // Re-throw to be handled by the retry logic
+    }
 }
 
 /** Renders the UI elements based on the JSON array. */

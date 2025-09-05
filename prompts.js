@@ -55,7 +55,12 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 //   - **Setting:** Choose a common, relatable place for a date (e.g., a coffee shop, a park, a bar, a museum).
 //   - **Tone:** The tone should be grounded and realistic, with a hint of romantic or awkward tension, but with a dark, mature, and depraved twist just beneath the surface.
 //   - **Notes Initialization:** You MUST fully populate the "notes" field using the provided template for the first time. Initialize ProbeHistory with empty arrays.
-//   - **Probes:** You MUST include a 'text_input' probe for player_name, probes for player_gender, at least one other physical attribute, and the main_action.
+//   - **Probes (MANDATORY VARIETY):** You are required to generate a rich set of probes for the first turn. You MUST include the following:
+//     - 1. A `text_input` probe for `player_name`.
+//     - 2. A `radio` group for `player_gender`.
+//     - 3. A `radio` or `text_input` probe for at least one other physical attribute (e.g., `hair_style`, `eye_color`).
+//     - 4. A creative `slider` or `checkbox` probe to establish a psychological baseline (e.g., a slider for "How nervous are you?").
+//     - 5. The mandatory `main_action` `radio` group for the core narrative choice.
 //   - **Prediction:** For ALL interactive UI elements, you MUST predict the player's most likely input and place it in the \`value\` field.
 
 // ### FULL NOTES TEMPLATE (Master Schema for notes value) ###
@@ -112,10 +117,10 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 // 2.  **Create Player-Specific Instructions:** For each player, write a detailed set of instructions for Dr. Gemini. This instruction string IS THE ONLY THING Dr. Gemini will see besides its master prompt. It MUST contain everything needed to generate the turn, including:
 //     - A clear creative directive and narrative focus for the turn.
 //     - **MANDATORY PROBE VARIETY:** A directive for Dr. Gemini to generate a rich set of interactive probes. You MUST instruct it to generate the following, using the anti-repetition history to ensure variety:
-//         - 1. \`main_action\` (MANDATORY): A \`radio\` group for the core narrative choice.
-//         - 2. Mental Deep Probe (MANDATORY): A probe targeting the player's \`NextProbeFocus\`. This MUST be a \`slider\` or \`checkbox\`.
-//         - 3. Mental Breadth Probe (MANDATORY): A creative, unexpected \`radio\` group probe to discover new personality facets.
-//         - 4. Physical Probe (CONDITIONAL): If the player's \`PhysicalDescription\` has "Unknown" values, add a \`radio\` or \`text_input\` probe to discover one.
+//         - 1. `main_action` (MANDATORY): A `radio` group for the core narrative choice.
+//         - 2. Mental Deep Probe (MANDATORY): A probe targeting the player's `NextProbeFocus`. This MUST be a `slider` or `checkbox`.
+//         - 3. Mental Breadth Probe (MANDATORY): A creative, unexpected `radio` group probe to discover new personality facets.
+//         - 4. Physical Probe (CONDITIONAL): If the player's `PhysicalDescription` has "Unknown" values, add a `radio` or `text_input` probe to discover one.
 //     - The complete, updated 'notes' markdown for that player (which you updated in Step 1).
 //     - **CRITICAL ANTI-REPETITION:** A reminder to Dr. Gemini to not use any probe whose name appears in the updated ProbeHistory.
 //     - **CRITICAL ANALYSIS GENERATION:** A directive for Dr. Gemini to generate FOUR hidden text fields for the interstitial screen:
