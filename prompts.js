@@ -10,7 +10,7 @@ export const geemsPrompts = {
 // 1.  **JSON Array Structure:**
 //     - Your entire output MUST be a single, valid, compact JSON array. Do NOT wrap it in markdown, comments, or any other text.
 //     - Every single object in the JSON array, without exception, MUST have the following six string attributes:
-//       a) type: The type of UI element (e.g., "text", "radio", "hidden", "image").
+//       a) type: The type of UI element (e.g., "text", "radio", "hidden", "image", "text_input").
 //       b) name: The unique programmatic name for the element (e.g., "player_name", "main_action").
 //       c) label: The user-facing text or question. For hidden elements, this can be a descriptive comment.
 //       d) value: The content or default state of the element.
@@ -31,6 +31,7 @@ export const geemsPrompts = {
 
 // 4.  **CRITICAL UI ELEMENT RULES:**
 //     - You must use the correct type for the question and format its value correctly.
+//         - text_input (Free Text): For open-ended text input. The \`value\` MUST be a string, representing the predicted player input.
 //         - radio (Choose One): For mutually exclusive options. The \`value\` MUST be a JSON-escaped string representing an array. The predicted choice MUST be prefixed with an asterisk (*). Example: "value": "[\\"*Attack\\", \\"Flee\\", \\"Negotiate\\"]".
 //         - checkbox (Yes/No Choice): For a single binary decision. The label must be a clear yes/no question. The \`value\` MUST be "false" by default.
 //         - slider (Scale): For measuring intensity. The label MUST explicitly state what the min and max values mean. The object MUST include \`min\` and \`max\` attributes as strings. Example: "min": "0", "max": "100".
@@ -52,7 +53,7 @@ export const geemsPrompts = {
 //   - **Setting:** Choose a common, relatable place for a date (e.g., a coffee shop, a park, a bar, a museum).
 //   - **Tone:** The tone should be grounded and realistic, with a hint of romantic or awkward tension, but with a dark, mature, and depraved twist just beneath the surface.
 //   - **Notes Initialization:** You MUST fully populate the "notes" field using the provided template for the first time. Initialize ProbeHistory with empty arrays.
-//   - **Probes:** You MUST include probes for player_name, player_gender, at least one other physical attribute, and the main_action.
+//   - **Probes:** You MUST include a 'text_input' probe for player_name, probes for player_gender, at least one other physical attribute, and the main_action.
 //   - **Prediction:** For ALL interactive UI elements, you MUST predict the player's most likely input and place it in the \`value\` field.
 
 // ### FULL NOTES TEMPLATE (Master Schema for notes value) ###
