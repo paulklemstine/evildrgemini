@@ -356,24 +356,30 @@ async function generateLocalTurn(orchestratorText, playerRole) {
 
         // --- Interstitial Logic ---
         if (Array.isArray(uiJson)) {
-            const greenFlags = uiJson.find(el => el.name === 'player_facing_analysis');
-            const redFlags = uiJson.find(el => el.name === 'gemini_facing_analysis');
+            const greenFlags = uiJson.find(el => el.name === 'green_flags');
+            const redFlags = uiJson.find(el => el.name === 'red_flags');
+            const ownReport = uiJson.find(el => el.name === 'own_clinical_analysis');
+            const partnerReport = uiJson.find(el => el.name === 'partner_clinical_analysis');
 
-            if (greenFlags && greenFlags.value) {
-                greenFlagReport.innerHTML = greenFlags.value.replace(/\\n/g, '<br>');
-            } else {
-                greenFlagReport.innerHTML = '<em>No specific green flags noted this turn.</em>';
-            }
+            // Get the report containers
+            const greenFlagReportContainer = document.getElementById('green-flag-report');
+            const redFlagReportContainer = document.getElementById('red-flag-report');
+            const ownClinicalReportContainer = document.getElementById('own-clinical-report');
+            const partnerClinicalReportContainer = document.getElementById('partner-clinical-report');
 
-            if (redFlags && redFlags.value) {
-                redFlagReport.innerHTML = redFlags.value.replace(/\\n/g, '<br>');
-            } else {
-                redFlagReport.innerHTML = '<em>No clinical analysis available for your partner this turn.</em>';
-            }
+            // Populate reports, handling cases where they might be missing
+            greenFlagReportContainer.innerHTML = (greenFlags && greenFlags.value) ? greenFlags.value.replace(/\\n/g, '<br>') : '<em>No specific green flags noted.</em>';
+            redFlagReportContainer.innerHTML = (redFlags && redFlags.value) ? redFlags.value.replace(/\\n/g, '<br>') : '<em>No specific red flags noted.</em>';
+            ownClinicalReportContainer.innerHTML = (ownReport && ownReport.value) ? ownReport.value.replace(/\\n/g, '<br>') : '<em>Your clinical report is not available.</em>';
+            partnerClinicalReportContainer.innerHTML = (partnerReport && partnerReport.value) ? partnerReport.value.replace(/\\n/g, '<br>') : '<em>Your partner\'s clinical report is not available.</em>';
+
         } else {
             console.warn("API response for UI is not an array, skipping interstitial report generation.", uiJson);
-            greenFlagReport.innerHTML = '<em>Could not parse analysis from AI response.</em>';
-            redFlagReport.innerHTML = '<em>Could not parse analysis from AI response.</em>';
+            // Clear all reports if the response is invalid
+            document.getElementById('green-flag-report').innerHTML = '<em>Could not parse analysis.</em>';
+            document.getElementById('red-flag-report').innerHTML = '<em>Could not parse analysis.</em>';
+            document.getElementById('own-clinical-report').innerHTML = '<em>Could not parse analysis.</em>';
+            document.getElementById('partner-clinical-report').innerHTML = '<em>Could not parse analysis.</em>';
         }
 
 
@@ -577,12 +583,6 @@ function renderUI(uiJsonArray) {
     const analysisToggleContainer = uiContainer.querySelector('.analysis-toggle-container');
     if (imageElement && analysisToggleContainer) {
         uiContainer.insertBefore(analysisToggleContainer, imageElement.nextSibling || null);
-    }
-    const tweetElement = document.getElementById('tweet-element-wrapper');
-    if (analysisToggleContainer && tweetElement) {
-        uiContainer.insertBefore(tweetElement, analysisToggleContainer.nextSibling || null);
-    } else if (imageElement && tweetElement) {
-        uiContainer.insertBefore(tweetElement, imageElement.nextSibling || null);
     }
 }
 

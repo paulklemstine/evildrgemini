@@ -114,21 +114,31 @@
             Please wait.
         </div>
 
-        <div id="interstitial-reports" class="hidden mt-4 space-y-4">
-            <div>
-                <h3 class="text-lg font-semibold text-green-600">Your Green Flags (What you're doing right):</h3>
-                <div id="green-flag-report" class="report-content p-2 border border-green-200 rounded bg-green-50">
+        <div id="interstitial-reports" class="hidden mt-4 space-y-4 text-left">
+            <details class="report-details">
+                <summary class="report-summary-green">Partner's Green Flags</summary>
+                <div id="green-flag-report" class="report-content">
                     <!-- Green flags will be populated here -->
                 </div>
-            </div>
-            <div>
-                <details>
-                    <summary class="text-lg font-semibold text-red-600 cursor-pointer">View Dr. Gemini's Private Report</summary>
-                    <div id="red-flag-report" class="report-content p-2 border border-red-200 rounded bg-red-50 mt-2">
-                        <!-- Red flags will be populated here -->
-                    </div>
-                </details>
-            </div>
+            </details>
+            <details class="report-details">
+                <summary class="report-summary-red">Partner's Red Flags</summary>
+                <div id="red-flag-report" class="report-content">
+                    <!-- Red flags will be populated here -->
+                </div>
+            </details>
+            <details class="report-details">
+                <summary class="report-summary-neutral">Your Clinical Report</summary>
+                <div id="own-clinical-report" class="report-content">
+                    <!-- Own clinical report will be populated here -->
+                </div>
+            </details>
+            <details class="report-details">
+                <summary class="report-summary-neutral">Partner's Clinical Report</summary>
+                <div id="partner-clinical-report" class="report-content">
+                    <!-- Partner's clinical report will be populated here -->
+                </div>
+            </details>
         </div>
 
         <div class="mt-6 text-center">
