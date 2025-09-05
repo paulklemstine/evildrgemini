@@ -407,33 +407,6 @@ async function generateLocalTurn(orchestratorText, playerRole) {
 }
 
 
-async function initiateSinglePlayerTurn(turnData) {
-    console.log("Initiating single-player turn...");
-    setLoading(true, true);
-
-    try {
-        // In single player, we can treat the player as both Player A and Player B.
-        // The orchestrator is designed for two sets of inputs, so we provide the same for both.
-        const orchestratorTurnData = {
-            playerA_actions: turnData,
-            playerB_actions: turnData,
-            playerA_notes: turnData.notes,
-            playerB_notes: turnData.notes,
-            isExplicit: isExplicitMode
-        };
-
-        const orchestratorPrompt = constructPrompt('orchestrator', orchestratorTurnData);
-        const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
-
-        // We only care about Player A's output for the single player.
-        await generateLocalTurn(orchestratorText, 'player1');
-
-    } catch (error) {
-        console.error("Error during single-player turn generation:", error);
-        showError("Failed to generate the next turn. Please try again.");
-        setLoading(false);
-    }
-}
 
 function renderDebugPanel() {
     if (!debugLogsContainer) return;
