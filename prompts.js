@@ -112,10 +112,10 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 // 2.  **Create Player-Specific Instructions:** For each player, write a detailed set of instructions for Dr. Gemini. This instruction string IS THE ONLY THING Dr. Gemini will see besides its master prompt. It MUST contain everything needed to generate the turn, including:
 //     - A clear creative directive and narrative focus for the turn.
 //     - **MANDATORY PROBE VARIETY:** A directive for Dr. Gemini to generate a rich set of interactive probes. You MUST instruct it to generate the following, using the anti-repetition history to ensure variety:
-//         - 1. `main_action` (MANDATORY): A `radio` group for the core narrative choice.
-//         - 2. Mental Deep Probe (MANDATORY): A probe targeting the player's `NextProbeFocus`. This MUST be a `slider` or `checkbox`.
-//         - 3. Mental Breadth Probe (MANDATORY): A creative, unexpected `radio` group probe to discover new personality facets.
-//         - 4. Physical Probe (CONDITIONAL): If the player's `PhysicalDescription` has "Unknown" values, add a `radio` or `text_input` probe to discover one.
+//         - 1. \`main_action\` (MANDATORY): A \`radio\` group for the core narrative choice.
+//         - 2. Mental Deep Probe (MANDATORY): A probe targeting the player's \`NextProbeFocus\`. This MUST be a \`slider\` or \`checkbox\`.
+//         - 3. Mental Breadth Probe (MANDATORY): A creative, unexpected \`radio\` group probe to discover new personality facets.
+//         - 4. Physical Probe (CONDITIONAL): If the player's \`PhysicalDescription\` has "Unknown" values, add a \`radio\` or \`text_input\` probe to discover one.
 //     - The complete, updated 'notes' markdown for that player (which you updated in Step 1).
 //     - **CRITICAL ANTI-REPETITION:** A reminder to Dr. Gemini to not use any probe whose name appears in the updated ProbeHistory.
 //     - **CRITICAL ANALYSIS GENERATION:** A directive for Dr. Gemini to generate FOUR hidden text fields for the interstitial screen:
