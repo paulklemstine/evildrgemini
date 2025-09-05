@@ -608,6 +608,7 @@ function renderSingleElement(element, index) {
             case 'text':
                 renderText(wrapper, element, adjustedColor);
                 break;
+            case 'text_input': // Alias for textfield, as requested by user
             case 'input_text': // Alias for textfield
             case 'textfield':
                 renderTextField(wrapper, element, adjustedColor);
