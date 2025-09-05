@@ -416,7 +416,7 @@ async function initiateTurnAsPlayer1(turnData) {
         const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
 
         // Send the entire text block to Player 2
-        MPLib.sendDirect(currentPartnerId, {
+        MPLib.sendDirectToRoomPeer(currentPartnerId, {
             type: 'orchestrator_output',
             payload: orchestratorText
         });
