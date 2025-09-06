@@ -1603,7 +1603,19 @@ submitButton.addEventListener('click', () => {
     if (isDateActive) {
         // --- Symmetrical Two-Player Date Logic ---
         const actions = collectInputState();
-        // No longer setting myActions globally here.
+        const myRoomId = MPLib.getLocalRoomId();
+
+        // Immediately record our own submission.
+        if (myRoomId) {
+            turnSubmissions.set(myRoomId, JSON.parse(actions));
+            console.log(`Locally recorded submission for ${myRoomId.slice(-6)}`);
+        } else {
+            console.error("Could not get local room ID to record submission.");
+            // Don't proceed if we can't record our own action.
+            submitButton.disabled = false;
+            showError("A local error occurred. Could not submit turn.");
+            return;
+        }
 
         // Show a waiting screen
         const loadingText = document.getElementById('loading-text');
@@ -1614,8 +1626,11 @@ submitButton.addEventListener('click', () => {
 
         showNotification("Actions submitted. Waiting for partner to submit...", "info");
 
-        // Broadcast actions to everyone in the room (including ourself)
+        // Broadcast actions to everyone in the room.
         MPLib.broadcastToRoom({ type: 'turn_submission', payload: actions });
+
+        // Check for completion immediately in case the partner already submitted.
+        checkForTurnCompletion();
 
     } else {
         // --- Single-Player Logic ---
@@ -1902,7 +1917,7 @@ function switchToRoom(roomName, isPublic) {
 }
 
 function initializeGame() {
-    console.log("Initializing SparkSync with new Master Directory architecture...");
+    console.log("Initializing Flagged with new Master Directory architecture...");
 
     // Hide the game wrapper and show the lobby selection by default
     if(gameWrapper) gameWrapper.style.display = 'none';
