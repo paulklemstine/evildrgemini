@@ -49,8 +49,6 @@ const errorDisplay = document.getElementById('error-display');
 const modeToggleButton = document.getElementById('modeToggleButton');
 const resetGameButton = document.getElementById('resetGameButton');
 const clipboardMessage = document.getElementById('clipboardMessage');
-const headerBanner = document.getElementById('headerBanner');
-const footerBanner = document.getElementById('footerBanner');
 // Assume footer exists, get reference to it
 const footerElement = document.querySelector('.site-footer');
 const h1 = document.querySelector('h1');
@@ -1183,20 +1181,6 @@ function updateModeButtonVisuals() {
     } else {
         modeToggleButton.textContent = '18+ Mode: Off';
         modeToggleButton.classList.add('standard-mode');
-    }
-}
-
-function setDynamicImages() {
-    const headerSeed = Math.floor(Math.random() * 65536), footerSeed = Math.floor(Math.random() * 65536);
-    const headerPrompt = "wide cinematic vivid colorful abstract emotional landscape brainwaves",
-        footerPrompt = "wide abstract colorful digital roots network connections";
-    if (headerBanner) {
-        headerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(headerPrompt)}?width=1200&height=200&seed=${headerSeed}&nologo=true&safe=false`;
-        headerBanner.alt = headerPrompt;
-    }
-    if (footerBanner) {
-        footerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(footerPrompt)}?width=1200&height=100&seed=${footerSeed}&nologo=true&safe=false`;
-        footerBanner.alt = footerPrompt;
     }
 }
 
