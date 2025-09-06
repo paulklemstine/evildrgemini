@@ -1,28 +1,59 @@
-/* SparkSync - Modern Dating Theme */
+/* Flagged - Fun, Lovey, Adult Kawaii Theme */
 
 /* --- Fonts and Body --- */
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #f8f9fa; /* Light gray background */
-    color: #212529; /* Dark gray text */
+    background-color: #fff0f5; /* Lavender blush background */
+    color: #5c3c3c; /* Rosy brown text */
     margin: 0;
     line-height: 1.6;
 }
 
 /* --- Header --- */
 .site-header {
-    background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
-    color: white;
-    padding: 1rem 2rem;
+    background: linear-gradient(45deg, #ff9a9e, #fecfef);
+    color: #4c4c4c;
+    padding: 1.5rem 2rem;
     text-align: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border-bottom: 4px solid #fdc500; /* Gold accent */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.site-header::before, .site-header::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    animation: wave 15s infinite linear;
+}
+
+.site-header::before {
+    width: 200%;
+    height: 200%;
+    top: -150%;
+    left: -50%;
+}
+
+.site-header::after {
+    width: 190%;
+    height: 190%;
+    top: -140%;
+    left: -45%;
+    animation-delay: -5s;
+}
+
+@keyframes wave {
+    0% { transform: translateX(0) rotate(0deg); }
+    100% { transform: translateX(-50px) rotate(360deg); }
 }
 
 .site-header h1 {
     font-family: 'Playfair Display', serif;
-    font-size: 2.5rem;
+    font-size: 3rem;
     margin: 0;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
 }
 
 /* --- Main Container --- */
@@ -81,36 +112,39 @@ body {
 
 .geems-input:focus, .geems-textarea:focus {
     outline: none;
-    border-color: #2575fc;
-    box-shadow: 0 0 0 3px rgba(37, 117, 252, 0.15);
+    border-color: #ee9ca7;
+    box-shadow: 0 0 0 3px rgba(238, 156, 167, 0.2);
 }
 
 /* --- Buttons --- */
 .geems-button {
-    background-color: #0d6efd;
+    background-color: #ff8fab;
     color: white;
-    padding: 0.75rem 1.5rem;
+    padding: 0.85rem 1.75rem;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 1rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    letter-spacing: 0.5px;
 }
 
 .geems-button:hover:not(:disabled) {
-    background-color: #0b5ed7;
-    transform: translateY(-1px);
+    background-color: #fb6f92;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .geems-button:disabled {
-    background-color: #6c757d;
+    background-color: #d8c9c9;
     cursor: not-allowed;
     opacity: 0.7;
 }
 
 #modeToggleButton.standard-mode {
-    background-color: #198754; /* Green for standard */
+    background-color: #fca3b7; /* Soft pink for standard */
 }
 #modeToggleButton {
     background-color: #dc3545; /* Red for explicit */
@@ -215,7 +249,7 @@ body {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.6);
+    background-color: rgba(92, 60, 60, 0.6); /* Rosy brown transparent */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -225,36 +259,66 @@ body {
     background-color: #fff;
     margin: auto;
     padding: 2rem;
-    border: 1px solid #dee2e6;
+    border: 1px solid #ee9ca7;
     width: 90%;
     max-width: 500px;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     position: relative;
 }
 
 .modal-close {
-    color: #aaa;
+    color: #ee9ca7;
     position: absolute;
     top: 1rem;
     right: 1.5rem;
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
+    transition: color 0.2s ease;
 }
 .modal-close:hover, .modal-close:focus {
-    color: #333;
+    color: #fb6f92;
 }
 
 
 /* --- Footer --- */
 .site-footer {
     text-align: center;
-    padding: 2rem;
+    padding: 2.5rem;
     margin-top: 2rem;
-    background: #343a40;
-    color: #adb5bd;
-    font-size: 0.875rem;
+    background: linear-gradient(45deg, #ff9a9e, #fecfef);
+    color: #4c4c4c;
+    font-size: 0.9rem;
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.05);
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.site-footer::before {
+    content: '★';
+    position: absolute;
+    top: 20%;
+    left: 15%;
+    font-size: 2rem;
+    opacity: 0.3;
+    animation: sparkle 8s infinite alternate;
+}
+
+.site-footer::after {
+    content: '♥';
+    position: absolute;
+    top: 40%;
+    right: 15%;
+    font-size: 2rem;
+    opacity: 0.3;
+    animation: sparkle 10s infinite alternate-reverse;
+}
+
+@keyframes sparkle {
+    from { transform: translateY(0px) scale(1); opacity: 0.3; }
+    to { transform: translateY(-15px) scale(1.2); opacity: 0.6; }
 }
 
 .footer-buttons {
@@ -460,27 +524,27 @@ body {
 }
 
 .report-summary-green {
-    background-color: #e6f9f1;
-    color: #198754;
+    background-color: #e0f8e0;
+    color: #5c9a5c;
 }
 .report-summary-green:hover {
-    background-color: #d1f3e3;
+    background-color: #d0f0d0;
 }
 
 .report-summary-red {
-    background-color: #f8d7da;
-    color: #dc3545;
+    background-color: #ffeaee;
+    color: #d9534f;
 }
 .report-summary-red:hover {
-    background-color: #f5c2c7;
+    background-color: #ffdde2;
 }
 
 .report-summary-neutral {
-    background-color: #e9ecef;
-    color: #495057;
+    background-color: #f5f5f5;
+    color: #8c8c8c;
 }
 .report-summary-neutral:hover {
-    background-color: #dee2e6;
+    background-color: #e8e8e8;
 }
 
 .report-content {
@@ -509,6 +573,10 @@ body {
 }
 
 /* Tailwind utility classes that were missing */
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
 .-ml-1 {
   margin-left: -0.25rem;
 }

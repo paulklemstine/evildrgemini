@@ -49,8 +49,6 @@ const errorDisplay = document.getElementById('error-display');
 const modeToggleButton = document.getElementById('modeToggleButton');
 const resetGameButton = document.getElementById('resetGameButton');
 const clipboardMessage = document.getElementById('clipboardMessage');
-const headerBanner = document.getElementById('headerBanner');
-const footerBanner = document.getElementById('footerBanner');
 // Assume footer exists, get reference to it
 const footerElement = document.querySelector('.site-footer');
 const h1 = document.querySelector('h1');
@@ -1186,20 +1184,6 @@ function updateModeButtonVisuals() {
     }
 }
 
-function setDynamicImages() {
-    const headerSeed = Math.floor(Math.random() * 65536), footerSeed = Math.floor(Math.random() * 65536);
-    const headerPrompt = "wide cinematic vivid colorful abstract emotional landscape brainwaves",
-        footerPrompt = "wide abstract colorful digital roots network connections";
-    if (headerBanner) {
-        headerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(headerPrompt)}?width=1200&height=200&seed=${headerSeed}&nologo=true&safe=false`;
-        headerBanner.alt = headerPrompt;
-    }
-    if (footerBanner) {
-        footerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(footerPrompt)}?width=1200&height=100&seed=${footerSeed}&nologo=true&safe=false`;
-        footerBanner.alt = footerPrompt;
-    }
-}
-
 // --- Multiplayer Functions ---
 
 /** Shows a basic notification */
@@ -1619,7 +1603,19 @@ submitButton.addEventListener('click', () => {
     if (isDateActive) {
         // --- Symmetrical Two-Player Date Logic ---
         const actions = collectInputState();
-        // No longer setting myActions globally here.
+        const myRoomId = MPLib.getLocalRoomId();
+
+        // Immediately record our own submission.
+        if (myRoomId) {
+            turnSubmissions.set(myRoomId, JSON.parse(actions));
+            console.log(`Locally recorded submission for ${myRoomId.slice(-6)}`);
+        } else {
+            console.error("Could not get local room ID to record submission.");
+            // Don't proceed if we can't record our own action.
+            submitButton.disabled = false;
+            showError("A local error occurred. Could not submit turn.");
+            return;
+        }
 
         // Show a waiting screen
         const loadingText = document.getElementById('loading-text');
@@ -1630,8 +1626,11 @@ submitButton.addEventListener('click', () => {
 
         showNotification("Actions submitted. Waiting for partner to submit...", "info");
 
-        // Broadcast actions to everyone in the room (including ourself)
+        // Broadcast actions to everyone in the room.
         MPLib.broadcastToRoom({ type: 'turn_submission', payload: actions });
+
+        // Check for completion immediately in case the partner already submitted.
+        checkForTurnCompletion();
 
     } else {
         // --- Single-Player Logic ---
@@ -1918,7 +1917,7 @@ function switchToRoom(roomName, isPublic) {
 }
 
 function initializeGame() {
-    console.log("Initializing SparkSync with new Master Directory architecture...");
+    console.log("Initializing Flagged with new Master Directory architecture...");
 
     // Hide the game wrapper and show the lobby selection by default
     if(gameWrapper) gameWrapper.style.display = 'none';
