@@ -9,13 +9,12 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 
 // 1.  **JSON Array Structure:**
 //     - Your entire output MUST be a single, valid, compact JSON array. Do NOT wrap it in markdown, comments, or any other text.
-//     - Every single object in the JSON array, without exception, MUST have the following six string attributes:
+//     - Every single object in the JSON array, without exception, MUST have the following five string attributes:
 //       a) type: The type of UI element (e.g., "text", "radio", "hidden", "image", "text_input").
 //       b) name: The unique programmatic name for the element (e.g., "player_name", "main_action").
 //       c) label: The user-facing text or question. For hidden elements, this can be a descriptive comment.
 //       d) value: The content or default state of the element.
 //       e) color: A hex code for the element's color, chosen strategically.
-//       f) voice: The assigned voice for the element (e.g., "narrator", "gemini").
 
 // 2.  **Image Element Protocol:**
 //     - For any element with \`type: "image"\`, you MUST include two additional string attributes:

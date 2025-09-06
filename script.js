@@ -347,8 +347,7 @@ async function generateLocalTurn(orchestratorText, playerRole) {
                         name: 'main_action',
                         label: action.label || action.action_id || 'Action', // Use label, fallback to action_id
                         value: action.description || 'No description available.',
-                        color: '#FFFFFF', // Default color
-                        voice: 'player'
+                        color: '#FFFFFF' // Default color
                     }));
                 } else {
                     uiJson = potentialArray; // The array seems to be in the correct format
