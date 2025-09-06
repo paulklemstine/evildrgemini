@@ -865,12 +865,12 @@ function renderText(wrapper, element, adjustedColor) {
     wrapper.appendChild(textElement);
 }
 
-function renderTextField(wrapper, element, adjustedColor) {
+function renderTextField(wrapper, element) {
     const label = document.createElement('label');
     label.className = 'geems-label';
     label.textContent = element.label || element.name;
     label.htmlFor = element.name;
-    if (adjustedColor) label.style.color = adjustedColor;
+    // Color is now handled by CSS variable
     wrapper.appendChild(label);
     const input = document.createElement('textarea');
     input.className = 'geems-textarea';
@@ -883,7 +883,7 @@ function renderTextField(wrapper, element, adjustedColor) {
     wrapper.appendChild(input);
 }
 
-function renderCheckbox(wrapper, element, adjustedColor) {
+function renderCheckbox(wrapper, element) {
     wrapper.classList.remove('geems-element');
     wrapper.style.borderLeftColor = 'transparent';
     wrapper.style.padding = '0';
@@ -896,7 +896,7 @@ function renderCheckbox(wrapper, element, adjustedColor) {
     input.name = element.name;
     input.checked = element.value === true || String(element.value).toLowerCase() === 'true';
     input.dataset.elementType = 'checkbox';
-    if (adjustedColor) input.style.accentColor = adjustedColor;
+    // Accent color is now handled by CSS variable
     const label = document.createElement('label');
     label.htmlFor = element.name;
     label.textContent = element.label || element.name;
@@ -906,12 +906,12 @@ function renderCheckbox(wrapper, element, adjustedColor) {
     wrapper.appendChild(optionDiv);
 }
 
-function renderSlider(wrapper, element, adjustedColor) {
+function renderSlider(wrapper, element) {
     const label = document.createElement('label');
     label.className = 'geems-label';
     label.textContent = element.label || element.name;
     label.htmlFor = element.name;
-    if (adjustedColor) label.style.color = adjustedColor;
+    // Color is now handled by CSS variable
     wrapper.appendChild(label);
     const sliderContainer = document.createElement('div');
     sliderContainer.className = 'flex items-center space-x-4 mt-2';
@@ -928,15 +928,11 @@ function renderSlider(wrapper, element, adjustedColor) {
     const defaultValue = parseFloat(element.value);
     input.value = isNaN(defaultValue) ? (min + max) / 2 : Math.max(min, Math.min(max, defaultValue));
     input.dataset.elementType = 'slider';
-    if (adjustedColor) {
-        input.style.accentColor = adjustedColor;
-        input.style.setProperty('--slider-thumb-color', adjustedColor);
-        input.setAttribute('style', `${input.getAttribute('style') || ''} --slider-thumb-color: ${adjustedColor};`);
-    }
+    // Thumb color is now handled by CSS variables
     const valueDisplay = document.createElement('span');
     valueDisplay.className = `geems-slider-value-display font-medium w-auto text-right`;
     valueDisplay.textContent = input.value;
-    if (adjustedColor) valueDisplay.style.color = adjustedColor;
+    // Color is now handled by CSS variables
     input.oninput = () => {
         valueDisplay.textContent = input.value;
     };
@@ -945,7 +941,7 @@ function renderSlider(wrapper, element, adjustedColor) {
     wrapper.appendChild(sliderContainer);
 }
 
-function renderRadio(wrapper, element, adjustedColor) {
+function renderRadio(wrapper, element) {
     wrapper.classList.remove('geems-element');
     wrapper.style.borderLeftColor = 'transparent';
     wrapper.style.padding = '0';
@@ -953,7 +949,7 @@ function renderRadio(wrapper, element, adjustedColor) {
     const label = document.createElement('label');
     label.className = 'geems-label block mb-2';
     label.textContent = element.label || element.name;
-    if (adjustedColor) label.style.color = adjustedColor;
+    // Color is now handled by CSS variables
     wrapper.appendChild(label);
     let options = [];
     let defaultValue = null;
@@ -1017,7 +1013,7 @@ function renderRadio(wrapper, element, adjustedColor) {
             input.value = option.value;
             input.checked = (option.value === defaultValue);
             input.dataset.elementType = 'radio';
-            if (adjustedColor) input.style.accentColor = adjustedColor;
+            // Accent color is now handled by CSS variable
             const optionLabel = document.createElement('label');
             optionLabel.htmlFor = inputId;
             optionLabel.textContent = option.label;
@@ -1116,58 +1112,6 @@ function isValidHexColor(hex) {
     return typeof hex === 'string' && /^#[0-9A-F]{6}$/i.test(hex);
 }
 
-function adjustColorForContrast(hex) {
-    if (!isValidHexColor(hex)) return hex;
-    let r = parseInt(hex.substring(1, 3), 16), g = parseInt(hex.substring(3, 5), 16),
-        b = parseInt(hex.substring(5, 7), 16);
-    r /= 255;
-    g /= 255;
-    b /= 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    let h = 0, s = 0, l = (max + min) / 2;
-    if (max !== min) {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch (max) {
-            case r:
-                h = (g - b) / d + (g < b ? 6 : 0);
-                break;
-            case g:
-                h = (b - r) / d + 2;
-                break;
-            case b:
-                h = (r - g) / d + 4;
-                break;
-        }
-        h /= 6;
-    }
-    if (l > MIN_CONTRAST_LIGHTNESS) {
-        l = MIN_CONTRAST_LIGHTNESS * 0.9;
-        let r1, g1, b1;
-        if (s === 0) r1 = g1 = b1 = l; else {
-            const hue2rgb = (p, q, t) => {
-                if (t < 0) t += 1;
-                if (t > 1) t -= 1;
-                if (t < 1 / 6) return p + (q - p) * 6 * t;
-                if (t < 1 / 2) return q;
-                if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-                return p;
-            };
-            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            const p = 2 * l - q;
-            r1 = hue2rgb(p, q, h + 1 / 3);
-            g1 = hue2rgb(p, q, h);
-            b1 = hue2rgb(p, q, h - 1 / 3);
-        }
-        const toHex = x => {
-            const hexVal = Math.round(x * 255).toString(16);
-            return hexVal.length === 1 ? '0' + hexVal : hexVal;
-        };
-        return `#${toHex(r1)}${toHex(g1)}${toHex(b1)}`;
-    }
-    return hex;
-}
-
 function showClipboardMessage(message, isError = false) {
     clipboardMessage.textContent = message;
     clipboardMessage.style.color = isError ? '#dc2626' : '#16a34a';
@@ -1186,18 +1130,31 @@ function updateModeButtonVisuals() {
     }
 }
 
-function setDynamicImages() {
-    const headerSeed = Math.floor(Math.random() * 65536), footerSeed = Math.floor(Math.random() * 65536);
-    const headerPrompt = "wide cinematic vivid colorful abstract emotional landscape brainwaves",
-        footerPrompt = "wide abstract colorful digital roots network connections";
-    if (headerBanner) {
-        headerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(headerPrompt)}?width=1200&height=200&seed=${headerSeed}&nologo=true&safe=false`;
-        headerBanner.alt = headerPrompt;
-    }
-    if (footerBanner) {
-        footerBanner.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(footerPrompt)}?width=1200&height=100&seed=${footerSeed}&nologo=true&safe=false`;
-        footerBanner.alt = footerPrompt;
-    }
+
+/**
+ * Applies a new color theme to the UI by setting CSS variables.
+ * @param {string|null} baseHex - The base hex color for the theme. Resets to default if null.
+ */
+function applyTheme(baseHex) {
+    const root = document.documentElement;
+    const defaultColor = '#8A2BE2'; // The default color from CSS
+
+    const color = (baseHex && isValidHexColor(baseHex)) ? baseHex : defaultColor;
+
+    // For simplicity, we'll just set the primary color and let the CSS handle variations.
+    // More complex logic could be added here to generate light/dark shades if needed.
+    root.style.setProperty('--primary-color', color);
+
+    // Example of how you might generate variations if you needed to:
+    // This is a simple placeholder and a real implementation would be more robust.
+    // For now, we rely on the CSS `color-mix` where possible or pre-defined shades.
+    const lightShade = color + 'B3'; // Add some transparency for a lighter feel
+    const darkShade = color; // You might use a library to darken this properly
+
+    root.style.setProperty('--primary-color-light', lightShade);
+    root.style.setProperty('--primary-color-dark', darkShade);
+
+    console.log(`Theme applied with base color: ${color}`);
 }
 
 // --- Multiplayer Functions ---
