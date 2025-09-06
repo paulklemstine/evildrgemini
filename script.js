@@ -14,6 +14,7 @@ let isExplicitMode = false; // Default mode
 let isLoading = false;
 let apiKeyLocked = false;
 let localGameStateSnapshot = null; // To store local state when viewing remote state
+let llmCallHistory = []; // For the debug panel
 
 // --- Model Switching State ---
 const AVAILABLE_MODELS = [
@@ -55,6 +56,12 @@ const footerElement = document.querySelector('.site-footer');
 const h1 = document.querySelector('h1');
 let peerListContainer = null; // Will be created dynamically
 
+// --- Debug Panel Elements ---
+const debugPanel = document.getElementById('debug-panel');
+const toggleDebugPanelButton = document.getElementById('toggle-debug-panel');
+const debugPanelCloseButton = document.getElementById('debug-panel-close-btn');
+const debugLogsContainer = document.getElementById('debug-panel-logs');
+
 // --- Web Audio API Context ---
 let audioCtx = null;
 
@@ -62,8 +69,7 @@ let audioCtx = null;
 let isDateActive = false;
 let currentPartnerId = null;
 let amIPlayer1 = false;
-let myActions = null;
-let partnerActions = null;
+let turnSubmissions = new Map(); // New state for turn aggregation
 let incomingProposal = null;
 let isDateExplicit = false;
 let globalRoomDirectory = { rooms: {}, peers: {} }; // Holds the global state
@@ -391,9 +397,6 @@ async function generateLocalTurn(orchestratorText, playerRole) {
         renderUI(currentUiJson);
         playTurnAlertSound();
 
-        myActions = null;
-        partnerActions = null;
-
     } catch (error) {
         console.error(`Error during local turn generation for ${playerRole}:`, error);
         showError("Failed to generate your turn. Please try again.");
@@ -403,6 +406,142 @@ async function generateLocalTurn(orchestratorText, playerRole) {
     }
 }
 
+
+
+function renderDebugPanel() {
+    if (!debugLogsContainer) return;
+    debugLogsContainer.innerHTML = ''; // Clear old logs
+
+    if (llmCallHistory.length === 0) {
+        debugLogsContainer.innerHTML = '<p class="text-gray-500 p-4">No LLM calls have been made yet.</p>';
+        return;
+    }
+
+    llmCallHistory.forEach(log => {
+        const entry = document.createElement('details');
+        entry.className = 'debug-log-entry';
+
+        const summary = document.createElement('summary');
+        const title = document.createElement('span');
+        // Use toLocaleTimeString for readability
+        title.textContent = `[${log.timestamp.toLocaleTimeString()}] ${log.model}`;
+        if (log.isError) {
+            title.style.color = '#dc3545'; // Red for errors
+        }
+        const meta = document.createElement('span');
+        meta.className = 'log-meta';
+        meta.textContent = log.isError ? 'ERROR' : 'OK';
+        summary.appendChild(title);
+        summary.appendChild(meta);
+
+        const content = document.createElement('div');
+        content.className = 'debug-log-content';
+
+        // Use a helper to safely display content
+        const escapeHtml = (unsafe) => {
+            if (unsafe === null || unsafe === undefined) return '';
+            return unsafe.toString()
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        };
+
+        content.innerHTML = `
+            <h4>Prompt</h4>
+            <pre>${escapeHtml(log.prompt)}</pre>
+            <h4>${log.isError ? 'Error Message' : 'Response'}</h4>
+            <pre>${escapeHtml(JSON.stringify(log.isError ? log.error : log.response, null, 2))}</pre>
+        `;
+
+        entry.appendChild(summary);
+        entry.appendChild(content);
+        debugLogsContainer.appendChild(entry);
+    });
+}
+
+function checkForTurnCompletion() {
+    const requiredSubmissions = 2;
+    const roomConnections = MPLib.getRoomConnections();
+    const numberOfPlayers = roomConnections ? roomConnections.size + 1 : 1;
+
+    if (numberOfPlayers !== 2 || !isDateActive) {
+        // This logic is only for 2-player dates.
+        return;
+    }
+
+    if (turnSubmissions.size < requiredSubmissions) {
+        console.log(`Have ${turnSubmissions.size}/${requiredSubmissions} submissions. Waiting...`);
+        return;
+    }
+
+    console.log("All turns received. Checking if I am Player 1 to proceed.");
+
+    if (amIPlayer1) {
+        const myRoomId = MPLib.getLocalRoomId();
+        // In a 2p date, there's only one other connection.
+        const partnerRoomId = roomConnections.keys().next().value;
+
+        const playerA_actions = turnSubmissions.get(myRoomId);
+        const playerB_actions = turnSubmissions.get(partnerRoomId);
+
+        if (!playerA_actions || !playerB_actions) {
+            showError("FATAL: Could not map submissions to players. Aborting turn.");
+            console.error("Submission mapping failed.", {
+                myRoomId,
+                partnerRoomId,
+                keys: Array.from(turnSubmissions.keys())
+            });
+            setLoading(false);
+            turnSubmissions.clear();
+            return;
+        }
+
+        console.log("I am Player 1. Initiating the next turn generation.");
+        initiateTurnAsPlayer1({
+            playerA_actions: playerA_actions,
+            playerB_actions: playerB_actions,
+            playerA_notes: playerA_actions.notes,
+            playerB_notes: playerB_actions.notes,
+            isExplicit: isDateExplicit
+        });
+
+        turnSubmissions.clear();
+    } else {
+        // Player 2's work is done, they just wait for the next turn from P1.
+        console.log("I am Player 2. My work is done for this turn, waiting for P1.");
+        turnSubmissions.clear();
+    }
+}
+
+async function initiateSinglePlayerTurn(turnData) {
+    console.log("Initiating single-player turn...");
+    setLoading(true, true);
+
+    try {
+        // In single player, we can treat the player as both Player A and Player B.
+        // The orchestrator is designed for two sets of inputs, so we provide the same for both.
+        const orchestratorTurnData = {
+            playerA_actions: turnData,
+            playerB_actions: turnData,
+            playerA_notes: turnData.notes,
+            playerB_notes: turnData.notes,
+            isExplicit: isExplicitMode
+        };
+
+        const orchestratorPrompt = constructPrompt('orchestrator', orchestratorTurnData);
+        const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
+
+        // We only care about Player A's output for the single player.
+        await generateLocalTurn(orchestratorText, 'player1');
+
+    } catch (error) {
+        console.error("Error during single-player turn generation:", error);
+        showError("Failed to generate the next turn. Please try again.");
+        setLoading(false);
+    }
+}
 
 /**
  * Kicks off the turn generation process. Called only by Player 1.
@@ -478,87 +617,108 @@ async function callGeminiApiWithRetry(prompt, responseMimeType = "application/js
     throw new Error(`Failed to get valid response from AI after ${maxAttempts} attempts. Last error: ${lastError?.message}`);
 }
 
-/** Calls the real Google AI (Gemini) API. */
+/** Calls the real Google AI (Gemini) API and logs the interaction for the debug panel. */
 async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType = "application/json") {
-    console.log("--- LLM Query ---", {
-        modelName,
-        promptText,
-        responseMimeType
-    });
+    const logEntry = {
+        timestamp: new Date(),
+        model: modelName,
+        prompt: promptText,
+        response: null,
+        error: null,
+        isError: false
+    };
+    // Add to the start of the array so newest logs are first
+    llmCallHistory.unshift(logEntry);
+    // Keep the log from getting too big
+    if (llmCallHistory.length > 50) {
+        llmCallHistory.pop();
+    }
+
+    console.log("--- LLM Query ---", { modelName, promptText, responseMimeType });
 
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
     const requestBody = {
-        contents: [{parts: [{text: promptText}]}],
-        generationConfig: {temperature: 1.0, response_mime_type: responseMimeType},
-        safetySettings: [{
-            "category": "HARM_CATEGORY_HARASSMENT",
-            "threshold": "BLOCK_NONE"
-        }, {
-            "category": "HARM_CATEGORY_HATE_SPEECH",
-            "threshold": "BLOCK_NONE"
-        }, {
-            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            "threshold": "BLOCK_NONE"
-        }, {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}]
+        contents: [{ parts: [{ text: promptText }] }],
+        generationConfig: { temperature: 1.0, response_mime_type: responseMimeType },
+        safetySettings: [
+            { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" }
+        ]
     };
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(requestBody)
-    });
-    if (!response.ok) {
-        let errorBody = `API request failed (${response.status})`;
-        try {
-            const errorJson = await response.json();
-            errorBody += `: ${JSON.stringify(errorJson.error || errorJson)}`;
-        } catch (e) {
-            try {
-                errorBody += `: ${await response.text()}`;
-            } catch (e2) {
-            }
-        }
-        console.error("API Error:", errorBody);
-        throw new Error(errorBody);
-    }
-    const responseData = await response.json();
-    console.log("--- LLM Response ---", responseData);
-    if (responseData.promptFeedback && responseData.promptFeedback.blockReason) throw new Error(`Request blocked by API. Reason: ${responseData.promptFeedback.blockReason}. Details: ${JSON.stringify(responseData.promptFeedback.safetyRatings || 'N/A')}`);
-    if (!responseData.candidates || responseData.candidates.length === 0) {
-        if (typeof responseData === 'string') {
-            try {
-                JSON.parse(responseData);
-                return responseData.trim();
-            } catch (e) {
-                throw new Error('No candidates, response not valid JSON.');
-            }
-        }
-        throw new Error('No candidates or unexpected API response.');
-    }
-    const candidate = responseData.candidates[0];
-    if (candidate.finishReason && candidate.finishReason !== "STOP" && candidate.finishReason !== "MAX_TOKENS") {
-        if (candidate.finishReason === "SAFETY") throw new Error(`API call finished due to SAFETY. Ratings: ${JSON.stringify(candidate.safetyRatings || 'N/A')}`); else if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) throw new Error(`API call finished unexpectedly (${candidate.finishReason}) and no content.`);
-    }
-    if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-        let generatedText = candidate.content.parts[0].text;
 
-        // If we expect JSON, clean and validate it
-        if (responseMimeType === "application/json") {
-            const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-            if (jsonMatch && jsonMatch[1]) {
-                generatedText = jsonMatch[1];
-            }
-            let trimmedText = generatedText.trim();
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            let errorBody = `API request failed (${response.status})`;
             try {
-                JSON.parse(trimmedText);
-                return trimmedText;
+                const errorJson = await response.json();
+                errorBody += `: ${JSON.stringify(errorJson.error || errorJson)}`;
             } catch (e) {
-                throw new Error(`Invalid JSON from API. Snippet: ${trimmedText.substring(0, 200)}...`);
+                try { errorBody += `: ${await response.text()}`; } catch (e2) {}
+            }
+            throw new Error(errorBody);
+        }
+
+        const responseData = await response.json();
+        logEntry.response = responseData; // Log success response
+        console.log("--- LLM Response ---", responseData);
+
+        if (responseData.promptFeedback && responseData.promptFeedback.blockReason) {
+            throw new Error(`Request blocked by API. Reason: ${responseData.promptFeedback.blockReason}. Details: ${JSON.stringify(responseData.promptFeedback.safetyRatings || 'N/A')}`);
+        }
+        if (!responseData.candidates || responseData.candidates.length === 0) {
+             if (typeof responseData === 'string') {
+                try {
+                    JSON.parse(responseData);
+                    return responseData.trim();
+                } catch (e) {
+                    throw new Error('No candidates, response not valid JSON.');
+                }
+            }
+            throw new Error('No candidates or unexpected API response.');
+        }
+
+        const candidate = responseData.candidates[0];
+        if (candidate.finishReason && candidate.finishReason !== "STOP" && candidate.finishReason !== "MAX_TOKENS") {
+            if (candidate.finishReason === "SAFETY") {
+                throw new Error(`API call finished due to SAFETY. Ratings: ${JSON.stringify(candidate.safetyRatings || 'N/A')}`);
+            } else if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+                throw new Error(`API call finished unexpectedly (${candidate.finishReason}) and no content.`);
+            }
+        }
+        if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+            let generatedText = candidate.content.parts[0].text;
+            if (responseMimeType === "application/json") {
+                const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                if (jsonMatch && jsonMatch[1]) {
+                    generatedText = jsonMatch[1];
+                }
+                let trimmedText = generatedText.trim();
+                 try {
+                    JSON.parse(trimmedText);
+                    return trimmedText;
+                } catch (e) {
+                    throw new Error(`Invalid JSON from API. Snippet: ${trimmedText.substring(0, 200)}...`);
+                }
+            } else {
+                return generatedText;
             }
         } else {
-            // Otherwise, return the raw text
-            return generatedText;
+            throw new Error('API candidate generated but no content parts.');
         }
-    } else throw new Error('API candidate generated but no content parts.');
+    } catch (error) {
+        console.error("API Error in callRealGeminiAPI:", error);
+        logEntry.error = error.message;
+        logEntry.isError = true;
+        throw error; // Re-throw to be handled by the retry logic
+    }
 }
 
 /** Renders the UI elements based on the JSON array. */
@@ -1330,7 +1490,7 @@ function handleRoomDataReceived(senderId, data) {
         console.warn("Received data without type from room peer:", senderId.slice(-6));
         return;
     }
-    // This switch statement remains largely the same, as it handles in-room game logic.
+
     switch (data.type) {
         case 'date_proposal':
             console.log(`Received date proposal from ${senderId}`);
@@ -1357,47 +1517,17 @@ function handleRoomDataReceived(senderId, data) {
                 button.textContent = 'Propose Date';
             }
             break;
-        // The rest of the game logic cases remain unchanged...
-        case 'turn_actions':
-            console.log(`Received turn actions from ${senderId}`);
-            if (isDateActive && !amIPlayer1) {
-                partnerActions = myActions;
-                myActions = JSON.parse(data.payload);
-                console.log("Player 2 has received Player 1's actions. Sending own actions back to P1.");
-                MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'final_actions_p2', payload: JSON.stringify(partnerActions) });
-            } else if (isDateActive && amIPlayer1) {
-                partnerActions = JSON.parse(data.payload);
-                if (myActions) {
-                    console.log("Player 1 has both sets of actions. Initiating next turn...");
-                    initiateTurnAsPlayer1({
-                        playerA_actions: myActions,
-                        playerB_actions: partnerActions,
-                        playerA_notes: myActions.notes,
-                        playerB_notes: partnerActions.notes,
-                        isExplicit: isDateExplicit
-                    });
-                }
+
+        case 'turn_submission':
+            console.log(`Received turn submission from ${senderId.slice(-6)}`);
+            if (isDateActive) {
+                const actions = JSON.parse(data.payload);
+                // Use the room ID as the key
+                turnSubmissions.set(senderId, actions);
+                checkForTurnCompletion();
             }
             break;
-        case 'final_actions_p2':
-            console.log(`Received final actions from Player 2: ${senderId}`);
-            if (isDateActive && amIPlayer1) {
-                partnerActions = JSON.parse(data.payload);
-                if (myActions && partnerActions) {
-                    console.log("Player 1 has both sets of actions. Initiating next turn...");
-                    initiateTurnAsPlayer1({
-                        playerA_actions: myActions,
-                        playerB_actions: partnerActions,
-                        playerA_notes: myActions.notes,
-                        playerB_notes: partnerActions.notes,
-                        isExplicit: isDateExplicit
-                    });
-                } else if (!partnerActions) {
-                    showError("Received invalid (null) actions from partner. Cannot proceed.");
-                    setLoading(false);
-                }
-            }
-            break;
+
         case 'new_turn_ui':
             console.log(`Received new turn UI from ${senderId}`);
             if (isDateActive && !amIPlayer1) {
@@ -1487,30 +1617,27 @@ submitButton.addEventListener('click', () => {
     submitButton.disabled = true; // Prevent double-clicks
 
     if (isDateActive) {
-        // --- New Two-Player Date Logic ---
+        // --- Symmetrical Two-Player Date Logic ---
         const actions = collectInputState();
-        myActions = JSON.parse(actions);
+        // No longer setting myActions globally here.
 
-        // Show a waiting screen using the standard spinner
+        // Show a waiting screen
         const loadingText = document.getElementById('loading-text');
         if (loadingText) {
             loadingText.textContent = 'Waiting for partner...';
         }
-        setLoading(true, true); // Use the standard spinner
+        setLoading(true, true); // Use the standard spinner for waiting
 
-        showNotification("Actions submitted. Waiting for partner...", "info");
+        showNotification("Actions submitted. Waiting for partner to submit...", "info");
 
-        // Send actions to partner immediately
-        MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'turn_actions', payload: actions });
+        // Broadcast actions to everyone in the room (including ourself)
+        MPLib.broadcastToRoom({ type: 'turn_submission', payload: actions });
 
     } else {
         // --- Single-Player Logic ---
         console.log("Submit button clicked (single-player mode).");
-        // This can be adapted to use the new `main` prompt for a single-player experience
-        const playerActions = collectInputState();
-        const notes = JSON.parse(playerActions).notes || "";
-        // This is a mock flow for single player
-        generateLocalTurn(`This is a test.\n---|||---\n${notes}\n---|||---\n${notes}`, 'player1');
+        const playerActions = JSON.parse(collectInputState());
+        initiateSinglePlayerTurn(playerActions);
     }
 });
 // --- MODIFICATION END: Long Press Logic ---
@@ -1665,8 +1792,7 @@ function startNewDate(partnerId, iAmPlayer1) {
     isDateActive = true;
     currentPartnerId = partnerId;
     amIPlayer1 = iAmPlayer1;
-    myActions = null;
-    partnerActions = null;
+    turnSubmissions.clear(); // Ensure clean state for the new date
 
     // Hide lobby, show game
     lobbyContainer.style.display = 'none';
@@ -1864,6 +1990,24 @@ function initializeGame() {
     if (savedApiKey) {
         apiKeyInput.value = savedApiKey;
         joinLobbyButton.click(); // Simulate click to trigger the connection logic
+    }
+
+    // --- Debug Panel Listeners ---
+    if (toggleDebugPanelButton && debugPanel) {
+        toggleDebugPanelButton.addEventListener('click', () => {
+            const isHidden = debugPanel.style.display === 'none';
+            if (isHidden) {
+                renderDebugPanel();
+                debugPanel.style.display = 'flex';
+            } else {
+                debugPanel.style.display = 'none';
+            }
+        });
+    }
+    if (debugPanelCloseButton && debugPanel) {
+        debugPanelCloseButton.addEventListener('click', () => {
+            debugPanel.style.display = 'none';
+        });
     }
 }
 
