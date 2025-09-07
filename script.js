@@ -461,6 +461,7 @@ function restoreLocalState() {
  * @param {string} playerRole - Either 'player1' or 'player2'.
  */
 async function generateLocalTurn(orchestratorData, playerRole) {
+    console.log(`Generating local turn for ${playerRole}. Received orchestrator data:`, JSON.stringify(orchestratorData, null, 2));
     console.log(`Generating local turn for ${playerRole}...`);
 
     // Reset interstitial title for turn generation
