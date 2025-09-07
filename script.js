@@ -1643,7 +1643,8 @@ function handleRoomDataReceived(senderId, data) {
         case 'turn_submission':
             console.log(`Received turn submission from ${senderId.slice(-6)}`);
             if (isDateActive) {
-                const actions = JSON.parse(data.payload);
+                // The payload is already a JS object, no need to parse it again.
+                const actions = data.payload;
                 // Use the room ID as the key
                 turnSubmissions.set(senderId, actions);
                 checkForTurnCompletion();
