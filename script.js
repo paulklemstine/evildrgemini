@@ -118,12 +118,8 @@ function decodeApiKey(encodedKey) {
 /** Constructs the full prompt for the Gemini API call based on the prompt type. */
 function constructPrompt(promptType, turnData) {
     const {
-        playerA_id,
-        playerB_id,
         playerA_actions,
         playerB_actions,
-        playerA_notes,
-        playerB_notes,
         isExplicit = false
     } = turnData;
 
@@ -133,17 +129,13 @@ function constructPrompt(promptType, turnData) {
     switch (promptType) {
         case 'orchestrator':
             prompt = geemsPrompts.orchestrator;
-            prompt += `\n\n---\nPREVIOUS STATE & ACTIONS\n---\n`;
+            prompt += `\n\n---\nPREVIOUS ACTIONS\n---\n`;
             prompt += `player_input_A: ${JSON.stringify(playerA_actions)}\n`;
-            prompt += `previous_notes_A: \`\`\`markdown\n${playerA_notes}\n\`\`\`\n\n`;
             prompt += `player_input_B: ${JSON.stringify(playerB_actions)}\n`;
-            prompt += `previous_notes_B: \`\`\`markdown\n${playerB_notes}\n\`\`\`\n`;
             prompt += activeAddendum;
-            prompt += `\n--- Generate instructions for both players based on the above. ---`;
+            prompt += `\n--- Generate a JSON object with a summary and directives based on the above. ---`;
             console.log("Generated Orchestrator Prompt.");
             break;
-
-        // The 'main' prompt is now called directly, so no case is needed here.
 
         default:
             throw new Error(`Unknown prompt type: ${promptType}`);
@@ -460,9 +452,8 @@ function restoreLocalState() {
  * @param {string} orchestratorText - The full plain text output from the orchestrator.
  * @param {string} playerRole - Either 'player1' or 'player2'.
  */
-async function generateLocalTurn(orchestratorData, playerRole) {
-    console.log(`Generating local turn for ${playerRole}. Received orchestrator data:`, JSON.stringify(orchestratorData, null, 2));
-    console.log(`Generating local turn for ${playerRole}...`);
+async function generateLocalTurn(orchestratorData, playerRole, ownNotes, partnerNotes) {
+    console.log(`Generating local turn for ${playerRole}.`);
 
     // Reset interstitial title for turn generation
     const interstitialTitle = document.querySelector('#interstitial-screen h2');
@@ -471,18 +462,30 @@ async function generateLocalTurn(orchestratorData, playerRole) {
     setLoading(true); // Show interstitial
 
     try {
-        let instructions;
-        if (playerRole === 'player1') {
-            instructions = orchestratorData.player1_instructions;
-        } else {
-            instructions = orchestratorData.player2_instructions;
+        const directive = (playerRole === 'player1') ? orchestratorData.player1_directive : orchestratorData.player2_directive;
+        if (!directive) {
+            throw new Error(`Could not find directive for ${playerRole} in orchestrator data.`);
         }
 
-        if (!instructions) {
-            throw new Error(`Could not find instructions for ${playerRole} in orchestrator data.`);
-        }
+        // Construct the full, detailed instructions for the UI generator AI.
+        // This is where the client-side logic now lives.
+        const instructions = `
+// Narrative Focus: ${orchestratorData.summary}
+// Creative Directive for ${playerRole}: ${directive}
 
-        // Combine the master prompt with the turn-specific instructions from the orchestrator.
+// You MUST generate the four hidden analysis fields. Here is the necessary data:
+// ---
+// Player A's Notes (own):
+// \`\`\`markdown
+// ${ownNotes}
+// \`\`\`
+// ---
+// Player B's Notes (partner):
+// \`\`\`markdown
+// ${partnerNotes}
+// \`\`\`
+`;
+
         const prompt = geemsPrompts.master_ui_prompt + "\n\n" + instructions;
         const uiJsonString = await callGeminiApiWithRetry(prompt);
         let uiJson = JSON.parse(uiJsonString);
@@ -493,20 +496,7 @@ async function generateLocalTurn(orchestratorData, playerRole) {
             if (arrayKey) {
                 const potentialArray = uiJson[arrayKey];
                 console.warn(`API returned an object. Found an array at key: '${arrayKey}'`);
-
-                // Check if the elements in the array are malformed (missing 'type')
-                if (potentialArray.length > 0 && potentialArray[0].type === undefined) {
-                    console.warn(`Transforming malformed array elements to conform to UI schema.`);
-                    uiJson = potentialArray.map(action => ({
-                        type: 'radio',
-                        name: 'main_action',
-                        label: action.label || action.action_id || 'Action', // Use label, fallback to action_id
-                        value: action.description || 'No description available.',
-                        color: '#FFFFFF' // Default color
-                    }));
-                } else {
-                    uiJson = potentialArray; // The array seems to be in the correct format
-                }
+                uiJson = potentialArray;
             }
         }
 
@@ -525,11 +515,11 @@ async function generateLocalTurn(orchestratorData, playerRole) {
             const ownClinicalReportContainer = document.getElementById('own-clinical-report');
             const partnerClinicalReportContainer = document.getElementById('partner-clinical-report');
 
-            // Populate reports, handling cases where they might be missing
-            greenFlagReportContainer.innerHTML = (greenFlags && greenFlags.value) ? greenFlags.value.replace(/\\n/g, '<br>') : '<em>No specific green flags noted.</em>';
-            redFlagReportContainer.innerHTML = (redFlags && redFlags.value) ? redFlags.value.replace(/\\n/g, '<br>') : '<em>No specific red flags noted.</em>';
-            ownClinicalReportContainer.innerHTML = (ownReport && ownReport.value) ? ownReport.value.replace(/\\n/g, '<br>') : '<em>Your clinical report is not available.</em>';
-            partnerClinicalReportContainer.innerHTML = (partnerReport && partnerReport.value) ? partnerReport.value.replace(/\\n/g, '<br>') : '<em>Your partner\'s clinical report is not available.</em>';
+            // Populate reports, wrapping in <pre> to preserve formatting
+            greenFlagReportContainer.innerHTML = (greenFlags && greenFlags.value) ? `<pre>${greenFlags.value}</pre>` : '<em>No specific green flags noted.</em>';
+            redFlagReportContainer.innerHTML = (redFlags && redFlags.value) ? `<pre>${redFlags.value}</pre>` : '<em>No specific red flags noted.</em>';
+            ownClinicalReportContainer.innerHTML = (ownReport && ownReport.value) ? `<pre>${ownReport.value}</pre>` : '<em>Your clinical report is not available.</em>';
+            partnerClinicalReportContainer.innerHTML = (partnerReport && partnerReport.value) ? `<pre>${partnerReport.value}</pre>` : '<em>Your partner\'s clinical report is not available.</em>';
 
         } else {
             console.warn("API response for UI is not an array, skipping interstitial report generation.", uiJson);
@@ -700,32 +690,32 @@ async function initiateSinglePlayerTurn(turnData) {
  */
 async function initiateTurnAsPlayer1(turnData) {
     console.log("Player 1 is initiating the turn by calling the orchestrator...");
-    const loadingText = document.getElementById('loading-text');
-    if (loadingText) {
-        loadingText.textContent = 'Generating next turn... Please wait.';
-    }
-    setLoading(true, true); // Use simple spinner for this phase
+    setLoading(true, true);
 
     try {
         const orchestratorPrompt = constructPrompt('orchestrator', turnData);
-        // The orchestrator now returns a JSON string
         const orchestratorJsonString = await callGeminiApiWithRetry(orchestratorPrompt, "application/json");
         const orchestratorData = JSON.parse(orchestratorJsonString);
 
+        // Player 1 has all the notes, so they can generate their turn immediately.
+        // Note: For Player 1 (who is Player A), their "ownNotes" are playerA_notes
+        // and their "partnerNotes" are playerB_notes.
+        generateLocalTurn(orchestratorData, 'player1', turnData.playerA_notes, turnData.playerB_notes);
 
-        // Send the orchestrator data object to Player 2
+        // Send the package to Player 2
+        const turnPackage = {
+            orchestratorData: orchestratorData,
+            partnerNotes: turnData.playerA_notes // From P2's perspective, P1's notes are the partner notes
+        };
         MPLib.sendDirectToRoomPeer(currentPartnerId, {
-            type: 'orchestrator_output',
-            payload: orchestratorData
+            type: 'new_turn_package',
+            payload: turnPackage
         });
-
-        // Player 1 generates their own turn locally from the data object
-        await generateLocalTurn(orchestratorData, 'player1');
 
     } catch (error) {
         console.error("Error during orchestrator call:", error);
         showError("Failed to get turn instructions from AI. Please try again.");
-        setLoading(false); // Hide spinner on error
+        setLoading(false);
     }
 }
 
@@ -1745,10 +1735,14 @@ function handleRoomDataReceived(senderId, data) {
                 setLoading(false, true);
             }
             break;
-        case 'orchestrator_output':
-            console.log(`Received orchestrator output from ${senderId}`);
+        case 'new_turn_package':
+            console.log(`Received new turn package from ${senderId}`);
             if (isDateActive && !amIPlayer1) {
-                generateLocalTurn(data.payload, 'player2');
+                const { orchestratorData, partnerNotes } = data.payload;
+                // For Player 2, their "ownNotes" are the ones they have in memory from their last turn.
+                // The "partnerNotes" are Player 1's notes, which have been sent in the package.
+                const ownNotes = uiContainer.querySelector('input[type="hidden"][name="notes"]')?.value || generateInitialNotes("PlayerB", getLocalProfile());
+                generateLocalTurn(orchestratorData, 'player2', ownNotes, partnerNotes);
             }
             break;
         case 'profile_update':
@@ -2139,58 +2133,46 @@ function generateInitialNotes(player, profile) {
 
 async function fetchFirstTurn() {
     console.log("Fetching first turn from AI using Orchestrator...");
-    const loadingText = document.getElementById('loading-text');
-    if (loadingText) {
-        loadingText.textContent = 'Orchestrating first scene... Please wait.';
-    }
-    setLoading(true, true); // Use simple spinner for this phase
+    setLoading(true, true);
 
     try {
-        // 1. Get local player's profile
+        // 1. Get profiles
         const localProfile = getLocalProfile();
-
-        // 2. Get partner's profile if available
         const partnerConnection = MPLib.getRoomConnections().get(currentPartnerId);
         const partnerMasterId = partnerConnection?.metadata?.masterId;
         const partnerProfile = remoteGameStates.get(partnerMasterId)?.profile || null;
-        if(partnerProfile) {
-            console.log(`Found partner profile for ${partnerMasterId.slice(-6)}`, partnerProfile);
-        } else {
-            console.log("Partner profile not found in remoteGameStates.");
-        }
 
-
-        // 3. Generate initial notes for both players
+        // 2. Generate initial notes for both players
         const playerA_notes = generateInitialNotes("PlayerA", localProfile);
         const playerB_notes = generateInitialNotes("PlayerB", partnerProfile);
 
-        // 4. Construct the turn data for the orchestrator
+        // 3. Call orchestrator with only the initial actions
         const orchestratorTurnData = {
             playerA_actions: { turn: 0, action: "initial_state" },
             playerB_actions: { turn: 0, action: "initial_state" },
-            playerA_notes: playerA_notes,
-            playerB_notes: playerB_notes,
             isExplicit: isDateExplicit
         };
-
-        // 5. Call the orchestrator
         const orchestratorPrompt = constructPrompt('orchestrator', orchestratorTurnData);
         const orchestratorJsonString = await callGeminiApiWithRetry(orchestratorPrompt, "application/json");
         const orchestratorData = JSON.parse(orchestratorJsonString);
 
-        // 6. Send the orchestrator data object to Player 2
-        MPLib.sendDirectToRoomPeer(currentPartnerId, {
-            type: 'orchestrator_output',
-            payload: orchestratorData
-        });
+        // 4. Player 1 generates their turn
+        generateLocalTurn(orchestratorData, 'player1', playerA_notes, playerB_notes);
 
-        // 7. Player 1 generates their own turn locally from the data object
-        await generateLocalTurn(orchestratorData, 'player1');
+        // 5. Send the package to Player 2
+        const turnPackage = {
+            orchestratorData: orchestratorData,
+            partnerNotes: playerA_notes // P1's notes are the partner's notes for P2
+        };
+        MPLib.sendDirectToRoomPeer(currentPartnerId, {
+            type: 'new_turn_package',
+            payload: turnPackage
+        });
 
     } catch (error) {
         console.error("Error fetching first turn with Orchestrator:", error);
         showError("Could not orchestrate the first turn. Please try again.");
-        setLoading(false); // Hide spinner on error
+        setLoading(false);
     }
 }
 
