@@ -25,10 +25,12 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 // 3.  **Element Order (MANDATORY):**
 //     - The sequence of elements in the array MUST be as follows:
 //       - Core Elements: image, narrative, subjectId, notes.
-//       - Analysis Elements (Hidden): green_flags, red_flags, own_clinical_analysis, partner_clinical_analysis.
+//       - Analysis Elements (Hidden): own_green_flags, own_red_flags, partner_green_flags, partner_red_flags, own_clinical_analysis, partner_clinical_analysis.
 //       - Interactive Probes: Any probes for player input (e.g., player_name, player_gender, main_action).
 //       - Final Elements: divine_wisdom.
-//     - The elements 'player_facing_analysis' and 'gemini_facing_analysis' are now deprecated and should not be used. Their content is now split across the four new analysis elements.
+//     - You must generate all six of the 'Analysis Elements'.
+//     - 'own_green_flags' and 'own_red_flags' should contain analysis of the current player's actions and profile.
+//     - 'partner_green_flags' and 'partner_red_flags' should contain analysis of the partner's actions and profile.
 
 // 4.  **CRITICAL UI ELEMENT RULES:**
 //     - You must use the correct type for the question and format its value correctly.

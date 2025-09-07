@@ -114,29 +114,40 @@
         </div>
 
         <div id="interstitial-reports" class="hidden mt-4 space-y-4 text-left">
-            <details class="report-details">
-                <summary class="report-summary-green">Partner's Green Flags</summary>
-                <div id="green-flag-report" class="report-content">
-                    <!-- Green flags will be populated here -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <details class="report-details">
+                        <summary class="report-summary-green">Your Green Flags</summary>
+                        <div id="own-green-flags-report" class="report-content"></div>
+                    </details>
                 </div>
+                <div>
+                    <details class="report-details">
+                        <summary class="report-summary-red">Your Red Flags</summary>
+                        <div id="own-red-flags-report" class="report-content"></div>
+                    </details>
+                </div>
+                <div>
+                    <details class="report-details">
+                        <summary class="report-summary-green">Partner's Green Flags</summary>
+                        <div id="partner-green-flags-report" class="report-content"></div>
+                    </details>
+                </div>
+                <div>
+                    <details class="report-details">
+                        <summary class="report-summary-red">Partner's Red Flags</summary>
+                        <div id="partner-red-flags-report" class="report-content"></div>
+                    </details>
+                </div>
+            </div>
+            <hr class="my-4 border-gray-300">
+            <details class="report-details">
+                <summary class="report-summary-neutral">Your Full Clinical Report</summary>
+                <div id="own-clinical-report" class="report-content"></div>
             </details>
             <details class="report-details">
-                <summary class="report-summary-red">Partner's Red Flags</summary>
-                <div id="red-flag-report" class="report-content">
-                    <!-- Red flags will be populated here -->
-                </div>
-            </details>
-            <details class="report-details">
-                <summary class="report-summary-neutral">Your Clinical Report</summary>
-                <div id="own-clinical-report" class="report-content">
-                    <!-- Own clinical report will be populated here -->
-                </div>
-            </details>
-            <details class="report-details">
-                <summary class="report-summary-neutral">Partner's Clinical Report</summary>
-                <div id="partner-clinical-report" class="report-content">
-                    <!-- Partner's clinical report will be populated here -->
-                </div>
+                <summary class="report-summary-neutral">Partner's Full Clinical Report</summary>
+                <div id="partner-clinical-report" class="report-content"></div>
             </details>
         </div>
 

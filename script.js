@@ -504,30 +504,58 @@ async function generateLocalTurn(orchestratorData, playerRole, ownNotes, partner
 
         // --- Interstitial Logic ---
         if (Array.isArray(uiJson)) {
-            const greenFlags = uiJson.find(el => el.name === 'green_flags');
-            const redFlags = uiJson.find(el => el.name === 'red_flags');
-            const ownReport = uiJson.find(el => el.name === 'own_clinical_analysis');
-            const partnerReport = uiJson.find(el => el.name === 'partner_clinical_analysis');
+            // Find all 6 data points from the UI JSON
+            const findValue = (name) => uiJson.find(el => el.name === name)?.value || null;
 
-            // Get the report containers
-            const greenFlagReportContainer = document.getElementById('green-flag-report');
-            const redFlagReportContainer = document.getElementById('red-flag-report');
+            const ownGreenFlags = findValue('own_green_flags');
+            const ownRedFlags = findValue('own_red_flags');
+            const partnerGreenFlags = findValue('partner_green_flags');
+            const partnerRedFlags = findValue('partner_red_flags');
+            const ownClinicalReport = findValue('own_clinical_report');
+            const partnerClinicalReport = findValue('partner_clinical_report');
+
+            // Get all 6 report containers
+            const ownGreenFlagsContainer = document.getElementById('own-green-flags');
+            const ownRedFlagsContainer = document.getElementById('own-red-flags');
+            const partnerGreenFlagsContainer = document.getElementById('partner-green-flags');
+            const partnerRedFlagsContainer = document.getElementById('partner-red-flags');
             const ownClinicalReportContainer = document.getElementById('own-clinical-report');
             const partnerClinicalReportContainer = document.getElementById('partner-clinical-report');
 
-            // Populate reports, wrapping in <pre> to preserve formatting
-            greenFlagReportContainer.innerHTML = (greenFlags && greenFlags.value) ? `<pre>${greenFlags.value}</pre>` : '<em>No specific green flags noted.</em>';
-            redFlagReportContainer.innerHTML = (redFlags && redFlags.value) ? `<pre>${redFlags.value}</pre>` : '<em>No specific red flags noted.</em>';
-            ownClinicalReportContainer.innerHTML = (ownReport && ownReport.value) ? `<pre>${ownReport.value}</pre>` : '<em>Your clinical report is not available.</em>';
-            partnerClinicalReportContainer.innerHTML = (partnerReport && partnerReport.value) ? `<pre>${partnerReport.value}</pre>` : '<em>Your partner\'s clinical report is not available.</em>';
+            // Helper to populate a container, preserving line breaks
+            const populateContainer = (container, data, defaultText, usePre = false) => {
+                if (container) {
+                    if (data) {
+                        // Basic sanitization to prevent HTML injection
+                        const sanitizedData = data.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        if (usePre) {
+                            container.innerHTML = `<pre>${sanitizedData}</pre>`;
+                        } else {
+                            // For non-preformatted text, convert newlines to <br> tags
+                            container.innerHTML = sanitizedData.replace(/\n/g, '<br>');
+                        }
+                    } else {
+                        container.innerHTML = `<em>${defaultText}</em>`;
+                    }
+                }
+            };
+
+            // Populate all 6 containers
+            populateContainer(ownGreenFlagsContainer, ownGreenFlags, 'No green flags noted.');
+            populateContainer(ownRedFlagsContainer, ownRedFlags, 'No red flags noted.');
+            populateContainer(partnerGreenFlagsContainer, partnerGreenFlags, 'No green flags noted.');
+            populateContainer(partnerRedFlagsContainer, partnerRedFlags, 'No red flags noted.');
+            populateContainer(ownClinicalReportContainer, ownClinicalReport, 'Your clinical report is not available.', true);
+            populateContainer(partnerClinicalReportContainer, partnerClinicalReport, "Your partner's clinical report is not available.", true);
 
         } else {
             console.warn("API response for UI is not an array, skipping interstitial report generation.", uiJson);
             // Clear all reports if the response is invalid
-            document.getElementById('green-flag-report').innerHTML = '<em>Could not parse analysis.</em>';
-            document.getElementById('red-flag-report').innerHTML = '<em>Could not parse analysis.</em>';
-            document.getElementById('own-clinical-report').innerHTML = '<em>Could not parse analysis.</em>';
-            document.getElementById('partner-clinical-report').innerHTML = '<em>Could not parse analysis.</em>';
+            const idsToClear = ['own-green-flags', 'own-red-flags', 'partner-green-flags', 'partner-red-flags', 'own-clinical-report', 'partner-clinical-report'];
+            idsToClear.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<em>Could not parse analysis.</em>';
+            });
         }
 
 
@@ -1628,27 +1656,38 @@ function handleRoomConnected(id) {
             isPublic: currentRoomIsPublic
         }
     });
+    // Broadcast our profile to everyone in the new room
+    const localProfile = getLocalProfile();
+    MPLib.broadcastToRoom({
+        type: 'profile_update',
+        payload: localProfile
+    });
+    console.log("Broadcasted local profile to new room.");
 }
 
 function handleRoomPeerJoined(peerId, conn) {
     console.log(`MPLib Event: Peer joined room - ${peerId.slice(-6)}`);
     showNotification(`Peer ${peerId.slice(-6)} joined the room.`, 'success', 2000);
 
-    // If a date is active, don't disrupt the UI by re-rendering the lobby.
-    if (isDateActive) {
-        console.log("A peer joined, but a date is active. Skipping lobby render.");
-        return;
+    if (!isDateActive) {
+        renderLobby();
     }
-    renderLobby();
 
     conn.on('open', () => {
-        console.log(`Data connection to room peer ${peerId.slice(-6)} opened. Re-rendering lobby.`);
-        // Also check here, as the state could have changed.
-        if (isDateActive) {
-            console.log("Peer connection opened, but a date is now active. Skipping lobby render.");
-            return;
+        console.log(`Data connection to room peer ${peerId.slice(-6)} opened.`);
+
+        // Send our profile to the new peer so they can update their lobby view
+        const localProfile = getLocalProfile();
+        MPLib.sendDirectToRoomPeer(peerId, {
+            type: 'profile_update',
+            payload: localProfile
+        });
+        console.log(`Sent local profile directly to new peer ${peerId.slice(-6)}.`);
+
+        // Re-render lobby only if not in a date
+        if (!isDateActive) {
+            renderLobby();
         }
-        renderLobby();
     });
 }
 
