@@ -19,7 +19,7 @@ let llmCallHistory = []; // For the debug panel
 
 // --- Model Switching State ---
 const AVAILABLE_MODELS = [
-    "gemini-2.5-flash",
+    // "gemini-2.5-flash",
     "gemini-2.5-pro"
 
 ];
