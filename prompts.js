@@ -49,11 +49,14 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 
     // This is now just an addendum for the first turn.
     firstrun_addendum: `
-// You are generating the VERY FIRST TURN of a new game.
-// **Your Task:** Invent an opening scene for a normal first date between two strangers.
+// You are generating the VERY FIRST TURN of a new game for two players on a blind date.
+// **Your Task:** Create a logical opening scene from the perspective of Player 1, who has arrived first.
+//   - **Scene:** Player 1 is already at the location (e.g., sitting at a table in a cafe, waiting on a park bench). Player 2 is just arriving. The UI you generate will be shown to BOTH players, but the narrative text should describe the scene from Player 1's point of view.
+//   - **Example Narrative:** "You've been here for a few minutes, nursing a coffee and trying to look casual. Just as you start to wonder if you've been stood up, the door opens and someone matching the description you were given walks in. This must be them."
 //   - **Setting:** Choose a common, relatable place for a date (e.g., a coffee shop, a park, a bar, a museum).
 //   - **Tone:** The tone should be grounded and realistic, with a hint of romantic or awkward tension, but with a dark, mature, and depraved twist just beneath the surface.
 //   - **Notes Initialization:** You MUST fully populate the "notes" field using the provided template for the first time. Initialize ProbeHistory with empty arrays.
+//   - **MANDATORY PROBES:** You MUST include a \`text_input\` probe with the name \`player_name\` and a \`radio\` probe with the name \`player_gender\`. This is non-negotiable.
 //   - **Probes (MANDATORY VARIETY):** You are required to generate a rich set of probes for the first turn. You MUST include the following:
 //     - 1. A \`text_input\` probe for \`player_name\`.
 //     - 2. A \`radio\` group for \`player_gender\`.
