@@ -1638,10 +1638,21 @@ function handleRoomConnected(id) {
 function handleRoomPeerJoined(peerId, conn) {
     console.log(`MPLib Event: Peer joined room - ${peerId.slice(-6)}`);
     showNotification(`Peer ${peerId.slice(-6)} joined the room.`, 'success', 2000);
+
+    // If a date is active, don't disrupt the UI by re-rendering the lobby.
+    if (isDateActive) {
+        console.log("A peer joined, but a date is active. Skipping lobby render.");
+        return;
+    }
     renderLobby();
 
     conn.on('open', () => {
         console.log(`Data connection to room peer ${peerId.slice(-6)} opened. Re-rendering lobby.`);
+        // Also check here, as the state could have changed.
+        if (isDateActive) {
+            console.log("Peer connection opened, but a date is now active. Skipping lobby render.");
+            return;
+        }
         renderLobby();
     });
 }
@@ -1649,6 +1660,28 @@ function handleRoomPeerJoined(peerId, conn) {
 function handleRoomPeerLeft(peerId) {
     console.log(`MPLib Event: Peer left room - ${peerId.slice(-6)}`);
     showNotification(`Peer ${peerId.slice(-6)} left the room.`, 'warn', 2000);
+
+    // Critical check: if the person who left was our date partner, end the date.
+    if (isDateActive && peerId === currentPartnerId) {
+        console.log("Dating partner has disconnected. Ending date.");
+        showError("Your partner has disconnected. The date has ended.");
+        // Reset date state variables
+        isDateActive = false;
+        currentPartnerId = null;
+        amIPlayer1 = false;
+        turnSubmissions.clear();
+        // Now, it's safe to render the lobby, which will show the lobby and hide the game.
+        renderLobby();
+        return; // Important to stop here.
+    }
+
+    // If we are in a date, but the person who left was NOT our partner, don't do anything to the main UI.
+    if (isDateActive) {
+        console.log("A non-partner peer left the room. Ignoring lobby render.");
+        return;
+    }
+
+    // If we are not in a date, it's safe to re-render the lobby.
     renderLobby();
 }
 
