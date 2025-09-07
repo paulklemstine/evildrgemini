@@ -75,6 +75,7 @@ let currentRoomName = null; // The name of the room the user is currently in
 let currentRoomIsPublic = true; // Whether the current room is public or private
 
 const remoteGameStates = new Map(); // Map<peerId, gameState>
+const LOCAL_PROFILE_KEY = 'sparksync_userProfile';
 
 // --- Long Press State ---
 let pressTimer = null;
@@ -160,6 +161,138 @@ function autoSaveGameState() {
         showError("Error auto-saving game state.");
     }
 }
+
+/**
+ * Retrieves the local user's profile from localStorage.
+ * @returns {object} The user profile object or a default object.
+ */
+function getLocalProfile() {
+    try {
+        const profileJson = localStorage.getItem(LOCAL_PROFILE_KEY);
+        return profileJson ? JSON.parse(profileJson) : {
+            name: "Anonymous",
+            gender: "Unknown",
+            physical: {}, // For attributes like hair, eyes, etc.
+            personality: {} // For Dr. Gemini's notes
+        };
+    } catch (e) {
+        console.error("Error reading local profile:", e);
+        return { name: "Anonymous", gender: "Unknown", physical: {}, personality: {} };
+    }
+}
+
+/**
+ * Extracts profile information from a turn's actions and saves it.
+ * @param {object} actions - The JSON object of actions from the turn.
+ */
+function updateLocalProfileFromTurn(actions) {
+    if (!actions) return;
+
+    const profile = getLocalProfile();
+    let updated = false;
+
+    // Define keys that represent profile data
+    const profileKeys = {
+        'player_name': 'name',
+        'player_gender': 'gender'
+        // Physical attributes will be handled separately
+    };
+
+    // Update top-level profile fields
+    for (const key in actions) {
+        if (profileKeys[key]) {
+            const profileField = profileKeys[key];
+            if (profile[profileField] !== actions[key]) {
+                profile[profileField] = actions[key];
+                updated = true;
+                console.log(`Updated profile ${profileField} to: ${actions[key]}`);
+            }
+        }
+    }
+
+    // Specifically handle physical attributes which might be nested or varied
+    const physicalKeys = ['hair_style', 'eye_color', 'build', 'clothing_style', 'distinguishing_feature'];
+    for(const key of physicalKeys) {
+        if(actions[key] && profile.physical[key] !== actions[key]) {
+             profile.physical[key] = actions[key];
+             updated = true;
+             console.log(`Updated physical profile ${key} to: ${actions[key]}`);
+        }
+    }
+
+    // Extract the detailed psychological profile from the 'notes' field
+    if (actions.notes) {
+        if (profile.personality.notes !== actions.notes) {
+            profile.personality.notes = actions.notes;
+            updated = true;
+            console.log("Updated personality notes.");
+        }
+    }
+
+    if (updated) {
+        try {
+            localStorage.setItem(LOCAL_PROFILE_KEY, JSON.stringify(profile));
+            console.log("Local user profile saved.", profile);
+            // Broadcast the updated profile to all peers in the room.
+            MPLib.broadcastToRoom({
+                type: 'profile_update',
+                payload: profile
+            });
+        } catch (e) {
+            console.error("Error saving or broadcasting local profile:", e);
+        }
+    }
+}
+
+/**
+ * Generates a descriptive prompt for an image generator based on a player's profile.
+ * @param {object} profile - The player's profile object.
+ * @returns {string} A prompt for Pollinations.ai.
+ */
+function generateAvatarPrompt(profile) {
+    if (!profile || !profile.physical) {
+        // A more interesting default if no data exists
+        return "a shadowy figure in a dimly lit room, mysterious, noir";
+    }
+
+    const { physical, gender, name } = profile;
+    // Base prompt with style
+    let promptParts = ["a detailed anime character portrait of a"];
+
+    // Core description
+    let description = [];
+    if (gender && gender.toLowerCase() !== 'unknown') {
+        description.push(gender);
+    } else {
+        description.push("person");
+    }
+
+    if (physical.distinguishing_feature) {
+        description.push(`with a ${physical.distinguishing_feature}`);
+    }
+    if (physical.build) {
+        description.push(`who has a ${physical.build} build`);
+    }
+
+    promptParts.push(description.join(' '));
+
+    // Specific features
+    if (physical.hair_style) {
+        promptParts.push(`${physical.hair_style} hair`);
+    }
+    if (physical.eye_color) {
+        promptParts.push(`${physical.eye_color} eyes`);
+    }
+    if (physical.clothing_style) {
+        promptParts.push(`wearing ${physical.clothing_style}`);
+    }
+
+    // Add some style keywords for a better look
+    promptParts.push("studio lighting, vibrant colors, detailed face, cinematic");
+
+    return promptParts.join(', ');
+}
+
 
 /** Initializes the AudioContext if it doesn't exist. */
 function initAudioContext() {
@@ -1501,6 +1634,17 @@ function handleRoomDataReceived(senderId, data) {
             }
             break;
 
+        case 'first_turn_ui':
+            console.log(`Received first turn UI from ${senderId.slice(-6)}`);
+            if (isDateActive) {
+                currentUiJson = data.payload;
+                renderUI(currentUiJson);
+                playTurnAlertSound();
+                submitButton.disabled = false;
+                setLoading(false, true);
+            }
+            break;
+
         case 'turn_submission':
             console.log(`Received turn submission from ${senderId.slice(-6)}`);
             if (isDateActive) {
@@ -1526,6 +1670,27 @@ function handleRoomDataReceived(senderId, data) {
             if (isDateActive && !amIPlayer1) {
                 generateLocalTurn(data.payload, 'player2');
             }
+            break;
+        case 'profile_update':
+            console.log(`Received profile update from ${senderId.slice(-6)}`, data.payload);
+            // Use the Master ID for storage to keep it consistent
+            const masterId = MPLib.getRoomConnections().get(senderId)?.metadata?.masterId || senderId;
+            if (!remoteGameStates.has(masterId)) {
+                remoteGameStates.set(masterId, {});
+            }
+            remoteGameStates.get(masterId).profile = data.payload;
+            console.log(`Updated remote profile for ${masterId.slice(-6)}`);
+
+            // Re-render the lobby if it's currently being viewed to show updates live.
+            if (lobbyContainer.style.display === 'block') {
+                renderLobby();
+            }
+            break;
+        case 'graceful_disconnect':
+            console.log(`Received graceful disconnect from ${senderId.slice(-6)}`);
+            // Manually close the connection. The 'onclose' handler in MPLib
+            // will then trigger the onRoomPeerLeft callback, which handles UI updates.
+            MPLib.closeConnection(senderId);
             break;
         default:
             console.warn(`Received unknown message type '${data.type}' from ${senderId.slice(-6)}`);
@@ -1599,42 +1764,40 @@ submitButton.addEventListener('click', () => {
     if (isLoading) return;
     submitButton.disabled = true; // Prevent double-clicks
 
+    // --- Single source of truth for actions ---
+    const playerActions = JSON.parse(collectInputState());
+    updateLocalProfileFromTurn(playerActions); // Update profile regardless of mode
+
     if (isDateActive) {
         // --- Symmetrical Two-Player Date Logic ---
-        const actions = collectInputState();
         const myRoomId = MPLib.getLocalRoomId();
 
-        // Immediately record our own submission.
         if (myRoomId) {
-            turnSubmissions.set(myRoomId, JSON.parse(actions));
+            turnSubmissions.set(myRoomId, playerActions);
             console.log(`Locally recorded submission for ${myRoomId.slice(-6)}`);
         } else {
             console.error("Could not get local room ID to record submission.");
-            // Don't proceed if we can't record our own action.
             submitButton.disabled = false;
             showError("A local error occurred. Could not submit turn.");
             return;
         }
 
-        // Show a waiting screen
         const loadingText = document.getElementById('loading-text');
         if (loadingText) {
             loadingText.textContent = 'Waiting for partner...';
         }
-        setLoading(true, true); // Use the standard spinner for waiting
+        setLoading(true, true);
 
         showNotification("Actions submitted. Waiting for partner to submit...", "info");
 
         // Broadcast actions to everyone in the room.
-        MPLib.broadcastToRoom({ type: 'turn_submission', payload: actions });
+        MPLib.broadcastToRoom({ type: 'turn_submission', payload: JSON.stringify(playerActions) });
 
-        // Check for completion immediately in case the partner already submitted.
         checkForTurnCompletion();
 
     } else {
         // --- Single-Player Logic ---
         console.log("Submit button clicked (single-player mode).");
-        const playerActions = JSON.parse(collectInputState());
         initiateSinglePlayerTurn(playerActions);
     }
 });
@@ -1675,10 +1838,9 @@ resetGameButton.addEventListener('click', () => {
 
 /** Renders the lobby UI */
 function renderLobby() {
-    console.log("Entering renderLobby.");
+    console.log("Entering renderLobby with dynamic profiles.");
     if (!lobbyContainer) return;
 
-    // Ensure the correct view is shown
     lobbyContainer.style.display = 'block';
     if(gameWrapper) gameWrapper.style.display = 'none';
 
@@ -1686,60 +1848,94 @@ function renderLobby() {
     const grid = document.createElement('div');
     grid.className = 'lobby-grid';
 
-    // Get all known peers and the local ID from MPLib for the current room
-    const allKnownPeers = MPLib.getRoomKnownPeerIds ? Array.from(MPLib.getRoomKnownPeerIds()) : [];
-    const localId = MPLib.getLocalRoomId ? MPLib.getLocalRoomId() : null;
+    const localMasterId = MPLib.getLocalMasterId();
+    const localProfile = getLocalProfile();
 
-    // Filter out the local client's ID to get a list of only remote peers
-    const remotePeers = allKnownPeers.filter(peerId => peerId && peerId !== localId);
+    // Create a list of all players to render, including the local player
+    const playersToRender = [];
 
-    if (remotePeers.length === 0) {
+    // Add the local player
+    if (localMasterId) {
+        playersToRender.push({
+            id: localMasterId,
+            profile: localProfile,
+            isLocal: true
+        });
+    }
+
+    // Add remote players
+    const remotePeers = MPLib.getRoomConnections ? Array.from(MPLib.getRoomConnections().values()) : [];
+    remotePeers.forEach(conn => {
+        if (conn && conn.open) {
+            const peerMasterId = conn.metadata?.masterId || conn.peer; // Fallback to room ID
+            const remoteState = remoteGameStates.get(peerMasterId) || {};
+            playersToRender.push({
+                id: peerMasterId,
+                profile: remoteState.profile || { name: `User-${peerMasterId.slice(-4)}`, gender: "Unknown", physical: {} },
+                isLocal: false,
+                roomConnection: conn // Pass the connection for the button
+            });
+        }
+    });
+
+    if (playersToRender.length <= 1) { // Only local player is here
         grid.innerHTML = '<p>No other users are currently online. Please wait for someone to connect.</p>';
     } else {
-        remotePeers.forEach(peerId => {
+        playersToRender.forEach(player => {
             const card = document.createElement('div');
             card.className = 'profile-card';
+            if (player.isLocal) {
+                card.classList.add('local-player-card');
+            }
+
+            const avatarPrompt = generateAvatarPrompt(player.profile);
+            const randomSeed = player.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const avatarUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(avatarPrompt)}?seed=${randomSeed}&nologo=true&safe=false`;
 
             const avatar = document.createElement('div');
             avatar.className = 'profile-avatar';
-            const randomSeed = peerId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            avatar.innerHTML = `<img src="https://image.pollinations.ai/prompt/cute%20cartoon%20animal%20avatar?seed=${randomSeed}&nologo=true&safe=false" alt="User Avatar">`;
+            avatar.innerHTML = `<img src="${avatarUrl}" alt="Avatar for ${player.profile.name}">`;
 
             const name = document.createElement('div');
             name.className = 'profile-name';
-            name.textContent = `User-${peerId.slice(-4)}`;
+            name.textContent = player.profile.name || `User-${player.id.slice(-4)}`;
 
-            const id = document.createElement('div');
-            id.className = 'profile-id';
-            id.textContent = `ID: ${peerId}`;
-
-            const button = document.createElement('button');
-            button.className = 'geems-button propose-date-button';
-            button.dataset.peerId = peerId; // Store peerId for the handler
-
-            // Check the actual connection status for this specific peer
-            const conn = MPLib.getRoomConnections().get(peerId);
-            if (conn && conn.open) {
-                button.textContent = 'Propose Date';
-                button.disabled = false;
-                button.onclick = (event) => {
-                    console.log(`Proposing date to ${peerId}`);
-                    const payload = {
-                        proposerExplicitMode: isExplicitMode
-                    };
-                    MPLib.sendDirectToRoomPeer(peerId, { type: 'date_proposal', payload: payload });
-                    event.target.disabled = true;
-                    event.target.textContent = 'Request Sent';
-                };
-            } else {
-                button.textContent = 'Connecting...';
-                button.disabled = true;
-            }
+            const gender = document.createElement('div');
+            gender.className = 'profile-gender';
+            gender.textContent = player.profile.gender || 'Unknown';
 
             card.appendChild(avatar);
             card.appendChild(name);
-            card.appendChild(id);
-            card.appendChild(button);
+            card.appendChild(gender);
+
+            if (!player.isLocal) {
+                const button = document.createElement('button');
+                button.className = 'geems-button propose-date-button';
+                button.dataset.peerId = player.roomConnection.peer; // Use the room ID for proposing
+
+                if (player.roomConnection && player.roomConnection.open) {
+                    button.textContent = 'Propose Date';
+                    button.disabled = false;
+                    button.onclick = (event) => {
+                        const targetPeerId = event.target.dataset.peerId;
+                        console.log(`Proposing date to ${targetPeerId}`);
+                        const payload = { proposerExplicitMode: isExplicitMode };
+                        MPLib.sendDirectToRoomPeer(targetPeerId, { type: 'date_proposal', payload: payload });
+                        event.target.disabled = true;
+                        event.target.textContent = 'Request Sent';
+                    };
+                } else {
+                    button.textContent = 'Connecting...';
+                    button.disabled = true;
+                }
+                card.appendChild(button);
+            } else {
+                const localPlayerLabel = document.createElement('div');
+                localPlayerLabel.className = 'local-player-label';
+                localPlayerLabel.textContent = '(This is you)';
+                card.appendChild(localPlayerLabel);
+            }
+
             grid.appendChild(card);
         });
     }
@@ -1800,13 +1996,9 @@ function startNewDate(partnerId, iAmPlayer1) {
     uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started!</h2></div>`;
 
     // Player 1 is responsible for fetching the first turn
-    if (amIPlayer1) {
+    if (iAmPlayer1) {
         console.log("I am Player 1, fetching the first turn.");
-        fetchFirstTurn({
-            playerA_id: MPLib.getLocalMasterId(),
-            playerB_id: currentPartnerId,
-            isExplicit: isDateExplicit
-        });
+        fetchFirstTurn();
     } else {
         // Player 2 just waits, show a loading indicator.
         uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started! Waiting for first turn...</h2></div>`;
@@ -1814,7 +2006,7 @@ function startNewDate(partnerId, iAmPlayer1) {
     }
 }
 
-async function fetchFirstTurn(turnData) {
+async function fetchFirstTurn() {
     console.log("Fetching first turn from AI...");
     const loadingText = document.getElementById('loading-text');
     if (loadingText) {
@@ -1827,21 +2019,16 @@ async function fetchFirstTurn(turnData) {
         const uiJsonString = await callGeminiApiWithRetry(prompt);
         const uiJson = JSON.parse(uiJsonString);
 
-        // Both players get the same UI on the first turn now
-        currentUiJson = uiJson;
-        renderUI(currentUiJson);
-        playTurnAlertSound();
-        submitButton.disabled = false;
-
-        // Send the generated UI to the other player so they are in sync
-        MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'new_turn_ui', payload: currentUiJson });
+        // Broadcast the first turn UI to everyone in the room (including self)
+        MPLib.broadcastToRoom({ type: 'first_turn_ui', payload: uiJson });
 
     } catch (error) {
         console.error("Error fetching first turn:", error);
         showError("Could not start the date. Please try again.");
-    } finally {
+        // If P1 fails to get the first turn, we need to unlock the UI for both
         setLoading(false, true);
     }
+    // setLoading is now handled in the message receiver
 }
 
 
@@ -2007,6 +2194,14 @@ function initializeGame() {
             debugPanel.style.display = 'none';
         });
     }
+
+    // Graceful disconnect
+    window.addEventListener('beforeunload', () => {
+        // This is a best-effort attempt. Most modern browsers are strict
+        // about what can be done in this event handler.
+        MPLib.broadcastToRoom({ type: 'graceful_disconnect' });
+        console.log("Sent graceful disconnect message.");
+    });
 }
 
 function createInitialMessage() {

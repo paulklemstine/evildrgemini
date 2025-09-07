@@ -314,7 +314,10 @@ const MPLib = (() => {
         logMessage(`Attempting to connect to room peer ${targetPeerId}`, 'info');
         pendingRoomConnections.add(targetPeerId);
 
-        const conn = roomPeer.connect(targetPeerId, { reliable: true });
+        const conn = roomPeer.connect(targetPeerId, {
+            reliable: true,
+            metadata: { masterId: localMasterId } // Share our permanent ID
+        });
         conn.on('open', () => {
             logMessage(`Room connection opened with ${targetPeerId}`, 'info');
             pendingRoomConnections.delete(targetPeerId);
@@ -330,9 +333,16 @@ const MPLib = (() => {
         const remotePeerId = conn.peer;
         roomConnections.set(remotePeerId, conn);
         roomKnownPeerIds.add(remotePeerId);
-        config.onRoomPeerJoined(remotePeerId, conn);
 
-        conn.on('open', () => conn.send({ type: 'request-peer-list' }));
+        // When the connection is established, log the metadata for debugging.
+        conn.on('open', () => {
+            if (conn.metadata) {
+                logMessage(`Connection with ${remotePeerId.slice(-6)} established. Metadata: ${JSON.stringify(conn.metadata)}`, 'success');
+            }
+            conn.send({ type: 'request-peer-list' });
+            // Inform the main script that a peer has fully joined and we have their metadata.
+            config.onRoomPeerJoined(remotePeerId, conn);
+        });
 
         conn.on('data', (data) => {
             if (data.type === 'request-peer-list') {
@@ -398,6 +408,14 @@ const MPLib = (() => {
         broadcastToRoom,
         sendDirectToRoomPeer,
         sendToMaster,
+        closeConnection: (peerId) => { // New function
+            const conn = roomConnections.get(peerId);
+            if (conn) {
+                logMessage(`Manually closing connection to ${peerId}`, 'warn');
+                conn.close();
+                // The 'close' event handler on the connection will call removeRoomConnection
+            }
+        },
         getLocalMasterId: () => localMasterId,
         getLocalRoomId: () => localRoomId,
         getRoomConnections: () => new Map(roomConnections),
