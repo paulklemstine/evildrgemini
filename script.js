@@ -87,14 +87,13 @@ const longPressDuration = 750; // milliseconds
 
 // --- Helper Functions ---
 
-/** Returns the decoded primary API key if it hasn't failed. */
+/** Returns the primary API key if it hasn't failed. */
 function getPrimaryApiKey() {
     if (hasPrimaryApiKeyFailed) {
         return null;
     }
-    // Encoded version of AIzaSyA-jfxiOqRoWOXEjTmT9zMpc4M6nen6k10
-    const encodedKey = 'QUl6YVN5QS1qZnhpT3FSb1dPWGVqVG1UOXpNcGM0TTZuZW42azEw';
-    return decodeApiKey(encodedKey);
+    // The primary, embedded API key.
+    return 'AIzaSyA-jfxiOqRoWOXEjTmT9zMpc4M6nen6k10';
 }
 
 /** Encodes a string using Base64. */
