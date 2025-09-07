@@ -511,8 +511,8 @@ async function generateLocalTurn(orchestratorData, playerRole, ownNotes, partner
             const ownRedFlags = findValue('own_red_flags');
             const partnerGreenFlags = findValue('partner_green_flags');
             const partnerRedFlags = findValue('partner_red_flags');
-            const ownClinicalReport = findValue('own_clinical_report');
-            const partnerClinicalReport = findValue('partner_clinical_report');
+            const ownClinicalReport = findValue('own_clinical_analysis');
+            const partnerClinicalReport = findValue('partner_clinical_analysis');
 
             // Get all 6 report containers
             const ownGreenFlagsContainer = document.getElementById('own-green-flags-report');
@@ -1803,6 +1803,34 @@ function handleRoomDataReceived(senderId, data) {
             // will then trigger the onRoomPeerLeft callback, which handles UI updates.
             MPLib.closeConnection(senderId);
             break;
+
+        case 'explicit_mode_sync_request':
+            if (isDateActive && senderId === currentPartnerId) {
+                const partnerIsExplicit = data.payload.isExplicit;
+                isDateExplicit = isExplicitMode && partnerIsExplicit;
+
+                // Respond with our own status
+                MPLib.sendDirectToRoomPeer(currentPartnerId, {
+                    type: 'explicit_mode_sync_response',
+                    payload: { isExplicit: isExplicitMode }
+                });
+
+                const message = `Date 18+ mode is now ${isDateExplicit ? 'ON' : 'OFF'}.`;
+                showNotification(message, 'info');
+                console.log(message + ` (Local: ${isExplicitMode}, Partner: ${partnerIsExplicit})`);
+            }
+            break;
+
+        case 'explicit_mode_sync_response':
+            if (isDateActive && senderId === currentPartnerId) {
+                const partnerIsExplicit = data.payload.isExplicit;
+                isDateExplicit = isExplicitMode && partnerIsExplicit;
+
+                const message = `Date 18+ mode is now ${isDateExplicit ? 'ON' : 'OFF'}.`;
+                showNotification(message, 'info');
+                console.log(message + ` (Local: ${isExplicitMode}, Partner: ${partnerIsExplicit})`);
+            }
+            break;
         default:
             console.warn(`Received unknown message type '${data.type}' from ${senderId.slice(-6)}`);
     }
@@ -1927,6 +1955,14 @@ modeToggleButton.addEventListener('click', () => {
     console.log(`18+ Mode Toggled: ${isExplicitMode ? 'On' : 'Off'}`);
     updateModeButtonVisuals();
     autoSaveGameState();
+
+    if (isDateActive && currentPartnerId) {
+        MPLib.sendDirectToRoomPeer(currentPartnerId, {
+            type: 'explicit_mode_sync_request',
+            payload: { isExplicit: isExplicitMode }
+        });
+        showNotification("Syncing 18+ mode with partner...", "info", 2000);
+    }
 });
 
 resetGameButton.addEventListener('click', () => {
