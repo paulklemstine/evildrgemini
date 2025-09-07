@@ -515,10 +515,10 @@ async function generateLocalTurn(orchestratorData, playerRole, ownNotes, partner
             const partnerClinicalReport = findValue('partner_clinical_report');
 
             // Get all 6 report containers
-            const ownGreenFlagsContainer = document.getElementById('own-green-flags');
-            const ownRedFlagsContainer = document.getElementById('own-red-flags');
-            const partnerGreenFlagsContainer = document.getElementById('partner-green-flags');
-            const partnerRedFlagsContainer = document.getElementById('partner-red-flags');
+            const ownGreenFlagsContainer = document.getElementById('own-green-flags-report');
+            const ownRedFlagsContainer = document.getElementById('own-red-flags-report');
+            const partnerGreenFlagsContainer = document.getElementById('partner-green-flags-report');
+            const partnerRedFlagsContainer = document.getElementById('partner-red-flags-report');
             const ownClinicalReportContainer = document.getElementById('own-clinical-report');
             const partnerClinicalReportContainer = document.getElementById('partner-clinical-report');
 
@@ -551,7 +551,7 @@ async function generateLocalTurn(orchestratorData, playerRole, ownNotes, partner
         } else {
             console.warn("API response for UI is not an array, skipping interstitial report generation.", uiJson);
             // Clear all reports if the response is invalid
-            const idsToClear = ['own-green-flags', 'own-red-flags', 'partner-green-flags', 'partner-red-flags', 'own-clinical-report', 'partner-clinical-report'];
+            const idsToClear = ['own-green-flags-report', 'own-red-flags-report', 'partner-green-flags-report', 'partner-red-flags-report', 'own-clinical-report', 'partner-clinical-report'];
             idsToClear.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = '<em>Could not parse analysis.</em>';
@@ -1284,8 +1284,6 @@ function setLoading(loading, isFirstTurn = false) {
             interstitialSpinner.style.display = 'flex';
             interstitialReports.classList.add('hidden');
             interstitialContinueButton.disabled = true;
-            greenFlagReport.innerHTML = 'Generating...';
-            redFlagReport.innerHTML = 'Generating...';
             interstitialScreen.style.display = 'flex';
         }
         // When loading is false, the interstitial is hidden by the continue button, not here.
