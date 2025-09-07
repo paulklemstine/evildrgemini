@@ -1634,17 +1634,6 @@ function handleRoomDataReceived(senderId, data) {
             }
             break;
 
-        case 'first_turn_ui':
-            console.log(`Received first turn UI from ${senderId.slice(-6)}`);
-            if (isDateActive) {
-                currentUiJson = data.payload;
-                renderUI(currentUiJson);
-                playTurnAlertSound();
-                submitButton.disabled = false;
-                setLoading(false, true);
-            }
-            break;
-
         case 'turn_submission':
             console.log(`Received turn submission from ${senderId.slice(-6)}`);
             if (isDateActive) {
@@ -2019,16 +2008,21 @@ async function fetchFirstTurn() {
         const uiJsonString = await callGeminiApiWithRetry(prompt);
         const uiJson = JSON.parse(uiJsonString);
 
-        // Broadcast the first turn UI to everyone in the room (including self)
-        MPLib.broadcastToRoom({ type: 'first_turn_ui', payload: uiJson });
+        // Render the UI for Player 1
+        currentUiJson = uiJson;
+        renderUI(currentUiJson);
+        playTurnAlertSound();
+        setLoading(false, true); // Stop P1's loading spinner
+        submitButton.disabled = false;
+
+        // Send the generated UI to Player 2
+        MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'new_turn_ui', payload: currentUiJson });
 
     } catch (error) {
         console.error("Error fetching first turn:", error);
         showError("Could not start the date. Please try again.");
-        // If P1 fails to get the first turn, we need to unlock the UI for both
-        setLoading(false, true);
+        setLoading(false, true); // Ensure loading is turned off on error
     }
-    // setLoading is now handled in the message receiver
 }
 
 
