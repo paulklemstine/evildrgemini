@@ -460,7 +460,7 @@ function restoreLocalState() {
  * @param {string} orchestratorText - The full plain text output from the orchestrator.
  * @param {string} playerRole - Either 'player1' or 'player2'.
  */
-async function generateLocalTurn(orchestratorText, playerRole) {
+async function generateLocalTurn(orchestratorData, playerRole) {
     console.log(`Generating local turn for ${playerRole}...`);
 
     // Reset interstitial title for turn generation
@@ -470,13 +470,16 @@ async function generateLocalTurn(orchestratorText, playerRole) {
     setLoading(true); // Show interstitial
 
     try {
-        const parts = orchestratorText.split('---|||---');
-        if (parts.length !== 3) {
-            throw new Error("Invalid orchestrator output format. Full text: " + orchestratorText);
+        let instructions;
+        if (playerRole === 'player1') {
+            instructions = orchestratorData.player1_instructions;
+        } else {
+            instructions = orchestratorData.player2_instructions;
         }
 
-        const playerNumber = (playerRole === 'player1') ? 1 : 2;
-        const instructions = parts[playerNumber]; // 1 for P1, 2 for P2
+        if (!instructions) {
+            throw new Error(`Could not find instructions for ${playerRole} in orchestrator data.`);
+        }
 
         // Combine the master prompt with the turn-specific instructions from the orchestrator.
         const prompt = geemsPrompts.master_ui_prompt + "\n\n" + instructions;
@@ -704,17 +707,19 @@ async function initiateTurnAsPlayer1(turnData) {
 
     try {
         const orchestratorPrompt = constructPrompt('orchestrator', turnData);
-        // The orchestrator now returns a single plain text block
-        const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
+        // The orchestrator now returns a JSON string
+        const orchestratorJsonString = await callGeminiApiWithRetry(orchestratorPrompt, "application/json");
+        const orchestratorData = JSON.parse(orchestratorJsonString);
 
-        // Send the entire text block to Player 2
+
+        // Send the orchestrator data object to Player 2
         MPLib.sendDirectToRoomPeer(currentPartnerId, {
             type: 'orchestrator_output',
-            payload: orchestratorText
+            payload: orchestratorData
         });
 
-        // Player 1 generates their own turn locally from the text block
-        await generateLocalTurn(orchestratorText, 'player1');
+        // Player 1 generates their own turn locally from the data object
+        await generateLocalTurn(orchestratorData, 'player1');
 
     } catch (error) {
         console.error("Error during orchestrator call:", error);
@@ -1760,16 +1765,6 @@ function handleRoomDataReceived(senderId, data) {
                 renderLobby();
             }
             break;
-        case 'new_turn_ui':
-            console.log(`Received new turn UI from ${senderId}`);
-            if (isDateActive && !amIPlayer1) {
-                currentUiJson = data.payload;
-                renderUI(currentUiJson);
-                playTurnAlertSound();
-                submitButton.disabled = false;
-                setLoading(false, true);
-            }
-            break;
         case 'graceful_disconnect':
             console.log(`Received graceful disconnect from ${senderId.slice(-6)}`);
             // Manually close the connection. The 'onclose' handler in MPLib
@@ -2106,41 +2101,95 @@ function startNewDate(partnerId, iAmPlayer1) {
     }
 }
 
+function generateInitialNotes(player, profile) {
+    const p = profile || { name: "Unknown", gender: "Unknown", physical: {} };
+    return `# Dr. Gemini's Log: The Wonderland Journal - Entry 1
+## Game Cycle
+* Current Phase: Assessment
+* Narrative Engine: Unassigned
+* Phase Turn: 1 of 1
+## Dynamic Game Parameters (Directives for THIS turn)
+* Pacing: Medium
+* Tone: Anticipation
+* Visual Style: Realistic
+* Next Probe Focus: First Impressions
+## Story & Narrative
+* Main Plot: The Player's Psyche
+* Current Arc: The First Date
+* Companions: None
+* Cliffhanger: None
+## Player Profile (Secret 'FBI Profile')
+* subjectId: ${player}
+* Player Name: ${p.name}
+* Physical Description: { gender: ${p.gender}, race: Unknown, hair: Unknown, eyes: Unknown, build: Unknown }
+## Psychological Analysis (Dr. Gemini's View)
+* Core Drivers: Unknown
+* Emotional State: { anxiety: 5, greed: 0, arousal: 2, shame: 0 }
+* Deviance Profile (Confirmed): None
+* Noted Kinks/Fetishes: None
+* Breadth Probe Flags: []
+* ProbeHistory: { physical: [], mental_breadth: [], mental_deep: [] }
+## Dr. Gemini's Strategic Plan
+* Long-Term Therapeutic Goal: Uncover the player's core psychological drivers.
+* Current Arc Goal: Establish a baseline profile.
+* Prediction for Next Action: Cautious engagement.
+* Next Turn's Tactical Goal: Observe initial social interaction.`;
+}
+
 async function fetchFirstTurn() {
     console.log("Fetching first turn from AI using Orchestrator...");
     const loadingText = document.getElementById('loading-text');
     if (loadingText) {
-        loadingText.textContent = 'Generating first scene... Please wait.';
+        loadingText.textContent = 'Orchestrating first scene... Please wait.';
     }
-    setLoading(true, true);
+    setLoading(true, true); // Use simple spinner for this phase
 
     try {
-        // For the first turn, we create a fake 'previous turn' to give the orchestrator context.
-        const firstTurnData = {
-            playerA_actions: { action: "start_game" },
-            playerB_actions: { action: "start_game" },
-            playerA_notes: "This is the first turn. You must ask for the player's name (player_name) and gender (player_gender). The players are meeting for the first time on a blind date. I (Player A) have arrived first and am waiting.",
-            playerB_notes: "This is the first turn. You must ask for the player's name (player_name) and gender (player_gender). The players are meeting for the first time on a blind date. I (Player B) am just arriving.",
+        // 1. Get local player's profile
+        const localProfile = getLocalProfile();
+
+        // 2. Get partner's profile if available
+        const partnerConnection = MPLib.getRoomConnections().get(currentPartnerId);
+        const partnerMasterId = partnerConnection?.metadata?.masterId;
+        const partnerProfile = remoteGameStates.get(partnerMasterId)?.profile || null;
+        if(partnerProfile) {
+            console.log(`Found partner profile for ${partnerMasterId.slice(-6)}`, partnerProfile);
+        } else {
+            console.log("Partner profile not found in remoteGameStates.");
+        }
+
+
+        // 3. Generate initial notes for both players
+        const playerA_notes = generateInitialNotes("PlayerA", localProfile);
+        const playerB_notes = generateInitialNotes("PlayerB", partnerProfile);
+
+        // 4. Construct the turn data for the orchestrator
+        const orchestratorTurnData = {
+            playerA_actions: { turn: 0, action: "initial_state" },
+            playerB_actions: { turn: 0, action: "initial_state" },
+            playerA_notes: playerA_notes,
+            playerB_notes: playerB_notes,
             isExplicit: isDateExplicit
         };
 
-        const orchestratorPrompt = constructPrompt('orchestrator', firstTurnData);
-        const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
+        // 5. Call the orchestrator
+        const orchestratorPrompt = constructPrompt('orchestrator', orchestratorTurnData);
+        const orchestratorJsonString = await callGeminiApiWithRetry(orchestratorPrompt, "application/json");
+        const orchestratorData = JSON.parse(orchestratorJsonString);
 
-        // Send the entire text block to Player 2
+        // 6. Send the orchestrator data object to Player 2
         MPLib.sendDirectToRoomPeer(currentPartnerId, {
             type: 'orchestrator_output',
-            payload: orchestratorText
+            payload: orchestratorData
         });
 
-        // Player 1 generates their own turn locally from the text block
-        await generateLocalTurn(orchestratorText, 'player1');
+        // 7. Player 1 generates their own turn locally from the data object
+        await generateLocalTurn(orchestratorData, 'player1');
 
     } catch (error) {
-        console.error("Error fetching first turn:", error);
-        showError("Could not start the date. Please try again.");
-        // Ensure loading is turned off on error, for both players if possible
-        setLoading(false);
+        console.error("Error fetching first turn with Orchestrator:", error);
+        showError("Could not orchestrate the first turn. Please try again.");
+        setLoading(false); // Hide spinner on error
     }
 }
 
