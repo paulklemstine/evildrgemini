@@ -5,6 +5,7 @@ import MPLib from './mp.js';
 // import MPLib from './mp.js'; // Uncomment if using ES6 modules for MPLib
 
 // --- Game State Variables ---
+let hasPrimaryApiKeyFailed = false;
 let historyQueue = [];
 const MAX_HISTORY_SIZE = 20;
 let currentUiJson = null;
@@ -85,6 +86,16 @@ let isLongPress = false;
 const longPressDuration = 750; // milliseconds
 
 // --- Helper Functions ---
+
+/** Returns the decoded primary API key if it hasn't failed. */
+function getPrimaryApiKey() {
+    if (hasPrimaryApiKeyFailed) {
+        return null;
+    }
+    // Encoded version of AIzaSyA-jfxiOqRoWOXEjTmT9zMpc4M6nen6k10
+    const encodedKey = 'QUl6YVN5QS1qZnhpT3FSb1dPWGVqVG1UOXpNcGM0TTZuZW42azEw';
+    return decodeApiKey(encodedKey);
+}
 
 /** Encodes a string using Base64. */
 function encodeApiKey(key) {
@@ -717,17 +728,25 @@ async function initiateTurnAsPlayer1(turnData) {
 
 
 /**
- * A wrapper for the Gemini API call that includes retry logic.
+ * A wrapper for the Gemini API call that includes retry logic and primary key fallback.
  */
 async function callGeminiApiWithRetry(prompt, responseMimeType = "application/json") {
-    const apiKey = apiKeyInput.value.trim();
+    // On each call, determine which API key to use.
+    let apiKey = getPrimaryApiKey(); // Tries the default key first.
     if (!apiKey) {
+        // If the primary key has failed or doesn't exist, use the user's input.
+        apiKey = apiKeyInput.value.trim();
+    }
+
+    // If there's still no key, it means the primary failed and the user hasn't provided one.
+    if (!apiKey) {
+        showError("API Key is missing. Please enter your own key to continue.");
         throw new Error("API Key is missing.");
     }
 
     let success = false;
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 3; // Retries for network errors, etc.
     let lastError = null;
 
     while (!success && attempts < maxAttempts) {
@@ -736,15 +755,40 @@ async function callGeminiApiWithRetry(prompt, responseMimeType = "application/js
         console.log(`Attempt ${attempts}/${maxAttempts}: Trying model ${currentModel}`);
         try {
             const responseText = await callRealGeminiAPI(apiKey, prompt, currentModel, responseMimeType);
-            // Quick validation for JSON responses
-            if (responseMimeType === "application/json") {
-                JSON.parse(responseText);
-            }
-            return responseText; // Success
+            // If the call succeeds, we return the text.
+            return responseText;
+
         } catch (error) {
             console.error(`Error with model ${currentModel} (Attempt ${attempts}):`, error);
             lastError = error;
-            // Simplified retry logic: just try again on any error.
+
+            // Specifically check for a quota error (429) and if it was the primary key that failed.
+            if (error.message && error.message.includes('429')) {
+                const primaryKey = getPrimaryApiKey();
+                if (primaryKey && apiKey === primaryKey) {
+                    console.warn("Primary API key has failed due to quota. Switching to user input.");
+                    hasPrimaryApiKeyFailed = true;
+
+                    // Update the UI to allow the user to enter their own key.
+                    apiKeyInput.disabled = false;
+                    apiKeyInput.value = ''; // Clear the failed key
+                    apiKeyInput.placeholder = 'Enter your Gemini API key';
+                    apiKeyInput.focus();
+
+                    // Remove the failed key from local storage to prevent auto-login with it on next refresh.
+                    localStorage.removeItem('sparksync_apiKey');
+
+                    const userMessage = "The shared API key's daily limit is exhausted. Please enter your own key and try again.";
+                    showError(userMessage);
+
+                    // We must stop the current operation and wait for the user to act.
+                    // Throw a new error that will be caught by the calling function (e.g., initiateTurn).
+                    // This prevents the retry loop from continuing with the failed key.
+                    throw new Error(userMessage);
+                }
+            }
+
+            // For any other kind of error, we can retry a few times.
             if (attempts < maxAttempts) {
                 showError(`AI Error (Attempt ${attempts}). Retrying...`);
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -752,6 +796,7 @@ async function callGeminiApiWithRetry(prompt, responseMimeType = "application/js
         }
     }
 
+    // If the loop finishes without success, throw the last error.
     throw new Error(`Failed to get valid response from AI after ${maxAttempts} attempts. Last error: ${lastError?.message}`);
 }
 
@@ -2145,6 +2190,7 @@ function initializeGame() {
     joinLobbyButton.addEventListener('click', () => {
         const apiKey = apiKeyInput.value.trim();
         if (!apiKey) {
+            // This case should now only be hit if the primary key fails and the user deletes it.
             showError("API Key is required to connect.");
             return;
         }
@@ -2203,12 +2249,22 @@ function initializeGame() {
         }
     });
 
-
-    // Auto-login if key is already saved
+    // --- New Key Management and Auto-Login Logic ---
+    const primaryApiKey = getPrimaryApiKey();
     const savedApiKey = localStorage.getItem('sparksync_apiKey');
-    if (savedApiKey) {
+
+    if (primaryApiKey && !hasPrimaryApiKeyFailed) {
+        apiKeyInput.value = primaryApiKey;
+        apiKeyInput.disabled = true;
+        apiKeyInput.placeholder = "Using default key";
+        console.log("Using primary API key.");
+        joinLobbyButton.click(); // Auto-login with the primary key
+    } else if (savedApiKey) {
         apiKeyInput.value = savedApiKey;
-        joinLobbyButton.click(); // Simulate click to trigger the connection logic
+        console.log("Using saved API key.");
+        joinLobbyButton.click(); // Auto-login with a previously user-provided key
+    } else {
+         console.log("No primary or saved key found. Waiting for user input.");
     }
 
     // --- Debug Panel Listeners ---
