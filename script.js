@@ -762,11 +762,11 @@ async function callGeminiApiWithRetry(prompt, responseMimeType = "application/js
             console.error(`Error with model ${currentModel} (Attempt ${attempts}):`, error);
             lastError = error;
 
-            // Specifically check for a quota error (429) and if it was the primary key that failed.
-            if (error.message && error.message.includes('429')) {
+            // Specifically check for a quota error (429) or invalid key error (400) and if it was the primary key that failed.
+            if (error.message && (error.message.includes('429') || error.message.includes('API_KEY_INVALID'))) {
                 const primaryKey = getPrimaryApiKey();
                 if (primaryKey && apiKey === primaryKey) {
-                    console.warn("Primary API key has failed due to quota. Switching to user input.");
+                    console.warn("Primary API key has failed (invalid or quota). Switching to user input.");
                     hasPrimaryApiKeyFailed = true;
 
                     // Update the UI to allow the user to enter their own key.
@@ -778,7 +778,7 @@ async function callGeminiApiWithRetry(prompt, responseMimeType = "application/js
                     // Remove the failed key from local storage to prevent auto-login with it on next refresh.
                     localStorage.removeItem('sparksync_apiKey');
 
-                    const userMessage = "The shared API key's daily limit is exhausted. Please enter your own key and try again.";
+                    const userMessage = "The default API key is invalid or has expired. Please enter your own key to continue.";
                     showError(userMessage);
 
                     // We must stop the current operation and wait for the user to act.
