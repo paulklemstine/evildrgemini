@@ -901,7 +901,7 @@ async function callRealGeminiAPI(apiKey, promptText, modelName, responseMimeType
         if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
             let generatedText = candidate.content.parts[0].text;
             if (responseMimeType === "application/json") {
-                const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                const jsonMatch = generatedText.match(/```(?:json|markdown)?\s*([\s\S]*?)\s*```/);
                 if (jsonMatch && jsonMatch[1]) {
                     generatedText = jsonMatch[1];
                 }
