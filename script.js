@@ -2119,8 +2119,8 @@ async function fetchFirstTurn() {
         const firstTurnData = {
             playerA_actions: { action: "start_game" },
             playerB_actions: { action: "start_game" },
-            playerA_notes: "The players are meeting for the first time on a blind date. I (Player A) have arrived first and am waiting.",
-            playerB_notes: "The players are meeting for the first time on a blind date. I (Player B) am just arriving.",
+            playerA_notes: "This is the first turn. You must ask for the player's name (player_name) and gender (player_gender). The players are meeting for the first time on a blind date. I (Player A) have arrived first and am waiting.",
+            playerB_notes: "This is the first turn. You must ask for the player's name (player_name) and gender (player_gender). The players are meeting for the first time on a blind date. I (Player B) am just arriving.",
             isExplicit: isDateExplicit
         };
 
