@@ -39,8 +39,9 @@ const MPLib = (() => {
         onMasterDisconnected: () => {},
         onNewMasterEstablished: () => {}, // Called when connection to a master is opened
         onDirectoryUpdate: (directory) => {},
-        onRoomPeerJoined: (peerId) => {},
+        onRoomPeerJoined: (peerId, conn) => {},
         onRoomPeerLeft: (peerId) => {},
+        onRoomPeerDisconnected: (masterId) => {}, // For cleaning up game state
         onRoomDataReceived: (peerId, data) => {},
         onRoomConnected: (id) => {},
     };
@@ -334,15 +335,22 @@ const MPLib = (() => {
         roomConnections.set(remotePeerId, conn);
         roomKnownPeerIds.add(remotePeerId);
 
-        // When the connection is established, log the metadata for debugging.
-        conn.on('open', () => {
+        // This function contains the logic to run once a connection is fully established.
+        const onConnectionOpen = () => {
             if (conn.metadata) {
                 logMessage(`Connection with ${remotePeerId.slice(-6)} established. Metadata: ${JSON.stringify(conn.metadata)}`, 'success');
             }
             conn.send({ type: 'request-peer-list' });
-            // Inform the main script that a peer has fully joined and we have their metadata.
             config.onRoomPeerJoined(remotePeerId, conn);
-        });
+        };
+
+        // If the connection is already open (e.g., for an outgoing connection that
+        // was just established), run the setup immediately. Otherwise, set a listener.
+        if (conn.open) {
+            onConnectionOpen();
+        } else {
+            conn.on('open', onConnectionOpen);
+        }
 
         conn.on('data', (data) => {
             if (data.type === 'request-peer-list') {
@@ -365,11 +373,20 @@ const MPLib = (() => {
     }
 
     function removeRoomConnection(peerId) {
-        if (roomConnections.has(peerId)) {
+        const conn = roomConnections.get(peerId);
+        if (conn) {
+            // Get the persistent masterId before deleting the connection
+            const masterId = conn.metadata?.masterId;
+
             roomConnections.delete(peerId);
             roomKnownPeerIds.delete(peerId);
             logMessage(`Removed room connection for ${peerId}`, 'info');
-            config.onRoomPeerLeft(peerId);
+            config.onRoomPeerLeft(peerId); // For general UI updates
+
+            // Use the new callback for specific game state cleanup
+            if (masterId) {
+                config.onRoomPeerDisconnected(masterId);
+            }
         }
     }
 

@@ -56,7 +56,7 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 //   - **Setting:** Choose a common, relatable place for a date (e.g., a coffee shop, a park, a bar, a museum).
 //   - **Tone:** The tone should be grounded and realistic, with a hint of romantic or awkward tension, but with a dark, mature, and depraved twist just beneath the surface.
 //   - **Notes Initialization:** You MUST fully populate the "notes" field using the provided template for the first time. Initialize ProbeHistory with empty arrays.
-//   - **MANDATORY PROBES:** You MUST include a \`text_input\` probe with the name \`player_name\` and a \`radio\` probe with the name \`player_gender\`. This is non-negotiable.
+//   - **MANDATORY PROBES:** You MUST include a `text_input` probe with the name `player_name` and a `radio` probe with the name `player_gender`. This is non-negotiable.
 //   - **Probes (MANDATORY VARIETY):** You are required to generate a rich set of probes for the first turn. You MUST include the following:
 //     - 1. A \`text_input\` probe for \`player_name\`.
 //     - 2. A \`radio\` group for \`player_gender\`.

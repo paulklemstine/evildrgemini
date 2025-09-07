@@ -233,11 +233,17 @@ function updateLocalProfileFromTurn(actions) {
         try {
             localStorage.setItem(LOCAL_PROFILE_KEY, JSON.stringify(profile));
             console.log("Local user profile saved.", profile);
+
             // Broadcast the updated profile to all peers in the room.
             MPLib.broadcastToRoom({
                 type: 'profile_update',
                 payload: profile
             });
+
+            // If we are in the lobby, re-render to show our own profile update
+            if (lobbyContainer.style.display === 'block') {
+                renderLobby();
+            }
         } catch (e) {
             console.error("Error saving or broadcasting local profile:", e);
         }
@@ -1675,6 +1681,16 @@ function handleRoomDataReceived(senderId, data) {
                 renderLobby();
             }
             break;
+        case 'new_turn_ui':
+            console.log(`Received new turn UI from ${senderId}`);
+            if (isDateActive && !amIPlayer1) {
+                currentUiJson = data.payload;
+                renderUI(currentUiJson);
+                playTurnAlertSound();
+                submitButton.disabled = false;
+                setLoading(false, true);
+            }
+            break;
         case 'graceful_disconnect':
             console.log(`Received graceful disconnect from ${senderId.slice(-6)}`);
             // Manually close the connection. The 'onclose' handler in MPLib
@@ -1780,7 +1796,7 @@ submitButton.addEventListener('click', () => {
         showNotification("Actions submitted. Waiting for partner to submit...", "info");
 
         // Broadcast actions to everyone in the room.
-        MPLib.broadcastToRoom({ type: 'turn_submission', payload: JSON.stringify(playerActions) });
+        MPLib.broadcastToRoom({ type: 'turn_submission', payload: playerActions });
 
         checkForTurnCompletion();
 
@@ -1900,18 +1916,34 @@ function renderLobby() {
             if (!player.isLocal) {
                 const button = document.createElement('button');
                 button.className = 'geems-button propose-date-button';
-                button.dataset.peerId = player.roomConnection.peer; // Use the room ID for proposing
+                button.dataset.masterId = player.id; // Store the persistent masterId
 
                 if (player.roomConnection && player.roomConnection.open) {
                     button.textContent = 'Propose Date';
                     button.disabled = false;
                     button.onclick = (event) => {
-                        const targetPeerId = event.target.dataset.peerId;
-                        console.log(`Proposing date to ${targetPeerId}`);
-                        const payload = { proposerExplicitMode: isExplicitMode };
-                        MPLib.sendDirectToRoomPeer(targetPeerId, { type: 'date_proposal', payload: payload });
-                        event.target.disabled = true;
-                        event.target.textContent = 'Request Sent';
+                        const targetMasterId = event.target.dataset.masterId;
+
+                        // Find the correct room connection using the masterId
+                        const connections = MPLib.getRoomConnections();
+                        let targetRoomId = null;
+                        for (const [roomId, conn] of connections.entries()) {
+                            if (conn.metadata?.masterId === targetMasterId) {
+                                targetRoomId = roomId;
+                                break;
+                            }
+                        }
+
+                        if (targetRoomId) {
+                            console.log(`Proposing date to masterId ${targetMasterId.slice(-6)} (via roomId ${targetRoomId.slice(-6)})`);
+                            const payload = { proposerExplicitMode: isExplicitMode };
+                            MPLib.sendDirectToRoomPeer(targetRoomId, { type: 'date_proposal', payload: payload });
+                            event.target.disabled = true;
+                            event.target.textContent = 'Request Sent';
+                        } else {
+                            showError("Could not find the player to send the proposal. They may have disconnected.");
+                            console.error("Failed to find room connection for masterId:", targetMasterId);
+                        }
                     };
                 } else {
                     button.textContent = 'Connecting...';
@@ -2133,6 +2165,11 @@ function initializeGame() {
             onRoomConnected: handleRoomConnected,
             onRoomPeerJoined: handleRoomPeerJoined,
             onRoomPeerLeft: handleRoomPeerLeft,
+            onRoomPeerDisconnected: (masterId) => {
+                console.log(`Peer with masterId ${masterId.slice(-6)} has disconnected. Cleaning up state.`);
+                remoteGameStates.delete(masterId);
+                // No need to call renderLobby here, as onRoomPeerLeft already does.
+            },
             onRoomDataReceived: handleRoomDataReceived,
         });
     });
