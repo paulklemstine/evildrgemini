@@ -628,8 +628,7 @@ function checkForTurnCompletion() {
 
     if (amIPlayer1) {
         const myRoomId = MPLib.getLocalRoomId();
-        // In a 2p date, there's only one other connection.
-        const partnerRoomId = roomConnections.keys().next().value;
+        const partnerRoomId = currentPartnerId; // Use the stored partner ID for reliability
 
         const playerA_actions = turnSubmissions.get(myRoomId);
         const playerB_actions = turnSubmissions.get(partnerRoomId);
@@ -2108,32 +2107,40 @@ function startNewDate(partnerId, iAmPlayer1) {
 }
 
 async function fetchFirstTurn() {
-    console.log("Fetching first turn from AI...");
+    console.log("Fetching first turn from AI using Orchestrator...");
     const loadingText = document.getElementById('loading-text');
     if (loadingText) {
-        loadingText.textContent = 'Generating first turn... Please wait.';
+        loadingText.textContent = 'Generating first scene... Please wait.';
     }
-    setLoading(true, true); // Use the simple spinner for the first turn
+    setLoading(true, true);
+
     try {
-        const prompt = geemsPrompts.master_ui_prompt + geemsPrompts.firstrun_addendum;
-        console.log("Generated First Run Prompt.");
-        const uiJsonString = await callGeminiApiWithRetry(prompt);
-        const uiJson = JSON.parse(uiJsonString);
+        // For the first turn, we create a fake 'previous turn' to give the orchestrator context.
+        const firstTurnData = {
+            playerA_actions: { action: "start_game" },
+            playerB_actions: { action: "start_game" },
+            playerA_notes: "The players are meeting for the first time on a blind date. I (Player A) have arrived first and am waiting.",
+            playerB_notes: "The players are meeting for the first time on a blind date. I (Player B) am just arriving.",
+            isExplicit: isDateExplicit
+        };
 
-        // Render the UI for Player 1
-        currentUiJson = uiJson;
-        renderUI(currentUiJson);
-        playTurnAlertSound();
-        setLoading(false, true); // Stop P1's loading spinner
-        submitButton.disabled = false;
+        const orchestratorPrompt = constructPrompt('orchestrator', firstTurnData);
+        const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
 
-        // Send the generated UI to Player 2
-        MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'new_turn_ui', payload: currentUiJson });
+        // Send the entire text block to Player 2
+        MPLib.sendDirectToRoomPeer(currentPartnerId, {
+            type: 'orchestrator_output',
+            payload: orchestratorText
+        });
+
+        // Player 1 generates their own turn locally from the text block
+        await generateLocalTurn(orchestratorText, 'player1');
 
     } catch (error) {
         console.error("Error fetching first turn:", error);
         showError("Could not start the date. Please try again.");
-        setLoading(false, true); // Ensure loading is turned off on error
+        // Ensure loading is turned off on error, for both players if possible
+        setLoading(false);
     }
 }
 
