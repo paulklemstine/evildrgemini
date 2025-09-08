@@ -2250,6 +2250,12 @@ function switchToRoom(roomName, isPublic) {
 function initializeGame() {
     console.log("Initializing Flagged with new Master Directory architecture...");
 
+    // Handle interstitial continue button click
+    interstitialContinueButton.addEventListener('click', () => {
+        interstitialScreen.style.display = 'none';
+        window.scrollTo(0, 0); // Scroll to top
+    });
+
     // Hide the game wrapper and show the lobby selection by default
     if(gameWrapper) gameWrapper.style.display = 'none';
     if(lobbyContainer) lobbyContainer.style.display = 'none';
