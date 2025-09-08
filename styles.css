@@ -682,3 +682,25 @@ body {
     max-height: 300px;
     overflow-y: auto;
 }
+
+/* --- Player Report Grouping --- */
+.player-report-group {
+    border: 1px solid #e9ecef; /* gray-200 */
+    border-radius: 0.75rem; /* rounded-lg */
+    padding: 1rem; /* p-4 */
+    background-color: #fbfdff;
+}
+
+.player-report-group + .player-report-group {
+    margin-top: 1.5rem;
+}
+
+.player-report-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem; /* text-xl */
+    font-weight: 700; /* font-bold */
+    margin-bottom: 1rem; /* mb-4 */
+    padding-bottom: 0.5rem; /* pb-2 */
+    border-bottom: 1px solid #dee2e6; /* border-b */
+    color: #4c4c4c;
+}
