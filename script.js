@@ -72,7 +72,6 @@ let currentPartnerId = null;
 let amIPlayer1 = false;
 let turnSubmissions = new Map(); // New state for turn aggregation
 let incomingProposal = null;
-let isDateExplicit = false;
 let globalRoomDirectory = { rooms: {}, peers: {} }; // Holds the global state
 let currentRoomName = null; // The name of the room the user is currently in
 let currentRoomIsPublic = true; // Whether the current room is public or private
@@ -648,6 +647,9 @@ function checkForTurnCompletion() {
         const playerA_actions = turnSubmissions.get(myRoomId);
         const playerB_actions = turnSubmissions.get(partnerRoomId);
 
+        console.log("Player A (self) turn data:", JSON.stringify(playerA_actions, null, 2));
+        console.log("Player B (partner) turn data:", JSON.stringify(playerB_actions, null, 2));
+
         if (!playerA_actions || !playerB_actions) {
             showError("FATAL: Could not map submissions to players. Aborting turn.");
             console.error("Submission mapping failed.", {
@@ -661,12 +663,17 @@ function checkForTurnCompletion() {
         }
 
         console.log("I am Player 1. Initiating the next turn generation.");
+
+        // Determine if the turn is explicit based on BOTH players' current mode.
+        const turnIsExplicit = (playerA_actions.isExplicit === true) && (playerB_actions.isExplicit === true);
+        console.log(`Turn explicit status determined by player submissions: ${turnIsExplicit}`);
+
         initiateTurnAsPlayer1({
             playerA_actions: playerA_actions,
             playerB_actions: playerB_actions,
             playerA_notes: playerA_actions.notes,
             playerB_notes: playerB_actions.notes,
-            isExplicit: isDateExplicit,
+            isExplicit: turnIsExplicit, // Use the calculated value for this specific turn
             history: historyQueue
         });
 
@@ -1735,13 +1742,15 @@ function handleRoomDataReceived(senderId, data) {
             showProposalModal();
             break;
         case 'date_accepted':
-            console.log(`Date proposal accepted by ${senderId}`);
-            showNotification(`Your date with ${senderId.slice(-4)} was accepted! Starting...`, "success");
-            const accepterExplicitMode = data.payload?.accepterExplicitMode || false;
-            isDateExplicit = isExplicitMode && accepterExplicitMode;
-            console.log(`Date explicit mode set to: ${isDateExplicit}`);
-            startNewDate(senderId, true);
-            break;
+            {
+                console.log(`Date proposal accepted by ${senderId}`);
+                showNotification(`Your date with ${senderId.slice(-4)} was accepted! Starting...`, "success");
+                const accepterExplicitMode = data.payload?.accepterExplicitMode || false;
+                const firstTurnIsExplicit = isExplicitMode && accepterExplicitMode;
+                console.log(`First turn explicit mode set to: ${firstTurnIsExplicit}`);
+                startNewDate(senderId, true, firstTurnIsExplicit);
+                break;
+            }
         case 'date_declined':
             console.log(`Date proposal declined by ${senderId}`);
             showNotification(`Your date with ${senderId.slice(-4)} was declined.`, "warn");
@@ -2099,11 +2108,11 @@ function showProposalModal() {
         MPLib.sendDirectToRoomPeer(incomingProposal.proposerId, { type: 'date_accepted', payload: payload });
         proposalModal.style.display = 'none';
 
-        // Determine if the date is explicit
-        isDateExplicit = isExplicitMode && incomingProposal.proposerExplicitMode;
-        console.log(`Date explicit mode set to: ${isDateExplicit}`);
+        // Determine if the date is explicit for the first turn
+        const firstTurnIsExplicit = isExplicitMode && incomingProposal.proposerExplicitMode;
+        console.log(`First turn explicit mode set to: ${firstTurnIsExplicit}`);
 
-        startNewDate(incomingProposal.proposerId, false); // We are Player 2 (receiver)
+        startNewDate(incomingProposal.proposerId, false, firstTurnIsExplicit); // We are Player 2
         incomingProposal = null; // Clear the stored proposal
     };
 
@@ -2120,8 +2129,8 @@ function showProposalModal() {
 window.showProposalModal = showProposalModal; // Expose for testing
 
 /** Transitions from lobby to game view and initializes date state */
-function startNewDate(partnerId, iAmPlayer1) {
-    console.log(`Starting new date with ${partnerId}. Am I Player 1? ${iAmPlayer1}`);
+function startNewDate(partnerId, iAmPlayer1, isFirstTurnExplicit) {
+    console.log(`Starting new date with ${partnerId}. Am I Player 1? ${iAmPlayer1}. First turn explicit: ${isFirstTurnExplicit}`);
 
     isDateActive = true;
     currentPartnerId = partnerId;
@@ -2130,7 +2139,7 @@ function startNewDate(partnerId, iAmPlayer1) {
 
     // Hide lobby, show game
     lobbyContainer.style.display = 'none';
-    if(gameWrapper) gameWrapper.style.display = 'block';
+    if (gameWrapper) gameWrapper.style.display = 'block';
 
     // This will be replaced by the actual first turn UI from the AI
     uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started!</h2></div>`;
@@ -2138,7 +2147,7 @@ function startNewDate(partnerId, iAmPlayer1) {
     // Player 1 is responsible for fetching the first turn
     if (iAmPlayer1) {
         console.log("I am Player 1, fetching the first turn.");
-        fetchFirstTurn();
+        fetchFirstTurn(isFirstTurnExplicit);
     } else {
         // Player 2 just waits, show a loading indicator.
         uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started! Waiting for first turn...</h2></div>`;
@@ -2146,7 +2155,7 @@ function startNewDate(partnerId, iAmPlayer1) {
     }
 }
 
-async function fetchFirstTurn() {
+async function fetchFirstTurn(isFirstTurnExplicit) {
     console.log("Fetching first turn using the Orchestrator...");
     const loadingText = document.getElementById('loading-text');
     if (loadingText) {
@@ -2161,12 +2170,12 @@ async function fetchFirstTurn() {
     // For the first turn, there are no previous actions or notes.
     // The orchestrator will be guided by the 'firstrun_addendum'.
     const initialTurnData = {
-        playerA_actions: { turn: 0, action: "game_start" },
-        playerB_actions: { turn: 0, action: "game_start" },
+        playerA_actions: { turn: 0, action: "game_start", isExplicit: isFirstTurnExplicit },
+        playerB_actions: { turn: 0, action: "game_start", isExplicit: isFirstTurnExplicit },
         // The notes provide a clear starting point for the orchestrator AI.
         playerA_notes: `## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 1, I have arrived first. Please generate a new scene and starting UI for both players. ${profileString}`,
         playerB_notes: "## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 2, I am just arriving. Please generate a new scene and starting UI for both players.",
-        isExplicit: isDateExplicit,
+        isExplicit: isFirstTurnExplicit,
         // Add a flag to indicate this is the first turn, so the prompt can be adjusted.
         isFirstTurn: true
     };
