@@ -665,29 +665,36 @@ function checkForTurnCompletion() {
 
 async function initiateSinglePlayerTurn(turnData) {
     console.log("Initiating single-player turn...");
-    setLoading(true, true);
+    setLoading(true, true); // Use simple spinner
 
     try {
-        // In single player, we can treat the player as both Player A and Player B.
-        // The orchestrator is designed for two sets of inputs, so we provide the same for both.
-        const orchestratorTurnData = {
-            playerA_actions: turnData,
-            playerB_actions: turnData,
-            playerA_notes: turnData.notes,
-            playerB_notes: turnData.notes,
-            isExplicit: isExplicitMode
-        };
+        // The 'main' prompt expects 'previous_notes' and 'player_input'.
+        const notesElement = uiContainer.querySelector('input[type="hidden"][name="notes"]');
+        const previousNotes = notesElement ? notesElement.value : '';
+        const playerInput = JSON.stringify(turnData);
 
-        const orchestratorPrompt = constructPrompt('orchestrator', orchestratorTurnData);
-        const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
+        // Construct the prompt manually for the main single-player flow.
+        let prompt = geemsPrompts.main;
+        prompt += `\n\n---\nPREVIOUS STATE & ACTIONS\n---\n`;
+        prompt += `player_input: ${playerInput}\n`;
+        prompt += `previous_notes: \`\`\`markdown\n${previousNotes}\n\`\`\`\n`;
 
-        // We only care about Player A's output for the single player.
-        await generateLocalTurn(orchestratorText, 'player1');
+        const activeAddendum = isExplicitMode ? `\n\n---\n${geemsPrompts.masturbationModeAddendum}\n---\n` : "";
+        prompt += activeAddendum;
+        prompt += `\n--- Generate the next turn's UI JSON based on the above. ---`;
+
+        const uiJsonString = await callGeminiApiWithRetry(prompt);
+        const uiJson = JSON.parse(uiJsonString);
+
+        currentUiJson = uiJson;
+        renderUI(currentUiJson);
+        playTurnAlertSound();
 
     } catch (error) {
         console.error("Error during single-player turn generation:", error);
         showError("Failed to generate the next turn. Please try again.");
-        setLoading(false);
+    } finally {
+        setLoading(false, true); // Hide simple spinner
     }
 }
 
@@ -696,31 +703,52 @@ async function initiateSinglePlayerTurn(turnData) {
  * This function makes the 'orchestrator' call and distributes the plain text plan.
  */
 async function initiateTurnAsPlayer1(turnData) {
-    console.log("Player 1 is initiating the turn by calling the orchestrator...");
-    const loadingText = document.getElementById('loading-text');
-    if (loadingText) {
-        loadingText.textContent = 'Generating next turn... Please wait.';
-    }
-    setLoading(true, true); // Use simple spinner for this phase
+    console.log("Player 1 is initiating the turn for two players...");
+    setLoading(true, true);
 
     try {
-        const orchestratorPrompt = constructPrompt('orchestrator', turnData);
-        // The orchestrator now returns a single plain text block
-        const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
+        const { playerA_actions, playerB_actions, playerA_notes, playerB_notes, isExplicit } = turnData;
 
-        // Send the entire text block to Player 2
+        // Helper function to construct and call the AI for a single player's perspective
+        const generateTurnForPlayer = async (inputActions, previousNotes) => {
+            let prompt = geemsPrompts.main;
+            prompt += `\n\n---\nPREVIOUS STATE & ACTIONS\n---\n`;
+            prompt += `player_input: ${JSON.stringify(inputActions)}\n`;
+            prompt += `previous_notes: \`\`\`markdown\n${previousNotes}\n\`\`\`\n`;
+            const activeAddendum = isExplicit ? `\n\n---\n${geemsPrompts.masturbationModeAddendum}\n---\n` : "";
+            prompt += activeAddendum;
+            prompt += `\n--- Generate the next turn's UI JSON based on the above. ---`;
+
+            const jsonString = await callGeminiApiWithRetry(prompt);
+            return JSON.parse(jsonString);
+        };
+
+        // Generate both turns in parallel to save time
+        const [uiJsonPlayer1, uiJsonPlayer2] = await Promise.all([
+            generateTurnForPlayer(playerA_actions, playerA_notes),
+            generateTurnForPlayer(playerB_actions, playerB_notes)
+        ]);
+
+        console.log("Successfully generated turns for both players.");
+
+        // Send Player 2 their new UI
         MPLib.sendDirectToRoomPeer(currentPartnerId, {
-            type: 'orchestrator_output',
-            payload: orchestratorText
+            type: 'new_turn_ui',
+            payload: uiJsonPlayer2
         });
+        console.log("Sent new turn UI to Player 2.");
 
-        // Player 1 generates their own turn locally from the text block
-        await generateLocalTurn(orchestratorText, 'player1');
+        // Render Player 1's UI
+        currentUiJson = uiJsonPlayer1;
+        renderUI(currentUiJson);
+        playTurnAlertSound();
+        console.log("Rendered new turn UI for Player 1.");
 
     } catch (error) {
-        console.error("Error during orchestrator call:", error);
-        showError("Failed to get turn instructions from AI. Please try again.");
-        setLoading(false); // Hide spinner on error
+        console.error("Error during two-player turn generation:", error);
+        showError("Failed to generate the next turn for both players. Please try again.");
+    } finally {
+        setLoading(false, true);
     }
 }
 
@@ -2115,7 +2143,7 @@ async function fetchFirstTurn() {
     }
     setLoading(true, true); // Use the simple spinner for the first turn
     try {
-        const prompt = geemsPrompts.master_ui_prompt + geemsPrompts.firstrun_addendum;
+        const prompt = geemsPrompts.firstrun;
         console.log("Generated First Run Prompt.");
         const uiJsonString = await callGeminiApiWithRetry(prompt);
         const uiJson = JSON.parse(uiJsonString);
