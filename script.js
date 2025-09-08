@@ -1730,9 +1730,12 @@ function handleRoomPeerJoined(peerId, conn) {
     const myProfile = getLocalProfile();
     MPLib.sendDirectToRoomPeer(peerId, {
         type: 'profile_update',
-        payload: myProfile
+        payload: {
+            masterId: MPLib.getLocalMasterId(),
+            profile: myProfile
+        }
     });
-    console.log(`Sent direct profile update to new peer ${peerId.slice(-6)}`);
+    console.log(`Sent direct profile update with masterId to new peer ${peerId.slice(-6)}`);
 
 
     // If a date is active, don't disrupt the UI by re-rendering the lobby.
