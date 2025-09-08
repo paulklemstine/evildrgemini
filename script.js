@@ -1717,9 +1717,12 @@ function handleRoomConnected(id) {
     const myProfile = getLocalProfile();
     MPLib.broadcastToRoom({
         type: 'profile_update',
-        payload: myProfile
+        payload: {
+            masterId: MPLib.getLocalMasterId(),
+            profile: myProfile
+        }
     });
-    console.log("Broadcasted own profile to room on connect.");
+    console.log("Broadcasted own profile (with masterId) to room on connect.");
 }
 
 function handleRoomPeerJoined(peerId, conn) {
@@ -1853,6 +1856,12 @@ function handleRoomDataReceived(senderId, data) {
 
             if (!masterId || !profile) {
                 console.error("Received malformed profile_update:", data);
+                return;
+            }
+
+            // Ignore profile updates from the master directory itself to prevent the "ghost host"
+            if (masterId === 'sparksync-master-directory-v2') {
+                console.log("Ignoring profile update from master directory peer.");
                 return;
             }
 
