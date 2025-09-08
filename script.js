@@ -78,6 +78,7 @@ let currentRoomName = null; // The name of the room the user is currently in
 let currentRoomIsPublic = true; // Whether the current room is public or private
 
 const remoteGameStates = new Map(); // Map<peerId, gameState>
+let roomIdToMasterId = new Map();
 const LOCAL_PROFILE_KEY = 'sparksync_userProfile';
 
 // --- Long Press State ---
@@ -1865,6 +1866,9 @@ function handleRoomDataReceived(senderId, data) {
                 return;
             }
 
+            // Populate the map for reliable ID lookup
+            roomIdToMasterId.set(senderId, masterId);
+
             if (!remoteGameStates.has(masterId)) {
                 remoteGameStates.set(masterId, {});
             }
@@ -2070,14 +2074,16 @@ function renderLobby() {
     }
 
     // Add remote players
-    const remotePeers = MPLib.getRoomConnections ? Array.from(MPLib.getRoomConnections().values()) : [];
-    remotePeers.forEach(conn => {
-        // Stricter check: Only render peers that are open and have a persistent masterId.
-        // This prevents rendering the "seed" peer, which doesn't have this metadata.
-        if (conn && conn.open && conn.metadata?.masterId) {
-            const peerMasterId = conn.metadata.masterId;
+    const remoteConns = MPLib.getRoomConnections ? MPLib.getRoomConnections() : new Map();
+    for (const [remoteRoomId, conn] of remoteConns.entries()) {
+        // Get the masterId from our new reliable map, but fall back to metadata for the receiver.
+        const masterIdFromMap = roomIdToMasterId.get(remoteRoomId);
+        const masterIdFromMeta = conn.metadata?.masterId;
+        const peerMasterId = masterIdFromMap || masterIdFromMeta;
+
+        if (conn && conn.open && peerMasterId) {
             // Final check to prevent rendering a card for ourselves.
-            if (peerMasterId === localMasterId) return;
+            if (peerMasterId === localMasterId) continue;
 
             const remoteState = remoteGameStates.get(peerMasterId) || {};
             // Make sure we have a profile, even a default one, to avoid errors
@@ -2090,7 +2096,7 @@ function renderLobby() {
                 roomConnection: conn // Pass the connection for the button
             });
         }
-    });
+    }
 
     if (playersToRender.length <= 1) { // Only local player is here
         grid.innerHTML = '<div class="text-center col-span-full py-8"><p class="text-gray-500">You are the only one here. Share the link with a friend to start a date!</p></div>';
