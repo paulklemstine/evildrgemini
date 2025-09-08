@@ -114,30 +114,48 @@
         </div>
 
         <div id="interstitial-reports" class="hidden mt-4 space-y-4 text-left">
-            <details class="report-details">
-                <summary class="report-summary-green">Partner's Green Flags</summary>
-                <div id="green-flag-report" class="report-content">
-                    <!-- Green flags will be populated here -->
-                </div>
-            </details>
-            <details class="report-details">
-                <summary class="report-summary-red">Partner's Red Flags</summary>
-                <div id="red-flag-report" class="report-content">
-                    <!-- Red flags will be populated here -->
-                </div>
-            </details>
-            <details class="report-details">
-                <summary class="report-summary-neutral">Your Clinical Report</summary>
-                <div id="own-clinical-report" class="report-content">
-                    <!-- Own clinical report will be populated here -->
-                </div>
-            </details>
-            <details class="report-details">
-                <summary class="report-summary-neutral">Partner's Clinical Report</summary>
-                <div id="partner-clinical-report" class="report-content">
-                    <!-- Partner's clinical report will be populated here -->
-                </div>
-            </details>
+            <div class="player-report-group">
+                <h3 class="player-report-title">Your Report</h3>
+                <details class="report-details" open>
+                    <summary class="report-summary-green">Your Green Flags</summary>
+                    <div id="own-green-flag-report" class="report-content">
+                        <!-- Own green flags will be populated here -->
+                    </div>
+                </details>
+                <details class="report-details" open>
+                    <summary class="report-summary-red">Your Red Flags</summary>
+                    <div id="own-red-flag-report" class="report-content">
+                        <!-- Own red flags will be populated here -->
+                    </div>
+                </details>
+                <details class="report-details" open>
+                    <summary class="report-summary-neutral">Your Clinical Report</summary>
+                    <div id="own-clinical-report" class="report-content">
+                        <!-- Own clinical report will be populated here -->
+                    </div>
+                </details>
+            </div>
+            <div class="player-report-group">
+                <h3 class="player-report-title">Partner's Report</h3>
+                <details class="report-details">
+                    <summary class="report-summary-green">Partner's Green Flags</summary>
+                    <div id="partner-green-flag-report" class="report-content">
+                        <!-- Partner's green flags will be populated here -->
+                    </div>
+                </details>
+                <details class="report-details">
+                    <summary class="report-summary-red">Partner's Red Flags</summary>
+                    <div id="partner-red-flag-report" class="report-content">
+                        <!-- Partner's red flags will be populated here -->
+                    </div>
+                </details>
+                <details class="report-details">
+                    <summary class="report-summary-neutral">Partner's Clinical Report</summary>
+                    <div id="partner-clinical-report" class="report-content">
+                        <!-- Partner's clinical report will be populated here -->
+                    </div>
+                </details>
+            </div>
         </div>
 
         <div class="mt-6 text-center">

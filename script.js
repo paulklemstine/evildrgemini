@@ -43,8 +43,10 @@ const loadingIndicator = document.getElementById('loading');
 const interstitialScreen = document.getElementById('interstitial-screen');
 const interstitialSpinner = document.getElementById('interstitial-spinner');
 const interstitialReports = document.getElementById('interstitial-reports');
-const greenFlagReport = document.getElementById('green-flag-report');
-const redFlagReport = document.getElementById('red-flag-report');
+const ownGreenFlagReport = document.getElementById('own-green-flag-report');
+const ownRedFlagReport = document.getElementById('own-red-flag-report');
+const partnerGreenFlagReport = document.getElementById('partner-green-flag-report');
+const partnerRedFlagReport = document.getElementById('partner-red-flag-report');
 const interstitialContinueButton = document.getElementById('interstitial-continue-button');
 const submitButton = document.getElementById('submit-turn');
 const apiKeyInput = document.getElementById('apiKeyInput');
@@ -524,30 +526,41 @@ async function generateLocalTurn(orchestratorText, playerRole) {
 
         // --- Interstitial Logic ---
         if (Array.isArray(uiJson)) {
-            const greenFlags = uiJson.find(el => el.name === 'green_flags');
-            const redFlags = uiJson.find(el => el.name === 'red_flags');
-            const ownReport = uiJson.find(el => el.name === 'own_clinical_analysis');
-            const partnerReport = uiJson.find(el => el.name === 'partner_clinical_analysis');
+            const findReport = (name) => uiJson.find(el => el.name === name);
 
-            // Get the report containers
-            const greenFlagReportContainer = document.getElementById('green-flag-report');
-            const redFlagReportContainer = document.getElementById('red-flag-report');
+            const reports = {
+                ownGreen: findReport('own_green_flags'),
+                ownRed: findReport('own_red_flags'),
+                partnerGreen: findReport('partner_green_flags'),
+                partnerRed: findReport('partner_red_flags'),
+                ownClinical: findReport('own_clinical_analysis'),
+                partnerClinical: findReport('partner_clinical_analysis')
+            };
+
             const ownClinicalReportContainer = document.getElementById('own-clinical-report');
             const partnerClinicalReportContainer = document.getElementById('partner-clinical-report');
 
-            // Populate reports, handling cases where they might be missing
-            greenFlagReportContainer.innerHTML = (greenFlags && greenFlags.value) ? greenFlags.value.replace(/\\n/g, '<br>') : '<em>No specific green flags noted.</em>';
-            redFlagReportContainer.innerHTML = (redFlags && redFlags.value) ? redFlags.value.replace(/\\n/g, '<br>') : '<em>No specific red flags noted.</em>';
-            ownClinicalReportContainer.innerHTML = (ownReport && ownReport.value) ? ownReport.value.replace(/\\n/g, '<br>') : '<em>Your clinical report is not available.</em>';
-            partnerClinicalReportContainer.innerHTML = (partnerReport && partnerReport.value) ? partnerReport.value.replace(/\\n/g, '<br>') : '<em>Your partner\'s clinical report is not available.</em>';
+            // Helper to populate a report container
+            const populateReport = (container, reportData, defaultText) => {
+                if (container) {
+                    container.innerHTML = (reportData && reportData.value) ? reportData.value.replace(/\\n/g, '<br>') : `<em>${defaultText}</em>`;
+                }
+            };
+
+            populateReport(ownGreenFlagReport, reports.ownGreen, 'No specific green flags noted.');
+            populateReport(ownRedFlagReport, reports.ownRed, 'No specific red flags noted.');
+            populateReport(partnerGreenFlagReport, reports.partnerGreen, 'No specific green flags noted.');
+            populateReport(partnerRedFlagReport, reports.partnerRed, 'No specific red flags noted.');
+            populateReport(ownClinicalReportContainer, reports.ownClinical, 'Your clinical report is not available.');
+            populateReport(partnerClinicalReportContainer, reports.partnerClinical, 'Your partner\'s clinical report is not available.');
 
         } else {
             console.warn("API response for UI is not an array, skipping interstitial report generation.", uiJson);
             // Clear all reports if the response is invalid
-            document.getElementById('green-flag-report').innerHTML = '<em>Could not parse analysis.</em>';
-            document.getElementById('red-flag-report').innerHTML = '<em>Could not parse analysis.</em>';
-            document.getElementById('own-clinical-report').innerHTML = '<em>Could not parse analysis.</em>';
-            document.getElementById('partner-clinical-report').innerHTML = '<em>Could not parse analysis.</em>';
+            const reportsToClear = [ownGreenFlagReport, ownRedFlagReport, partnerGreenFlagReport, partnerRedFlagReport, document.getElementById('own-clinical-report'), document.getElementById('partner-clinical-report')];
+            reportsToClear.forEach(report => {
+                if(report) report.innerHTML = '<em>Could not parse analysis.</em>';
+            });
         }
 
 
@@ -1304,7 +1317,7 @@ function setLoading(loading, isFirstTurn = false) {
     const keyPresent = apiKeyInput.value.trim().length > 0;
     submitButton.disabled = loading || !(apiKeyLocked || keyPresent);
     modeToggleButton.disabled = loading;
-    resetGameButton.disabled = loading || !apiKeyLocked;
+    resetGameButton.disabled = loading;
     uiContainer.querySelectorAll('input, textarea, button, .analysis-toggle-container, .geems-radio-option, .geems-checkbox-option').forEach(el => {
         if (el.id !== 'submit-turn' && el.id !== 'modeToggleButton' && el.id !== 'resetGameButton') {
             if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'BUTTON') el.disabled = loading;
@@ -1930,7 +1943,6 @@ submitButton.addEventListener('click', () => {
 apiKeyInput.addEventListener('input', () => {
     const keyPresent = apiKeyInput.value.trim().length > 0;
     submitButton.disabled = isLoading || !(apiKeyLocked || keyPresent);
-    resetGameButton.disabled = isLoading || (!apiKeyLocked && !keyPresent);
 });
 
 modeToggleButton.addEventListener('click', () => {
