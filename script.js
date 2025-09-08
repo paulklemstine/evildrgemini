@@ -1307,8 +1307,14 @@ function setLoading(loading, isFirstTurn = false) {
             interstitialSpinner.style.display = 'flex';
             interstitialReports.classList.add('hidden');
             interstitialContinueButton.disabled = true;
-            greenFlagReport.innerHTML = 'Generating...';
-            redFlagReport.innerHTML = 'Generating...';
+            if (ownGreenFlagReport) ownGreenFlagReport.innerHTML = 'Generating...';
+            if (ownRedFlagReport) ownRedFlagReport.innerHTML = 'Generating...';
+            if (partnerGreenFlagReport) partnerGreenFlagReport.innerHTML = 'Generating...';
+            if (partnerRedFlagReport) partnerRedFlagReport.innerHTML = 'Generating...';
+            const ownClinical = document.getElementById('own-clinical-report');
+            if (ownClinical) ownClinical.innerHTML = 'Generating...';
+            const partnerClinical = document.getElementById('partner-clinical-report');
+            if (partnerClinical) partnerClinical.innerHTML = 'Generating...';
             interstitialScreen.style.display = 'flex';
         }
         // When loading is false, the interstitial is hidden by the continue button, not here.
