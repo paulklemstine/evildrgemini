@@ -702,7 +702,11 @@ async function initiateSinglePlayerTurn(turnData, history = []) {
 
     } catch (error) {
         console.error("Error during single-player turn generation:", error);
-        showError("Failed to generate the next turn. Please try again.");
+        let userMessage = "Failed to generate the next turn. Please try again.";
+        if (error.message && error.message.includes('503')) {
+            userMessage = "The AI is currently overloaded. Please wait a moment and resubmit your turn.";
+        }
+        showError(userMessage);
         setLoading(false);
     }
 }
@@ -735,7 +739,16 @@ async function initiateTurnAsPlayer1(turnData) {
 
     } catch (error) {
         console.error("Error during orchestrator call:", error);
-        showError("Failed to get turn instructions from AI. Please try again.");
+        let userMessage = "Failed to get turn instructions from AI. Please try again.";
+        if (error.message && error.message.includes('503')) {
+            userMessage = "The AI is currently overloaded. Please wait a moment and resubmit your turn.";
+            // Notify Player 2
+            MPLib.sendDirectToRoomPeer(currentPartnerId, {
+                type: 'llm_overloaded',
+                payload: {}
+            });
+        }
+        showError(userMessage);
         setLoading(false); // Hide spinner on error
     }
 }
@@ -776,6 +789,10 @@ async function callGeminiApiWithRetry(prompt, responseMimeType = "application/js
         } catch (error) {
             console.error(`Error with model ${currentModel} (Attempt ${attempts}):`, error);
             lastError = error;
+
+            if (error.message && error.message.includes('503')) {
+                throw new Error("LLM service is currently overloaded (503). Please try again shortly.");
+            }
 
             // Specifically check for a quota error (429) or invalid key error (400) and if it was the primary key that failed.
             if (error.message && (error.message.includes('429') || error.message.includes('API_KEY_INVALID'))) {
@@ -1792,6 +1809,11 @@ function handleRoomDataReceived(senderId, data) {
             // Manually close the connection. The 'onclose' handler in MPLib
             // will then trigger the onRoomPeerLeft callback, which handles UI updates.
             MPLib.closeConnection(senderId);
+            break;
+        case 'llm_overloaded':
+            console.log("Received LLM overloaded message from partner.");
+            showError("The AI is currently overloaded. Please wait a moment and resubmit your turn.");
+            setLoading(false); // This will re-enable the submit button and hide loading indicators.
             break;
         default:
             console.warn(`Received unknown message type '${data.type}' from ${senderId.slice(-6)}`);
