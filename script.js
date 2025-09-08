@@ -287,7 +287,10 @@ function updateLocalProfileFromTurn(actions) {
             // Broadcast the updated profile to all peers in the room.
             MPLib.broadcastToRoom({
                 type: 'profile_update',
-                payload: profile
+                payload: {
+                    masterId: MPLib.getLocalMasterId(),
+                    profile: profile
+                }
             });
 
             // If we are in the lobby, re-render to show our own profile update
@@ -1841,12 +1844,19 @@ function handleRoomDataReceived(senderId, data) {
             break;
         case 'profile_update':
             console.log(`Received profile update from ${senderId.slice(-6)}`, data.payload);
-            // Use the Master ID for storage to keep it consistent
-            const masterId = MPLib.getRoomConnections().get(senderId)?.metadata?.masterId || senderId;
+            // Use the Master ID from the payload for reliable storage
+            const masterId = data.payload.masterId;
+            const profile = data.payload.profile;
+
+            if (!masterId || !profile) {
+                console.error("Received malformed profile_update:", data);
+                return;
+            }
+
             if (!remoteGameStates.has(masterId)) {
                 remoteGameStates.set(masterId, {});
             }
-            remoteGameStates.get(masterId).profile = data.payload;
+            remoteGameStates.get(masterId).profile = profile;
             console.log(`Updated remote profile for ${masterId.slice(-6)}`);
 
             // Re-render the lobby if it's currently being viewed to show updates live.
@@ -2054,6 +2064,9 @@ function renderLobby() {
         // This prevents rendering the "seed" peer, which doesn't have this metadata.
         if (conn && conn.open && conn.metadata?.masterId) {
             const peerMasterId = conn.metadata.masterId;
+            // Final check to prevent rendering a card for ourselves.
+            if (peerMasterId === localMasterId) return;
+
             const remoteState = remoteGameStates.get(peerMasterId) || {};
             // Make sure we have a profile, even a default one, to avoid errors
             const peerProfile = remoteState.profile || { name: `User-${peerMasterId.slice(-4)}`, gender: "Unknown", physical: {}, personality: {} };
