@@ -660,12 +660,17 @@ function checkForTurnCompletion() {
         }
 
         console.log("I am Player 1. Initiating the next turn generation.");
+
+        // Determine if the turn is explicit based on BOTH players' current mode.
+        const turnIsExplicit = (playerA_actions.isExplicit === true) && (playerB_actions.isExplicit === true);
+        console.log(`Turn explicit status determined by player submissions: ${turnIsExplicit}`);
+
         initiateTurnAsPlayer1({
             playerA_actions: playerA_actions,
             playerB_actions: playerB_actions,
             playerA_notes: playerA_actions.notes,
             playerB_notes: playerB_actions.notes,
-            isExplicit: isDateExplicit,
+            isExplicit: turnIsExplicit, // Use the calculated value for this specific turn
             history: historyQueue
         });
 
