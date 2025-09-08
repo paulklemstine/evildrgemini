@@ -195,17 +195,24 @@ function autoSaveGameState() {
 function getLocalProfile() {
     try {
         const profileJson = localStorage.getItem(LOCAL_PROFILE_KEY);
-        return profileJson ? JSON.parse(profileJson) : {
-            name: "Anonymous",
-            gender: "Unknown",
-            physical: {}, // For attributes like hair, eyes, etc.
-            personality: {} // For Dr. Gemini's notes
+        const profile = profileJson ? JSON.parse(profileJson) : {};
+
+        // Ensure the profile has a consistent structure to prevent errors downstream
+        return {
+            name: profile.name || "Anonymous",
+            gender: profile.gender || "Unknown",
+            physical: profile.physical || {},
+            personality: profile.personality || {},
+            greenFlags: profile.greenFlags || [],
+            redFlags: profile.redFlags || []
         };
     } catch (e) {
         console.error("Error reading local profile:", e);
-        return { name: "Anonymous", gender: "Unknown", physical: {}, personality: {} };
+        // Return a failsafe default structure
+        return { name: "Anonymous", gender: "Unknown", physical: {}, personality: {}, greenFlags: [], redFlags: [] };
     }
 }
+
 
 /**
  * Extracts profile information from a turn's actions and saves it.
@@ -217,11 +224,10 @@ function updateLocalProfileFromTurn(actions) {
     const profile = getLocalProfile();
     let updated = false;
 
-    // Define keys that represent profile data
+    // Define keys that represent direct profile data
     const profileKeys = {
         'player_name': 'name',
         'player_gender': 'gender'
-        // Physical attributes will be handled separately
     };
 
     // Update top-level profile fields
@@ -237,8 +243,13 @@ function updateLocalProfileFromTurn(actions) {
     }
 
     // Specifically handle physical attributes which might be nested or varied
+    // This ensures the 'physical' object exists before we try to assign to it.
+    if (!profile.physical) {
+        profile.physical = {};
+    }
     const physicalKeys = ['hair_style', 'eye_color', 'build', 'clothing_style', 'distinguishing_feature'];
     for(const key of physicalKeys) {
+        // Only update if the key exists in actions and is different from the current value
         if(actions[key] && profile.physical[key] !== actions[key]) {
              profile.physical[key] = actions[key];
              updated = true;
@@ -248,12 +259,25 @@ function updateLocalProfileFromTurn(actions) {
 
     // Extract the detailed psychological profile from the 'notes' field
     if (actions.notes) {
+         if (!profile.personality) profile.personality = {};
         if (profile.personality.notes !== actions.notes) {
             profile.personality.notes = actions.notes;
             updated = true;
             console.log("Updated personality notes.");
         }
     }
+     // Extract red and green flags
+    if (actions.green_flags && JSON.stringify(profile.greenFlags) !== JSON.stringify(actions.green_flags)) {
+        profile.greenFlags = actions.green_flags;
+        updated = true;
+        console.log("Updated green flags.");
+    }
+     if (actions.red_flags && JSON.stringify(profile.redFlags) !== JSON.stringify(actions.red_flags)) {
+        profile.redFlags = actions.red_flags;
+        updated = true;
+        console.log("Updated red flags.");
+    }
+
 
     if (updated) {
         try {
@@ -1666,11 +1690,28 @@ function handleRoomConnected(id) {
             isPublic: currentRoomIsPublic
         }
     });
+
+    // When we connect to a room, broadcast our profile to everyone already there.
+    const myProfile = getLocalProfile();
+    MPLib.broadcastToRoom({
+        type: 'profile_update',
+        payload: myProfile
+    });
+    console.log("Broadcasted own profile to room on connect.");
 }
 
 function handleRoomPeerJoined(peerId, conn) {
     console.log(`MPLib Event: Peer joined room - ${peerId.slice(-6)}`);
     showNotification(`Peer ${peerId.slice(-6)} joined the room.`, 'success', 2000);
+
+    // When a new peer joins, send them our current profile directly.
+    const myProfile = getLocalProfile();
+    MPLib.sendDirectToRoomPeer(peerId, {
+        type: 'profile_update',
+        payload: myProfile
+    });
+    console.log(`Sent direct profile update to new peer ${peerId.slice(-6)}`);
+
 
     // If a date is active, don't disrupt the UI by re-rendering the lobby.
     if (isDateActive) {
@@ -1968,7 +2009,7 @@ function renderLobby() {
     lobbyContainer.style.display = 'block';
     if(gameWrapper) gameWrapper.style.display = 'none';
 
-    lobbyContainer.innerHTML = '<h2>Welcome to the Lobby</h2>';
+    lobbyContainer.innerHTML = `<h2>Welcome to the ${currentRoomName || 'Lobby'}</h2><p>The following players are in this room. You can propose a date to start a new game.</p>`;
     const grid = document.createElement('div');
     grid.className = 'lobby-grid';
 
@@ -1993,9 +2034,12 @@ function renderLobby() {
         if (conn && conn.open) {
             const peerMasterId = conn.metadata?.masterId || conn.peer; // Fallback to room ID
             const remoteState = remoteGameStates.get(peerMasterId) || {};
+            // Make sure we have a profile, even a default one, to avoid errors
+            const peerProfile = remoteState.profile || { name: `User-${peerMasterId.slice(-4)}`, gender: "Unknown", physical: {}, personality: {} };
+
             playersToRender.push({
                 id: peerMasterId,
-                profile: remoteState.profile || { name: `User-${peerMasterId.slice(-4)}`, gender: "Unknown", physical: {} },
+                profile: peerProfile,
                 isLocal: false,
                 roomConnection: conn // Pass the connection for the button
             });
@@ -2003,7 +2047,7 @@ function renderLobby() {
     });
 
     if (playersToRender.length <= 1) { // Only local player is here
-        grid.innerHTML = '<p>No other users are currently online. Please wait for someone to connect.</p>';
+        grid.innerHTML = '<div class="text-center col-span-full py-8"><p class="text-gray-500">You are the only one here. Share the link with a friend to start a date!</p></div>';
     } else {
         playersToRender.forEach(player => {
             const card = document.createElement('div');
@@ -2012,13 +2056,18 @@ function renderLobby() {
                 card.classList.add('local-player-card');
             }
 
+            // --- Avatar ---
             const avatarPrompt = generateAvatarPrompt(player.profile);
+            // Use the master ID for a consistent seed
             const randomSeed = player.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
             const avatarUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(avatarPrompt)}?seed=${randomSeed}&nologo=true&safe=false`;
-
             const avatar = document.createElement('div');
             avatar.className = 'profile-avatar';
-            avatar.innerHTML = `<img src="${avatarUrl}" alt="Avatar for ${player.profile.name}">`;
+            avatar.innerHTML = `<img src="${avatarUrl}" alt="Avatar for ${player.profile.name}" loading="lazy">`;
+
+            // --- Info ---
+            const info = document.createElement('div');
+            info.className = 'profile-info';
 
             const name = document.createElement('div');
             name.className = 'profile-name';
@@ -2026,11 +2075,28 @@ function renderLobby() {
 
             const gender = document.createElement('div');
             gender.className = 'profile-gender';
-            gender.textContent = player.profile.gender || 'Unknown';
+            gender.textContent = player.profile.gender || 'Not specified';
 
-            card.appendChild(avatar);
-            card.appendChild(name);
-            card.appendChild(gender);
+            info.appendChild(name);
+            info.appendChild(gender);
+
+            // --- Details (Physical Traits) ---
+            const details = document.createElement('div');
+            details.className = 'profile-details';
+            if (player.profile.physical && Object.keys(player.profile.physical).length > 0) {
+                const traits = Object.entries(player.profile.physical)
+                    .map(([key, value]) => `<li><strong>${key.replace(/_/g, ' ')}:</strong> ${value}</li>`)
+                    .join('');
+                details.innerHTML = `<ul>${traits}</ul>`;
+            } else {
+                details.innerHTML = '<p class="text-sm text-gray-400">No physical details provided yet.</p>';
+            }
+             info.appendChild(details);
+
+
+            // --- Actions (Button) ---
+            const actions = document.createElement('div');
+            actions.className = 'profile-actions';
 
             if (!player.isLocal) {
                 const button = document.createElement('button');
@@ -2068,14 +2134,17 @@ function renderLobby() {
                     button.textContent = 'Connecting...';
                     button.disabled = true;
                 }
-                card.appendChild(button);
+                actions.appendChild(button);
             } else {
                 const localPlayerLabel = document.createElement('div');
                 localPlayerLabel.className = 'local-player-label';
                 localPlayerLabel.textContent = '(This is you)';
-                card.appendChild(localPlayerLabel);
+                actions.appendChild(localPlayerLabel);
             }
 
+            card.appendChild(avatar);
+            card.appendChild(info);
+            card.appendChild(actions);
             grid.appendChild(card);
         });
     }
