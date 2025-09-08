@@ -7,7 +7,7 @@ import MPLib from './mp.js';
 // --- Game State Variables ---
 let hasPrimaryApiKeyFailed = false;
 let historyQueue = [];
-const MAX_HISTORY_SIZE = 20;
+const MAX_HISTORY_SIZE = 10; // Keep track of the last 10 game turns
 let currentUiJson = null;
 let currentNotes = {};
 let currentSubjectId = "";
@@ -118,13 +118,13 @@ function decodeApiKey(encodedKey) {
 /** Constructs the full prompt for the Gemini API call based on the prompt type. */
 function constructPrompt(promptType, turnData) {
     const {
-        playerA_id,
-        playerB_id,
         playerA_actions,
         playerB_actions,
         playerA_notes,
         playerB_notes,
-        isExplicit = false
+        isExplicit = false,
+        isFirstTurn = false, // Extract the new flag
+        history = []
     } = turnData;
 
     const activeAddendum = isExplicit ? `\n\n---\n${geemsPrompts.masturbationModeAddendum}\n---\n` : "";
@@ -133,14 +133,28 @@ function constructPrompt(promptType, turnData) {
     switch (promptType) {
         case 'orchestrator':
             prompt = geemsPrompts.orchestrator;
-            prompt += `\n\n---\nPREVIOUS STATE & ACTIONS\n---\n`;
+            // Append the first run addendum if it's the first turn.
+            if (isFirstTurn) {
+                prompt += geemsPrompts.firstrun_addendum;
+            }
+
+            // Add history section if it exists
+            if (history && history.length > 0) {
+                const historyString = history.map((turn, index) =>
+                    `Turn ${history.length - index} ago:\n- UI displayed to player:\n${turn.ui}\n- Player actions taken:\n${turn.actions}`
+                ).join('\n\n');
+                prompt += `\n\n---\nCONTEXT: LAST ${history.length} TURNS (Most recent first)\n---\n${historyString}`;
+            }
+
+            prompt += `\n\n---\nLATEST TURN DATA\n---\n`;
             prompt += `player_input_A: ${JSON.stringify(playerA_actions)}\n`;
             prompt += `previous_notes_A: \`\`\`markdown\n${playerA_notes}\n\`\`\`\n\n`;
             prompt += `player_input_B: ${JSON.stringify(playerB_actions)}\n`;
             prompt += `previous_notes_B: \`\`\`markdown\n${playerB_notes}\n\`\`\`\n`;
             prompt += activeAddendum;
             prompt += `\n--- Generate instructions for both players based on the above. ---`;
-            console.log("Generated Orchestrator Prompt.");
+            if(isFirstTurn) console.log("Generated First Turn Orchestrator Prompt.");
+            else console.log("Generated Orchestrator Prompt.");
             break;
 
         // The 'main' prompt is now called directly, so no case is needed here.
@@ -652,7 +666,8 @@ function checkForTurnCompletion() {
             playerB_actions: playerB_actions,
             playerA_notes: playerA_actions.notes,
             playerB_notes: playerB_actions.notes,
-            isExplicit: isDateExplicit
+            isExplicit: isDateExplicit,
+            history: historyQueue
         });
 
         turnSubmissions.clear();
@@ -663,7 +678,7 @@ function checkForTurnCompletion() {
     }
 }
 
-async function initiateSinglePlayerTurn(turnData) {
+async function initiateSinglePlayerTurn(turnData, history = []) {
     console.log("Initiating single-player turn...");
     setLoading(true, true);
 
@@ -675,7 +690,8 @@ async function initiateSinglePlayerTurn(turnData) {
             playerB_actions: turnData,
             playerA_notes: turnData.notes,
             playerB_notes: turnData.notes,
-            isExplicit: isExplicitMode
+            isExplicit: isExplicitMode,
+            history: history
         };
 
         const orchestratorPrompt = constructPrompt('orchestrator', orchestratorTurnData);
@@ -1883,7 +1899,7 @@ submitButton.addEventListener('click', () => {
     } else {
         // --- Single-Player Logic ---
         console.log("Submit button clicked (single-player mode).");
-        initiateSinglePlayerTurn(playerActions);
+        initiateSinglePlayerTurn(playerActions, historyQueue);
     }
 });
 // --- MODIFICATION END: Long Press Logic ---
@@ -1910,9 +1926,10 @@ resetGameButton.addEventListener('click', () => {
         // Clear all relevant local storage items
         localStorage.removeItem(LOCAL_STORAGE_KEY);
         localStorage.removeItem('sparksync_apiKey');
+        localStorage.removeItem(LOCAL_PROFILE_KEY); // Also delete the user's profile
         localStorage.removeItem('sparksync_hivemind');
         localStorage.removeItem('sparksync_lastLobby');
-        console.log("Cleared localStorage.");
+        console.log("Cleared localStorage, including user profile.");
 
         // Reload the page to go back to the lobby selection
         window.location.reload();
@@ -2108,33 +2125,33 @@ function startNewDate(partnerId, iAmPlayer1) {
 }
 
 async function fetchFirstTurn() {
-    console.log("Fetching first turn from AI...");
+    console.log("Fetching first turn using the Orchestrator...");
     const loadingText = document.getElementById('loading-text');
     if (loadingText) {
-        loadingText.textContent = 'Generating first turn... Please wait.';
+        loadingText.textContent = 'Inventing a new scenario... Please wait.';
     }
     setLoading(true, true); // Use the simple spinner for the first turn
-    try {
-        const prompt = geemsPrompts.master_ui_prompt + geemsPrompts.firstrun_addendum;
-        console.log("Generated First Run Prompt.");
-        const uiJsonString = await callGeminiApiWithRetry(prompt);
-        const uiJson = JSON.parse(uiJsonString);
 
-        // Render the UI for Player 1
-        currentUiJson = uiJson;
-        renderUI(currentUiJson);
-        playTurnAlertSound();
-        setLoading(false, true); // Stop P1's loading spinner
-        submitButton.disabled = false;
+    // Load the local profile to provide context to the AI if it exists.
+    const localProfile = getLocalProfile();
+    const profileString = `Player A's saved profile: ${JSON.stringify(localProfile)}. If profile data exists, use it when creating the notes and UI. Otherwise, ensure the UI probes for it.`;
 
-        // Send the generated UI to Player 2
-        MPLib.sendDirectToRoomPeer(currentPartnerId, { type: 'new_turn_ui', payload: currentUiJson });
+    // For the first turn, there are no previous actions or notes.
+    // The orchestrator will be guided by the 'firstrun_addendum'.
+    const initialTurnData = {
+        playerA_actions: { turn: 0, action: "game_start" },
+        playerB_actions: { turn: 0, action: "game_start" },
+        // The notes provide a clear starting point for the orchestrator AI.
+        playerA_notes: `## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 1, I have arrived first. Please generate a new scene and starting UI for both players. ${profileString}`,
+        playerB_notes: "## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 2, I am just arriving. Please generate a new scene and starting UI for both players.",
+        isExplicit: isDateExplicit,
+        // Add a flag to indicate this is the first turn, so the prompt can be adjusted.
+        isFirstTurn: true
+    };
 
-    } catch (error) {
-        console.error("Error fetching first turn:", error);
-        showError("Could not start the date. Please try again.");
-        setLoading(false, true); // Ensure loading is turned off on error
-    }
+    // We can now just call the same function used for all subsequent turns.
+    // This simplifies the logic and ensures consistency.
+    await initiateTurnAsPlayer1(initialTurnData);
 }
 
 

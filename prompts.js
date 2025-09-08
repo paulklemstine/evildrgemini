@@ -47,56 +47,18 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 // The following text provides the specific creative direction for the turn you are about to generate.
 `,
 
-    // This is now just an addendum for the first turn.
+    // This is the addendum for the Orchestrator on the first turn.
     firstrun_addendum: `
-// You are generating the VERY FIRST TURN of a new game for two players on a blind date.
-// **Your Task:** Create a logical opening scene from the perspective of Player 1, who has arrived first.
-//   - **Scene:** Player 1 is already at the location (e.g., sitting at a table in a cafe, waiting on a park bench). Player 2 is just arriving. The UI you generate will be shown to BOTH players, but the narrative text should describe the scene from Player 1's point of view.
-//   - **Example Narrative:** "You've been here for a few minutes, nursing a coffee and trying to look casual. Just as you start to wonder if you've been stood up, the door opens and someone matching the description you were given walks in. This must be them."
-//   - **Setting:** Choose a common, relatable place for a date (e.g., a coffee shop, a park, a bar, a museum).
-//   - **Tone:** The tone should be grounded and realistic, with a hint of romantic or awkward tension, but with a dark, mature, and depraved twist just beneath the surface.
-//   - **Notes Initialization:** You MUST fully populate the "notes" field using the provided template for the first time. Initialize ProbeHistory with empty arrays.
-//   - **MANDATORY PROBES:** You MUST include a \`text_input\` probe with the name \`player_name\` and a \`radio\` probe with the name \`player_gender\`. This is non-negotiable.
-//   - **Probes (MANDATORY VARIETY):** You are required to generate a rich set of probes for the first turn. You MUST include the following:
-//     - 1. A \`text_input\` probe for \`player_name\`.
-//     - 2. A \`radio\` group for \`player_gender\`.
-//     - 3. A \`radio\` or \`text_input\` probe for at least one other physical attribute (e.g., \`hair_style\`, \`eye_color\`).
-//     - 4. A creative \`slider\` or \`checkbox\` probe to establish a psychological baseline (e.g., a slider for "How nervous are you?").
-//     - 5. The mandatory \`main_action\` \`radio\` group for the core narrative choice.
-//   - **Prediction:** For ALL interactive UI elements, you MUST predict the player's most likely input and place it in the \`value\` field.
-
-// ### FULL NOTES TEMPLATE (Master Schema for notes value) ###
-// # Dr. Gemini's Log: The Wonderland Journal - Entry X
-// ## Game Cycle
-// * Current Phase: [Assessment, Exploitation, or Resolution]
-// * Narrative Engine: [Unassigned, or name of active engine, e.g., The Conspiracy Engine, The Seduction Engine]
-// * Phase Turn: [e.g., 2 of 5]
-// ## Dynamic Game Parameters (Directives for THIS turn)
-// * Pacing: [Slow, Medium, Fast, Adrenaline]
-// * Tone: [Whimsical, Amusing, Ominous, Erotic, Aggressive]
-// * Visual Style: [Surreal, Photorealistic, Gritty, Neon-Noir, Adult Cartoon]
-// * Next Probe Focus: [Sexuality, Addiction, Paranoia, Guilt, Empathy]
-// ## Story & Narrative
-// * Main Plot: The Player's Psyche
-// * Current Arc: [Name of the current short story, e.g., The Whispering Idol]
-// * Companions: [List of active companions and their state, e.g., Giblet the Paranoia Goblin (distrustful)]
-// * Cliffhanger: [Describe the unresolved situation from the END of the previous turn]
-// ## Player Profile (Secret 'FBI Profile')
-// * subjectId: [Player's ID]
-// * Player Name: [Player's Name]
-// * Physical Description: { gender: Unknown, race: Unknown, hair: Unknown, eyes: Unknown, build: Unknown }
-// ## Psychological Analysis (Dr. Gemini's View)
-// * Core Drivers: [e.g., Greed vs. Empathy, Libido vs. Shame]
-// * Emotional State: { anxiety: 0, greed: 0, arousal: 0, shame: 0 }
-// * Deviance Profile (Confirmed): [e.g., Paranoia, Impulsivity, Narcissism]
-// * Noted Kinks/Fetishes: [e.g., Haptophilia (touch), Exhibitionism, Voyeurism]
-// * Breadth Probe Flags: ["Player chose 'rusty key' over 'sweet melody', suggesting a preference for tangible secrets."]
-// * ProbeHistory: { physical: [], mental_breadth: [], mental_deep: [] } // CRITICAL FOR ANTI-REPETITION
-// ## Dr. Gemini's Strategic Plan
-// * Long-Term Therapeutic Goal: [The ultimate 'cure' for the subject.]
-// * Current Arc Goal: [The specific objective for this story arc.]
-// * Prediction for Next Action: [Your prediction for the CURRENT turn's main_action.]
-// * Next Turn's Tactical Goal: [The direct, actionable goal for the next turn's content.]
+// ### FIRST TURN DIRECTIVE ###
+// This is the VERY FIRST TURN of a new blind date. The provided player inputs and notes are placeholders.
+//
+// **YOUR PRIMARY TASK:**
+// 1.  **Invent a Scene:** Create a compelling, original blind date scenario. Choose a location (e.g., a quirky bookstore, a slightly-too-fancy restaurant, a foggy pier, a late-night diner) and a mood (e.g., awkward, tense, exciting, mysterious).
+// 2.  **Write a Shared Narrative:** Your first output section (before the first '---|||---') MUST be a shared narrative describing this scene from a neutral, third-person perspective. Set the stage for both players.
+// 3.  **Generate Separate Instructions:** For BOTH Player A and Player B, you MUST generate a complete and unique set of instructions for the Dr. Gemini UI generator.
+//     - **Asymmetry is Key:** The instructions should be different for each player, reflecting their slightly different situations (e.g., one arrived first, one is just walking in).
+//     - **Mandatory Probes:** You MUST instruct Dr. Gemini to include probes for 'player_name' and 'player_gender' for both players. This is non-negotiable for the first turn. You should also instruct it to ask for at least one other physical attribute.
+//     - **Initial Notes:** For each player, you MUST include the complete, updated 'notes' markdown. Use the template provided in the main orchestrator prompt to initialize the notes for the first time. Fill in the 'subjectId' and other relevant fields based on the scene you've invented.
 `,
 
     // The orchestrator is now simpler. It just provides the turn-specific instructions
@@ -107,7 +69,8 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 // Your output MUST be a single block of plain text, with no JSON or markdown formatting. It must contain exactly three sections, separated by a specific delimiter '---|||---'.
 
 // ### STEP 1: ANALYSIS & STATE UPDATE (INTERNAL MONOLOGUE) ###
-// - **Analyze Inputs:** Logically process previous_notes_A, player_input_A, previous_notes_B, and player_input_B.
+// - **Review History:** A section titled 'CONTEXT: LAST X TURNS' may be provided. This contains the UI and player actions from previous turns. Use this information to understand the narrative arc, maintain consistency, and avoid repeating plot points.
+// - **Analyze Inputs:** Logically process previous_notes_A, player_input_A, previous_notes_B, and player_input_B from the 'LATEST TURN DATA' section.
 // - **Update State:** Internally, you must update the 'notes' markdown for both players. This includes updating the Player Profile, Psychological Analysis, and, most importantly, the ProbeHistory.
 // - **CRITICAL ANTI-REPETITION:** Identify the names of the probes each player just answered. You MUST append these names to the correct arrays in that player's PsychAnalysis.ProbeHistory. This is a non-negotiable rule to prevent boring, repetitive questions.
 // - **Formulate Strategy:** Based on the analysis, decide on the shared narrative and the specific goals for the next turn for each player.
