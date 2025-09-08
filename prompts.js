@@ -89,10 +89,10 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 //     - The complete, updated 'notes' markdown for that player (which you updated in Step 1).
 //     - **CRITICAL ANTI-REPETITION:** A reminder to Dr. Gemini to not use any probe whose name appears in the updated ProbeHistory.
 //     - **CRITICAL ANALYSIS GENERATION:** A directive for Dr. Gemini to generate SIX hidden text fields for the interstitial screen. You will provide the content for these fields.
-//         - `own_green_flags`: A positive analysis of the player's own actions this turn, framed as self-awareness.
-//         - `own_red_flags`: A critical analysis of the player's own actions this turn, framed as self-reflection.
-//         - `partner_green_flags`: A positive, supportive analysis of the partner's actions this turn.
-//         - `partner_red_flags`: A critical, concerned, or suspicious analysis of the partner's actions this turn.
+//         - \`own_green_flags\`: A positive analysis of the player's own actions this turn, framed as self-awareness.
+//         - \`own_red_flags\`: A critical analysis of the player's own actions this turn, framed as self-reflection.
+//         - \`partner_green_flags\`: A positive, supportive analysis of the partner's actions this turn.
+//         - \`partner_red_flags\`: A critical, concerned, or suspicious analysis of the partner's actions this turn.
 //         - \`own_clinical_analysis\`: The full clinical report for the player receiving the turn.
 //         - \`partner_clinical_analysis\`: The full clinical report for the player's partner.
 //     - To accomplish this, you MUST generate and include the full, updated clinical analysis reports for BOTH players within these instructions. These reports will be used by Dr. Gemini as the 'value' for the 'own_clinical_analysis' and 'partner_clinical_analysis' fields.
