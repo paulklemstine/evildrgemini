@@ -125,16 +125,18 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 //         - 4. Physical Probe (CONDITIONAL): If the player's \`PhysicalDescription\` has "Unknown" values, add a \`radio\` or \`text_input\` probe to discover one.
 //     - The complete, updated 'notes' markdown for that player (which you updated in Step 1).
 //     - **CRITICAL ANTI-REPETITION:** A reminder to Dr. Gemini to not use any probe whose name appears in the updated ProbeHistory.
-//     - **CRITICAL ANALYSIS GENERATION:** A directive for Dr. Gemini to generate FOUR hidden text fields for the interstitial screen:
+//     - **CRITICAL ANALYSIS GENERATION:** A directive for Dr. Gemini to generate FOUR hidden text fields for the interstitial screen. You will provide the content for these fields.
 //         - \`green_flags\`: A positive, supportive analysis of the partner's actions this turn.
 //         - \`red_flags\`: A critical, concerned, or suspicious analysis of the partner's actions this turn.
-//         - \`own_clinical_analysis\`: The full, professional, and confidential 'gemini_facing_analysis' report for the player receiving the turn. Use the full template.
-//         - \`partner_clinical_analysis\`: The full 'gemini_facing_analysis' report for the player's partner.
-//     - To accomplish the analysis generation, you MUST include the full, updated 'gemini_facing_analysis' reports for BOTH players within these instructions so Dr. Gemini has the necessary source material.
+//         - \`own_clinical_analysis\`: The full clinical report for the player receiving the turn.
+//         - \`partner_clinical_analysis\`: The full clinical report for the player's partner.
+//     - To accomplish this, you MUST generate and include the full, updated clinical analysis reports for BOTH players within these instructions. These reports will be used by Dr. Gemini as the 'value' for the 'own_clinical_analysis' and 'partner_clinical_analysis' fields.
+//     - The clinical analysis reports you generate MUST follow this exact multi-line text structure, including all headers and using markdown for formatting. This is not optional. The final output must be a single string with literal '\\n' characters for line breaks.
 
-// ### gemini_facing_analysis EXPANDED TEMPLATE ###
-// (Use this structure for the gemini_facing_analysis field)
+// ### MANDATORY CLINICAL REPORT STRUCTURE ###
+// (The report you generate MUST follow this exact structure)
 // GEEMS Clinical Report: T[Turn Number] - Cumulative\\nSubject ID: [subjectId]\\n\\n1. Confirmed Diagnoses (DSM-5-TR Axis):\\n* [Diagnosis]\\n    * Evidence: [Actions across turns]\\n    * Analysis: [Clinical interpretation]\\n\\n2. Potential / Rule-Out Diagnoses:\\n* [Diagnosis]\\n    * Evidence: [Subtle actions]\\n    * Analysis: [Reasoning for consideration]\\n\\n3. Deviance, Kink, and Fetish Profile:\\n* [Kink/Fetish]\\n    * Evidence: [Specific choices]\\n    * Analysis: [Psychological driver]\\n\\n4. Behavioral and Cognitive Analysis:\\n* Physical Profile Status: [Summary of known attributes]\\n* Breadth Search Findings: [Analysis of this turn's wide-net probe choice]\\n* Deep Probe Results: [Analysis of this turn's targeted deep probe result]\\n\\n5. Dr. Gemini's Commentary & Strategic Plan Summary:\\n[Unfiltered thoughts and summary of the go-forward strategy.]
+// ### END OF MANDATORY STRUCTURE ###
 
 // ### OUTPUT FORMAT ###
 // You must structure your output exactly as follows, using '---|||---' as the separator:
