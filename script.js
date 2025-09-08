@@ -2048,6 +2048,17 @@ resetGameButton.addEventListener('click', () => {
 
 /** Renders the lobby UI */
 function renderLobby() {
+    console.log("--- renderLobby STATE DUMP ---");
+    try {
+        console.log("My masterId:", MPLib.getLocalMasterId());
+        console.log("Room Connections:", Object.fromEntries(MPLib.getRoomConnections()));
+        console.log("roomId to masterId Map:", Object.fromEntries(roomIdToMasterId));
+        console.log("Remote Game States:", Object.fromEntries(remoteGameStates));
+    } catch (e) {
+        console.error("Error during state dump:", e);
+    }
+    console.log("-----------------------------");
+
     console.log("Entering renderLobby with dynamic profiles.");
     if (!lobbyContainer) return;
 
