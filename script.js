@@ -666,21 +666,27 @@ function checkForTurnCompletion() {
 
     if (amIPlayer1) {
         const myRoomId = MPLib.getLocalRoomId();
-        // In a 2p date, there's only one other connection.
-        const partnerRoomId = roomConnections.keys().next().value;
+        // The partner's room ID is stored reliably in `currentPartnerId` when the date starts.
+        // Using this is much safer than iterating over the connections map, which may contain
+        // the seed peer or other transient connections.
+        const partnerRoomId = currentPartnerId;
+
+        if (!partnerRoomId) {
+            showError("FATAL: Partner ID is not set. Aborting turn.");
+            console.error("Cannot check for turn completion without a valid currentPartnerId.");
+            setLoading(false);
+            turnSubmissions.clear();
+            return;
+        }
 
         const playerA_actions = turnSubmissions.get(myRoomId);
         const playerB_actions = turnSubmissions.get(partnerRoomId);
 
         if (!playerA_actions || !playerB_actions) {
-            showError("FATAL: Could not map submissions to players. Aborting turn.");
-            console.error("Submission mapping failed.", {
-                myRoomId,
-                partnerRoomId,
-                keys: Array.from(turnSubmissions.keys())
-            });
-            setLoading(false);
-            turnSubmissions.clear();
+            // This is now expected behavior while waiting for the other player.
+            // We only log an error if both submissions are present but one is bad,
+            // which shouldn't happen with this new logic.
+            console.log(`Still waiting on partner's submission. My submission is ${playerA_actions ? 'ready' : 'not ready'}. Partner's is ${playerB_actions ? 'ready' : 'not ready'}.`);
             return;
         }
 
@@ -747,8 +753,21 @@ async function initiateTurnAsPlayer1(turnData) {
     }
     setLoading(true, true); // Use simple spinner for this phase
 
+    // Enhance turnData with full profiles for the AI
+    const localProfile = getLocalProfile();
+    const partnerMasterId = MPLib.getRoomConnections().get(currentPartnerId)?.metadata?.masterId;
+    const partnerState = partnerMasterId ? remoteGameStates.get(partnerMasterId) : {};
+    const partnerProfile = partnerState?.profile || { name: "Unknown Partner", gender: "Unknown", physical: {}, personality: {} };
+
+    const enhancedTurnData = {
+        ...turnData,
+        playerA_profile: localProfile,
+        playerB_profile: partnerProfile,
+    };
+
+
     try {
-        const orchestratorPrompt = constructPrompt('orchestrator', turnData);
+        const orchestratorPrompt = constructPrompt('orchestrator', enhancedTurnData);
         // The orchestrator now returns a single plain text block
         const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
 
@@ -2031,8 +2050,10 @@ function renderLobby() {
     // Add remote players
     const remotePeers = MPLib.getRoomConnections ? Array.from(MPLib.getRoomConnections().values()) : [];
     remotePeers.forEach(conn => {
-        if (conn && conn.open) {
-            const peerMasterId = conn.metadata?.masterId || conn.peer; // Fallback to room ID
+        // Stricter check: Only render peers that are open and have a persistent masterId.
+        // This prevents rendering the "seed" peer, which doesn't have this metadata.
+        if (conn && conn.open && conn.metadata?.masterId) {
+            const peerMasterId = conn.metadata.masterId;
             const remoteState = remoteGameStates.get(peerMasterId) || {};
             // Make sure we have a profile, even a default one, to avoid errors
             const peerProfile = remoteState.profile || { name: `User-${peerMasterId.slice(-4)}`, gender: "Unknown", physical: {}, personality: {} };
@@ -2092,6 +2113,31 @@ function renderLobby() {
                 details.innerHTML = '<p class="text-sm text-gray-400">No physical details provided yet.</p>';
             }
              info.appendChild(details);
+
+            // --- Flags ---
+            const flags = document.createElement('div');
+            flags.className = 'profile-flags';
+            if (player.profile.greenFlags && player.profile.greenFlags.length > 0) {
+                const greenFlagsList = document.createElement('ul');
+                greenFlagsList.className = 'green-flags';
+                player.profile.greenFlags.forEach(flag => {
+                    const li = document.createElement('li');
+                    li.textContent = flag;
+                    greenFlagsList.appendChild(li);
+                });
+                flags.appendChild(greenFlagsList);
+            }
+            if (player.profile.redFlags && player.profile.redFlags.length > 0) {
+                const redFlagsList = document.createElement('ul');
+                redFlagsList.className = 'red-flags';
+                player.profile.redFlags.forEach(flag => {
+                    const li = document.createElement('li');
+                    li.textContent = flag;
+                    redFlagsList.appendChild(li);
+                });
+                flags.appendChild(redFlagsList);
+            }
+            info.appendChild(flags);
 
 
             // --- Actions (Button) ---
@@ -2225,16 +2271,21 @@ async function fetchFirstTurn() {
 
     // Load the local profile to provide context to the AI if it exists.
     const localProfile = getLocalProfile();
-    const profileString = `Player A's saved profile: ${JSON.stringify(localProfile)}. If profile data exists, use it when creating the notes and UI. Otherwise, ensure the UI probes for it.`;
+    const partnerMasterId = MPLib.getRoomConnections().get(currentPartnerId)?.metadata?.masterId;
+    const partnerState = partnerMasterId ? remoteGameStates.get(partnerMasterId) : {};
+    const partnerProfile = partnerState?.profile || { name: "Unknown Partner", gender: "Unknown", physical: {}, personality: {} };
+
 
     // For the first turn, there are no previous actions or notes.
     // The orchestrator will be guided by the 'firstrun_addendum'.
     const initialTurnData = {
         playerA_actions: { turn: 0, action: "game_start" },
         playerB_actions: { turn: 0, action: "game_start" },
+        playerA_profile: localProfile,
+        playerB_profile: partnerProfile,
         // The notes provide a clear starting point for the orchestrator AI.
-        playerA_notes: `## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 1, I have arrived first. Please generate a new scene and starting UI for both players. ${profileString}`,
-        playerB_notes: "## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 2, I am just arriving. Please generate a new scene and starting UI for both players.",
+        playerA_notes: `## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 1, I have arrived first. Please generate a new scene and starting UI for both players. My profile is: ${JSON.stringify(localProfile)}`,
+        playerB_notes: `## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 2, I am just arriving. Please generate a new scene and starting UI for both players. My profile is: ${JSON.stringify(partnerProfile)}`,
         isExplicit: isDateExplicit,
         // Add a flag to indicate this is the first turn, so the prompt can be adjusted.
         isFirstTurn: true
