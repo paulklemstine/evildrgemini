@@ -647,6 +647,9 @@ function checkForTurnCompletion() {
         const playerA_actions = turnSubmissions.get(myRoomId);
         const playerB_actions = turnSubmissions.get(partnerRoomId);
 
+        console.log("Player A (self) turn data:", JSON.stringify(playerA_actions, null, 2));
+        console.log("Player B (partner) turn data:", JSON.stringify(playerB_actions, null, 2));
+
         if (!playerA_actions || !playerB_actions) {
             showError("FATAL: Could not map submissions to players. Aborting turn.");
             console.error("Submission mapping failed.", {
