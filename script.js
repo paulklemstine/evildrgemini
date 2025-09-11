@@ -1747,7 +1747,9 @@ function handleRoomPeerJoined(peerId, conn) {
         console.log("A peer joined, but a date is active. Skipping lobby render.");
         return;
     }
-    renderLobby();
+    // Use a timeout to allow the connection map to update before rendering
+    setTimeout(() => renderLobby(), 100);
+
 
     conn.on('open', () => {
         console.log(`Data connection to room peer ${peerId.slice(-6)} opened. Re-rendering lobby.`);
@@ -1756,7 +1758,8 @@ function handleRoomPeerJoined(peerId, conn) {
             console.log("Peer connection opened, but a date is now active. Skipping lobby render.");
             return;
         }
-        renderLobby();
+        // Use a timeout to allow the connection map to update before rendering
+        setTimeout(() => renderLobby(), 100);
     });
 }
 
@@ -1877,7 +1880,8 @@ function handleRoomDataReceived(senderId, data) {
 
             // Re-render the lobby if it's currently being viewed to show updates live.
             if (lobbyContainer.style.display === 'block') {
-                renderLobby();
+                // Use a timeout to allow state maps to update before rendering
+                setTimeout(() => renderLobby(), 100);
             }
             break;
         case 'new_turn_ui':
@@ -2048,17 +2052,6 @@ resetGameButton.addEventListener('click', () => {
 
 /** Renders the lobby UI */
 function renderLobby() {
-    console.log("--- renderLobby STATE DUMP ---");
-    try {
-        console.log("My masterId:", MPLib.getLocalMasterId());
-        console.log("Room Connections:", Object.fromEntries(MPLib.getRoomConnections()));
-        console.log("roomId to masterId Map:", Object.fromEntries(roomIdToMasterId));
-        console.log("Remote Game States:", Object.fromEntries(remoteGameStates));
-    } catch (e) {
-        console.error("Error during state dump:", e);
-    }
-    console.log("-----------------------------");
-
     console.log("Entering renderLobby with dynamic profiles.");
     if (!lobbyContainer) return;
 
