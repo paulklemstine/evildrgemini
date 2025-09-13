@@ -523,7 +523,7 @@ async function generateLocalTurn(orchestratorText, playerRole) {
         currentUiJson = uiJson;
 
         // --- Interstitial Logic ---
-        if (Array.isArray(uiJson)) {
+        if (Array.isArray(uiJson) && isDateActive) { // Only show for dates
             // Find all the report and flag elements
             const pA_green = uiJson.find(el => el.name === 'playerA_green_flags');
             const pA_red = uiJson.find(el => el.name === 'playerA_red_flags');
@@ -537,36 +537,37 @@ async function generateLocalTurn(orchestratorText, playerRole) {
             const partnerMasterId = MPLib.getRoomConnections()?.get(currentPartnerId)?.metadata?.masterId;
             const partnerProfile = remoteGameStates.get(partnerMasterId)?.profile || { name: "Partner" };
 
-            // Determine who is P1 and P2 for display purposes
-            const p1_profile = amIPlayer1 ? localProfile : partnerProfile;
-            const p2_profile = amIPlayer1 ? partnerProfile : localProfile;
-            const p1_report = amIPlayer1 ? ownReport : partnerReport;
-            const p2_report = amIPlayer1 ? partnerReport : ownReport;
+            // Determine which set of flags/reports belong to local vs partner
+            const localIsPlayerA = amIPlayer1;
+            const localFlags = {
+                green: localIsPlayerA ? pA_green : pB_green,
+                red: localIsPlayerA ? pA_red : pB_red,
+                report: ownReport
+            };
+            const partnerFlags = {
+                green: localIsPlayerA ? pB_green : pA_green,
+                red: localIsPlayerA ? pB_red : pA_red,
+                report: partnerReport
+            };
 
             // Get the DOM elements for the new layout
-            document.getElementById('p1-name').textContent = p1_profile.name || "Player 1";
-            document.getElementById('p2-name').textContent = p2_profile.name || "Player 2";
+            document.getElementById('local-player-name').textContent = localProfile.name || 'You';
+            document.getElementById('partner-player-name').textContent = partnerProfile.name || 'Your Partner';
 
-            const p1_green_container = document.getElementById('p1-green-flags');
-            const p1_red_container = document.getElementById('p1-red-flags');
-            const p1_clinical_container = document.getElementById('p1-clinical-report');
-            const p2_green_container = document.getElementById('p2-green-flags');
-            const p2_red_container = document.getElementById('p2-red-flags');
-            const p2_clinical_container = document.getElementById('p2-clinical-report');
+            // Populate the 'You' column
+            document.getElementById('local-green-flags').innerHTML = (localFlags.green && localFlags.green.value) ? localFlags.green.value.replace(/\\n/g, '<br>') : '<em>No specific green flags noted.</em>';
+            document.getElementById('local-red-flags').innerHTML = (localFlags.red && localFlags.red.value) ? localFlags.red.value.replace(/\\n/g, '<br>') : '<em>No specific red flags noted.</em>';
+            document.getElementById('local-clinical-report').innerHTML = (localFlags.report && localFlags.report.value) ? localFlags.report.value.replace(/\\n/g, '<br>') : '<em>Clinical report not available.</em>';
 
-            // Populate the reports
-            p1_green_container.innerHTML = (pA_green && pA_green.value) ? pA_green.value.replace(/\\n/g, '<br>') : '<em>No specific green flags noted.</em>';
-            p1_red_container.innerHTML = (pA_red && pA_red.value) ? pA_red.value.replace(/\\n/g, '<br>') : '<em>No specific red flags noted.</em>';
-            p1_clinical_container.innerHTML = (p1_report && p1_report.value) ? p1_report.value.replace(/\\n/g, '<br>') : '<em>Clinical report not available.</em>';
-
-            p2_green_container.innerHTML = (pB_green && pB_green.value) ? pB_green.value.replace(/\\n/g, '<br>') : '<em>No specific green flags noted.</em>';
-            p2_red_container.innerHTML = (pB_red && pB_red.value) ? pB_red.value.replace(/\\n/g, '<br>') : '<em>No specific red flags noted.</em>';
-            p2_clinical_container.innerHTML = (p2_report && p2_report.value) ? p2_report.value.replace(/\\n/g, '<br>') : '<em>Clinical report not available.</em>';
+            // Populate the 'Partner' column
+            document.getElementById('partner-green-flags').innerHTML = (partnerFlags.green && partnerFlags.green.value) ? partnerFlags.green.value.replace(/\\n/g, '<br>') : '<em>No specific green flags noted.</em>';
+            document.getElementById('partner-red-flags').innerHTML = (partnerFlags.red && partnerFlags.red.value) ? partnerFlags.red.value.replace(/\\n/g, '<br>') : '<em>No specific red flags noted.</em>';
+            document.getElementById('partner-clinical-report').innerHTML = (partnerFlags.report && partnerFlags.report.value) ? partnerFlags.report.value.replace(/\\n/g, '<br>') : '<em>Clinical report not available.</em>';
 
         } else {
-            console.warn("API response for UI is not an array, skipping interstitial report generation.", uiJson);
+            console.warn("API response for UI is not an array or not in a date, skipping interstitial report generation.", uiJson);
             // Clear all reports if the response is invalid
-            const reportIds = ['p1-green-flags', 'p1-red-flags', 'p1-clinical-report', 'p2-green-flags', 'p2-red-flags', 'p2-clinical-report'];
+            const reportIds = ['local-green-flags', 'local-red-flags', 'local-clinical-report', 'partner-green-flags', 'partner-red-flags', 'partner-clinical-report'];
             reportIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = '<em>Could not parse analysis.</em>';
@@ -1317,8 +1318,8 @@ function setLoading(loading, isFirstTurn = false) {
             interstitialSpinner.style.display = 'flex';
             interstitialReports.classList.add('hidden');
             interstitialContinueButton.disabled = true;
-            greenFlagReport.innerHTML = 'Generating...';
-            redFlagReport.innerHTML = 'Generating...';
+            // The report containers are now dynamic, so we don't set their content here.
+            // The main interstitial-reports div is hidden, which is sufficient.
             interstitialScreen.style.display = 'flex';
         }
         // When loading is false, the interstitial is hidden by the continue button, not here.
@@ -2110,7 +2111,9 @@ function renderLobby() {
 function showProposalModal() {
     if (!proposalModal || !incomingProposal) return;
 
-    proposerName.textContent = `User-${incomingProposal.proposerId.slice(-4)}`;
+    const proposerMasterId = MPLib.getRoomConnections()?.get(incomingProposal.proposerId)?.metadata?.masterId;
+    const proposerProfile = remoteGameStates.get(proposerMasterId)?.profile;
+    proposerName.textContent = proposerProfile?.name || `User-${incomingProposal.proposerId.slice(-4)}`;
 
     // Use .onclick to easily overwrite previous listeners
     proposalAcceptButton.onclick = () => {
@@ -2155,8 +2158,12 @@ function startNewDate(partnerId, iAmPlayer1) {
     lobbyContainer.style.display = 'none';
     if(gameWrapper) gameWrapper.style.display = 'block';
 
+    const partnerMasterId = MPLib.getRoomConnections()?.get(partnerId)?.metadata?.masterId;
+    const partnerProfile = remoteGameStates.get(partnerMasterId)?.profile;
+    const partnerName = partnerProfile?.name || `User-${partnerId.slice(-4)}`;
+
     // This will be replaced by the actual first turn UI from the AI
-    uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started!</h2></div>`;
+    uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerName} has started!</h2></div>`;
 
     // Player 1 is responsible for fetching the first turn
     if (iAmPlayer1) {
@@ -2164,7 +2171,7 @@ function startNewDate(partnerId, iAmPlayer1) {
         fetchFirstTurn();
     } else {
         // Player 2 just waits, show a loading indicator.
-        uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerId.slice(-4)} has started! Waiting for first turn...</h2></div>`;
+        uiContainer.innerHTML = `<div class="text-center p-8"><h2>Date with ${partnerName} has started! Waiting for first turn...</h2></div>`;
         setLoading(true, true); // Use simple spinner
     }
 }
