@@ -757,21 +757,8 @@ async function initiateTurnAsPlayer1(turnData) {
     }
     setLoading(true, true); // Use simple spinner for this phase
 
-    // Enhance turnData with full profiles for the AI
-    const localProfile = getLocalProfile();
-    const partnerMasterId = MPLib.getRoomConnections().get(currentPartnerId)?.metadata?.masterId;
-    const partnerState = partnerMasterId ? remoteGameStates.get(partnerMasterId) : {};
-    const partnerProfile = partnerState?.profile || { name: "Unknown Partner", gender: "Unknown", physical: {}, personality: {} };
-
-    const enhancedTurnData = {
-        ...turnData,
-        playerA_profile: localProfile,
-        playerB_profile: partnerProfile,
-    };
-
-
     try {
-        const orchestratorPrompt = constructPrompt('orchestrator', enhancedTurnData);
+        const orchestratorPrompt = constructPrompt('orchestrator', turnData);
         // The orchestrator now returns a single plain text block
         const orchestratorText = await callGeminiApiWithRetry(orchestratorPrompt, "text/plain");
 
@@ -1724,6 +1711,9 @@ function handleRoomConnected(id) {
         }
     });
     console.log("Broadcasted own profile (with masterId) to room on connect.");
+
+    // Immediately render the lobby so the user sees they are in the room.
+    renderLobby();
 }
 
 function handleRoomPeerJoined(peerId, conn) {
@@ -1747,8 +1737,8 @@ function handleRoomPeerJoined(peerId, conn) {
         console.log("A peer joined, but a date is active. Skipping lobby render.");
         return;
     }
-    // Use a timeout to allow the connection map to update before rendering
-    setTimeout(() => renderLobby(), 100);
+    // Re-render the lobby immediately now that a peer has joined.
+    renderLobby();
 
 
     conn.on('open', () => {
@@ -1758,8 +1748,8 @@ function handleRoomPeerJoined(peerId, conn) {
             console.log("Peer connection opened, but a date is now active. Skipping lobby render.");
             return;
         }
-        // Use a timeout to allow the connection map to update before rendering
-        setTimeout(() => renderLobby(), 100);
+        // Re-render again now that the connection is fully open, which might update its status.
+        renderLobby();
     });
 }
 
@@ -1880,8 +1870,7 @@ function handleRoomDataReceived(senderId, data) {
 
             // Re-render the lobby if it's currently being viewed to show updates live.
             if (lobbyContainer.style.display === 'block') {
-                // Use a timeout to allow state maps to update before rendering
-                setTimeout(() => renderLobby(), 100);
+                renderLobby();
             }
             break;
         case 'new_turn_ui':
@@ -2306,21 +2295,16 @@ async function fetchFirstTurn() {
 
     // Load the local profile to provide context to the AI if it exists.
     const localProfile = getLocalProfile();
-    const partnerMasterId = MPLib.getRoomConnections().get(currentPartnerId)?.metadata?.masterId;
-    const partnerState = partnerMasterId ? remoteGameStates.get(partnerMasterId) : {};
-    const partnerProfile = partnerState?.profile || { name: "Unknown Partner", gender: "Unknown", physical: {}, personality: {} };
-
+    const profileString = `Player A's saved profile: ${JSON.stringify(localProfile)}. If profile data exists, use it when creating the notes and UI. Otherwise, ensure the UI probes for it.`;
 
     // For the first turn, there are no previous actions or notes.
     // The orchestrator will be guided by the 'firstrun_addendum'.
     const initialTurnData = {
         playerA_actions: { turn: 0, action: "game_start" },
         playerB_actions: { turn: 0, action: "game_start" },
-        playerA_profile: localProfile,
-        playerB_profile: partnerProfile,
         // The notes provide a clear starting point for the orchestrator AI.
-        playerA_notes: `## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 1, I have arrived first. Please generate a new scene and starting UI for both players. My profile is: ${JSON.stringify(localProfile)}`,
-        playerB_notes: `## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 2, I am just arriving. Please generate a new scene and starting UI for both players. My profile is: ${JSON.stringify(partnerProfile)}`,
+        playerA_notes: `## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 1, I have arrived first. Please generate a new scene and starting UI for both players. ${profileString}`,
+        playerB_notes: "## Dr. Gemini's Log\nThis is the very first turn of a new blind date. As Player 2, I am just arriving. Please generate a new scene and starting UI for both players.",
         isExplicit: isDateExplicit,
         // Add a flag to indicate this is the first turn, so the prompt can be adjusted.
         isFirstTurn: true
