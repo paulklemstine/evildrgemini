@@ -25,7 +25,7 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 // 3.  **Element Order (MANDATORY):**
 //     - The sequence of elements in the array MUST be as follows:
 //       - Core Elements: image, narrative, subjectId, notes.
-//       - Analysis Elements (Hidden): green_flags, red_flags, own_clinical_analysis, partner_clinical_analysis.
+//       - Analysis Elements (Hidden): playerA_green_flags, playerA_red_flags, playerB_green_flags, playerB_red_flags, own_clinical_analysis, partner_clinical_analysis.
 //       - Interactive Probes: Any probes for player input (e.g., player_name, player_gender, main_action).
 //       - Final Elements: divine_wisdom.
 //     - The elements 'player_facing_analysis' and 'gemini_facing_analysis' are now deprecated and should not be used. Their content is now split across the four new analysis elements.
@@ -88,13 +88,15 @@ master_ui_prompt: `// GEEMS MASTER UI PROTOCOL V4.0 - JSON ONLY
 //         - 4. Physical Probe (CONDITIONAL): If the player's \`PhysicalDescription\` has "Unknown" values, add a \`radio\` or \`text_input\` probe to discover one.
 //     - The complete, updated 'notes' markdown for that player (which you updated in Step 1).
 //     - **CRITICAL ANTI-REPETITION:** A reminder to Dr. Gemini to not use any probe whose name appears in the updated ProbeHistory.
-//     - **CRITICAL ANALYSIS GENERATION:** A directive for Dr. Gemini to generate FOUR hidden text fields for the interstitial screen. You will provide the content for these fields.
-//         - \`green_flags\`: A positive, supportive analysis of the partner's actions this turn.
-//         - \`red_flags\`: A critical, concerned, or suspicious analysis of the partner's actions this turn.
+//     - **CRITICAL ANALYSIS GENERATION:** A directive for Dr. Gemini to generate SIX hidden text fields for the interstitial screen. You will provide the content for all of these fields.
+//         - \`playerA_green_flags\`: A positive, supportive analysis of Player A's actions this turn.
+//         - \`playerA_red_flags\`: A critical, concerned, or suspicious analysis of Player A's actions this turn.
+//         - \`playerB_green_flags\`: A positive, supportive analysis of Player B's actions this turn.
+//         - \`playerB_red_flags\`: A critical, concerned, or suspicious analysis of Player B's actions this turn.
 //         - \`own_clinical_analysis\`: The full clinical report for the player receiving the turn.
 //         - \`partner_clinical_analysis\`: The full clinical report for the player's partner.
-//     - To accomplish this, you MUST generate and include the full, updated clinical analysis reports for BOTH players within these instructions. These reports will be used by Dr. Gemini as the 'value' for the 'own_clinical_analysis' and 'partner_clinical_analysis' fields.
-//     - The clinical analysis reports you generate MUST follow this exact multi-line text structure, including all headers and using markdown for formatting. This is not optional. The final output must be a single string with literal '\\n' characters for line breaks.
+//     - To accomplish this, you MUST generate and include the content for all four flag reports AND the full, updated clinical analysis reports for BOTH players within these instructions. This content will be used by Dr. Gemini as the 'value' for the corresponding hidden fields.
+//     - The clinical analysis reports you generate MUST follow the mandatory multi-line text structure below, including all headers and using markdown for formatting. This is not optional. The final output must be a single string with literal '\\n' characters for line breaks.
 
 // ### MANDATORY CLINICAL REPORT STRUCTURE ###
 // (The report you generate MUST follow this exact structure)
