@@ -524,30 +524,53 @@ async function generateLocalTurn(orchestratorText, playerRole) {
 
         // --- Interstitial Logic ---
         if (Array.isArray(uiJson)) {
-            const greenFlags = uiJson.find(el => el.name === 'green_flags');
-            const redFlags = uiJson.find(el => el.name === 'red_flags');
+            // Find all the report and flag elements
+            const pA_green = uiJson.find(el => el.name === 'playerA_green_flags');
+            const pA_red = uiJson.find(el => el.name === 'playerA_red_flags');
+            const pB_green = uiJson.find(el => el.name === 'playerB_green_flags');
+            const pB_red = uiJson.find(el => el.name === 'playerB_red_flags');
             const ownReport = uiJson.find(el => el.name === 'own_clinical_analysis');
             const partnerReport = uiJson.find(el => el.name === 'partner_clinical_analysis');
 
-            // Get the report containers
-            const greenFlagReportContainer = document.getElementById('green-flag-report');
-            const redFlagReportContainer = document.getElementById('red-flag-report');
-            const ownClinicalReportContainer = document.getElementById('own-clinical-report');
-            const partnerClinicalReportContainer = document.getElementById('partner-clinical-report');
+            // Get player profiles
+            const localProfile = getLocalProfile();
+            const partnerMasterId = MPLib.getRoomConnections()?.get(currentPartnerId)?.metadata?.masterId;
+            const partnerProfile = remoteGameStates.get(partnerMasterId)?.profile || { name: "Partner" };
 
-            // Populate reports, handling cases where they might be missing
-            greenFlagReportContainer.innerHTML = (greenFlags && greenFlags.value) ? greenFlags.value.replace(/\\n/g, '<br>') : '<em>No specific green flags noted.</em>';
-            redFlagReportContainer.innerHTML = (redFlags && redFlags.value) ? redFlags.value.replace(/\\n/g, '<br>') : '<em>No specific red flags noted.</em>';
-            ownClinicalReportContainer.innerHTML = (ownReport && ownReport.value) ? ownReport.value.replace(/\\n/g, '<br>') : '<em>Your clinical report is not available.</em>';
-            partnerClinicalReportContainer.innerHTML = (partnerReport && partnerReport.value) ? partnerReport.value.replace(/\\n/g, '<br>') : '<em>Your partner\'s clinical report is not available.</em>';
+            // Determine who is P1 and P2 for display purposes
+            const p1_profile = amIPlayer1 ? localProfile : partnerProfile;
+            const p2_profile = amIPlayer1 ? partnerProfile : localProfile;
+            const p1_report = amIPlayer1 ? ownReport : partnerReport;
+            const p2_report = amIPlayer1 ? partnerReport : ownReport;
+
+            // Get the DOM elements for the new layout
+            document.getElementById('p1-name').textContent = p1_profile.name || "Player 1";
+            document.getElementById('p2-name').textContent = p2_profile.name || "Player 2";
+
+            const p1_green_container = document.getElementById('p1-green-flags');
+            const p1_red_container = document.getElementById('p1-red-flags');
+            const p1_clinical_container = document.getElementById('p1-clinical-report');
+            const p2_green_container = document.getElementById('p2-green-flags');
+            const p2_red_container = document.getElementById('p2-red-flags');
+            const p2_clinical_container = document.getElementById('p2-clinical-report');
+
+            // Populate the reports
+            p1_green_container.innerHTML = (pA_green && pA_green.value) ? pA_green.value.replace(/\\n/g, '<br>') : '<em>No specific green flags noted.</em>';
+            p1_red_container.innerHTML = (pA_red && pA_red.value) ? pA_red.value.replace(/\\n/g, '<br>') : '<em>No specific red flags noted.</em>';
+            p1_clinical_container.innerHTML = (p1_report && p1_report.value) ? p1_report.value.replace(/\\n/g, '<br>') : '<em>Clinical report not available.</em>';
+
+            p2_green_container.innerHTML = (pB_green && pB_green.value) ? pB_green.value.replace(/\\n/g, '<br>') : '<em>No specific green flags noted.</em>';
+            p2_red_container.innerHTML = (pB_red && pB_red.value) ? pB_red.value.replace(/\\n/g, '<br>') : '<em>No specific red flags noted.</em>';
+            p2_clinical_container.innerHTML = (p2_report && p2_report.value) ? p2_report.value.replace(/\\n/g, '<br>') : '<em>Clinical report not available.</em>';
 
         } else {
             console.warn("API response for UI is not an array, skipping interstitial report generation.", uiJson);
             // Clear all reports if the response is invalid
-            document.getElementById('green-flag-report').innerHTML = '<em>Could not parse analysis.</em>';
-            document.getElementById('red-flag-report').innerHTML = '<em>Could not parse analysis.</em>';
-            document.getElementById('own-clinical-report').innerHTML = '<em>Could not parse analysis.</em>';
-            document.getElementById('partner-clinical-report').innerHTML = '<em>Could not parse analysis.</em>';
+            const reportIds = ['p1-green-flags', 'p1-red-flags', 'p1-clinical-report', 'p2-green-flags', 'p2-red-flags', 'p2-clinical-report'];
+            reportIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<em>Could not parse analysis.</em>';
+            });
         }
 
 
